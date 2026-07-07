@@ -3,6 +3,7 @@ const path = require('path');
 
 require('../src/config/env');
 require('../src/core/prisma');
+require('../src/core/runtimeShutdown');
 require('../src/app');
 require('../src/routes');
 
