@@ -1,13 +1,434 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Laundry Operations & Linen Asset Management Platform
+// schema.prisma v1.0
+//
+// Purpose:
+// - Source of Truth for the Laundry Pilot Project.
+// - Supports Laundry Workspace and Resort Workspace.
+// - Supports lean production flow.
+// - Supports linen inventory visibility.
+// - Supports machine load planning with owner-defined load standards.
+//
+// Core principles:
+// - Laundry Work is the operational center.
+// - Bag is the intake unit.
+// - Count Line is the real item count captured at laundry.
+// - Inventory Summary is derived from movement history.
+// - Resort Workspace must be isolated by resortId.
+// - Issues must be explicit.
+// - Machine load standards are defined by laundry owner.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  LAUNDRY_OWNER
+  LAUNDRY_MANAGER
+  LAUNDRY_STAFF
+  RESORT_OWNER
+  RESORT_STAFF
+}
+
+enum WorkspaceType {
+  LAUNDRY
+  RESORT
+}
+
+enum WorkStatus {
+  DRAFT
+  BAG_RECEIVED
+  FACTORY_RECEIVED
+  BAG_OPENED
+  ITEM_COUNTED
+  TYPE_SORTED
+  COLOR_SORTED
+  DATA_RECORDED
+  RETURNED
+  CLOSED
+  CANCELLED
+}
+
+enum BagStatus {
+  RECEIVED
+  OPENED
+  COUNTED
+  CLOSED
+}
+
+enum MovementType {
+  COUNTED_AT_LAUNDRY
+  ISSUE_REPORTED
+  RETURNED_TO_RESORT
+  ADJUSTMENT
+}
+
+enum IssueType {
+  DAMAGED
+  MISSING
+  COUNT_MISMATCH
+  RETURN_MISMATCH
+  OTHER
+}
+
+enum IssueStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+  CANCELLED
+}
+
+enum WashLoadStatus {
+  DRAFT
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum WashLoadFitStatus {
+  UNCHECKED
+  UNDER_LOADED
+  OPTIMAL
+  OVER_LOADED
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  email         String        @unique
+  passwordHash  String
+  displayName   String?
+  role          UserRole
+  workspaceType WorkspaceType
+
+  resortId      Int?
+  resort        Resort?       @relation(fields: [resortId], references: [id])
+
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  createdWorks  LaundryWork[] @relation("WorkCreatedBy")
+  issueReports  IssueReport[] @relation("IssueReportedBy")
+
+  @@index([resortId])
+  @@index([workspaceType])
+  @@index([role])
+}
+
+model Resort {
+  id           Int      @id @default(autoincrement())
+  name         String
+  contactName  String?
+  contactPhone String?
+  address      String?
+  active       Boolean  @default(true)
+
+  users        User[]
+  works        LaundryWork[]
+  bags         LaundryBag[]
+  countLines   LaundryCountLine[]
+  movements    LinenMovement[]
+  inventory    LinenInventorySummary[]
+  issues       IssueReport[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([active])
+}
+
+model LaundryItemType {
+  id               Int      @id @default(autoincrement())
+  name             String
+  category         String?
+  weightPerPieceKg Decimal? @db.Decimal(6, 3)
+  active           Boolean  @default(true)
+
+  countLines       LaundryCountLine[]
+  movements        LinenMovement[]
+  inventory        LinenInventorySummary[]
+  issues           IssueReport[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([name, category])
+  @@index([active])
+}
+
+model LaundryWork {
+  id            Int        @id @default(autoincrement())
+  workNo        String     @unique
+
+  resortId      Int
+  resort        Resort     @relation(fields: [resortId], references: [id])
+
+  bagCount      Int        @default(0)
+  currentStatus WorkStatus @default(DRAFT)
+  issueCount    Int        @default(0)
+
+  receivedDate  DateTime?
+  returnedAt    DateTime?
+  closedAt      DateTime?
+
+  createdById   Int?
+  createdBy     User?      @relation("WorkCreatedBy", fields: [createdById], references: [id])
+
+  bags          LaundryBag[]
+  countLines    LaundryCountLine[]
+  movements     LinenMovement[]
+  issues        IssueReport[]
+  statusLogs    WorkStatusLog[]
+  washLoadPlans WashLoadPlan[]
+
+  note          String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([resortId])
+  @@index([currentStatus])
+  @@index([receivedDate])
+  @@index([returnedAt])
+  @@index([closedAt])
+}
+
+model LaundryBag {
+  id          Int         @id @default(autoincrement())
+
+  workId      Int
+  work        LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  resortId    Int
+  resort      Resort      @relation(fields: [resortId], references: [id])
+
+  bagNo       String
+  status      BagStatus   @default(RECEIVED)
+
+  receivedAt  DateTime?
+  openedAt    DateTime?
+  note        String?
+
+  countLines  LaundryCountLine[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workId, bagNo])
+  @@index([resortId])
+  @@index([status])
+  @@index([receivedAt])
+  @@index([openedAt])
+}
+
+model LaundryCountLine {
+  id            Int             @id @default(autoincrement())
+
+  workId        Int
+  work          LaundryWork     @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  bagId         Int?
+  bag           LaundryBag?     @relation(fields: [bagId], references: [id])
+
+  resortId      Int
+  resort        Resort          @relation(fields: [resortId], references: [id])
+
+  itemTypeId    Int
+  itemType      LaundryItemType @relation(fields: [itemTypeId], references: [id])
+
+  colorGroup    String?
+  quantity      Int             @default(0)
+  issueQuantity Int             @default(0)
+  note          String?
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([workId])
+  @@index([bagId])
+  @@index([resortId])
+  @@index([itemTypeId])
+  @@index([colorGroup])
+}
+
+model LinenMovement {
+  id            Int             @id @default(autoincrement())
+
+  resortId      Int
+  resort        Resort          @relation(fields: [resortId], references: [id])
+
+  workId        Int?
+  work          LaundryWork?    @relation(fields: [workId], references: [id])
+
+  itemTypeId    Int
+  itemType      LaundryItemType @relation(fields: [itemTypeId], references: [id])
+
+  colorGroup    String?
+  movementType  MovementType
+  quantity      Int
+
+  occurredAt    DateTime        @default(now())
+  note          String?
+
+  @@index([resortId])
+  @@index([workId])
+  @@index([itemTypeId])
+  @@index([colorGroup])
+  @@index([movementType])
+  @@index([occurredAt])
+}
+
+model LinenInventorySummary {
+  id             Int             @id @default(autoincrement())
+
+  resortId       Int
+  resort         Resort          @relation(fields: [resortId], references: [id])
+
+  itemTypeId     Int
+  itemType       LaundryItemType @relation(fields: [itemTypeId], references: [id])
+
+  colorGroup     String?
+
+  totalKnownQty  Int             @default(0)
+  atResortQty    Int             @default(0)
+  atLaundryQty   Int             @default(0)
+  issueQty       Int             @default(0)
+  returnedQty    Int             @default(0)
+
+  calculatedAt   DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([resortId, itemTypeId, colorGroup])
+  @@index([resortId])
+  @@index([itemTypeId])
+  @@index([colorGroup])
+}
+
+model IssueReport {
+  id            Int              @id @default(autoincrement())
+
+  workId        Int
+  work          LaundryWork      @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  resortId      Int
+  resort        Resort           @relation(fields: [resortId], references: [id])
+
+  itemTypeId    Int?
+  itemType      LaundryItemType? @relation(fields: [itemTypeId], references: [id])
+
+  colorGroup    String?
+  issueType     IssueType
+  quantity      Int              @default(0)
+  description   String?
+  status        IssueStatus      @default(OPEN)
+
+  reportedById  Int?
+  reportedBy    User?            @relation("IssueReportedBy", fields: [reportedById], references: [id])
+
+  reportedAt    DateTime         @default(now())
+  resolvedAt    DateTime?
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([workId])
+  @@index([resortId])
+  @@index([itemTypeId])
+  @@index([colorGroup])
+  @@index([status])
+  @@index([reportedAt])
+}
+
+model WorkStatusLog {
+  id            Int        @id @default(autoincrement())
+
+  workId        Int
+  work          LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  fromStatus    WorkStatus?
+  toStatus      WorkStatus
+  changedById   Int?
+  changedByName String?
+  changedAt     DateTime   @default(now())
+  note          String?
+
+  @@index([workId])
+  @@index([toStatus])
+  @@index([changedAt])
+}
+
+model LaundryMachine {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique
+  name         String
+  capacityKg   Decimal  @db.Decimal(6, 2)
+  displayOrder Int      @default(0)
+  active       Boolean  @default(true)
+
+  loadRules    LaundryMachineLoadRule[]
+  washLoadPlans WashLoadPlan[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([active])
+  @@index([displayOrder])
+}
+
+model LaundryMachineLoadRule {
+  id          Int             @id @default(autoincrement())
+
+  machineId   Int
+  machine     LaundryMachine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  name        String
+  minWeightKg Decimal         @db.Decimal(6, 2)
+  targetKg    Decimal         @db.Decimal(6, 2)
+  maxWeightKg Decimal         @db.Decimal(6, 2)
+
+  active      Boolean         @default(true)
+
+  washLoadPlans WashLoadPlan[]
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([machineId])
+  @@index([active])
+}
+
+model WashLoadPlan {
+  id                  Int                     @id @default(autoincrement())
+
+  workId              Int
+  work                LaundryWork             @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  machineId           Int
+  machine             LaundryMachine          @relation(fields: [machineId], references: [id])
+
+  loadRuleId          Int?
+  loadRule            LaundryMachineLoadRule? @relation(fields: [loadRuleId], references: [id])
+
+  loadNo              Int
+  estimatedPieceCount Int
+  totalWeightKg       Decimal                 @db.Decimal(8, 2)
+
+  status              WashLoadStatus          @default(DRAFT)
+  fitStatus           WashLoadFitStatus       @default(UNCHECKED)
+
+  note                String?
+
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  @@unique([workId, loadNo])
+  @@index([workId])
+  @@index([machineId])
+  @@index([loadRuleId])
+  @@index([status])
+  @@index([fitStatus])
 }
