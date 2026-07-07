@@ -1,4 +1,5 @@
 const { prisma } = require('../core/prisma');
+const laundryWorksRepository = require('../repositories/laundryWorks.repository');
 
 const DEFAULT_TAKE = 50;
 const MAX_TAKE = 100;
