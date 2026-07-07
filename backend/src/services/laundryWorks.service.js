@@ -1,4 +1,3 @@
-const { prisma } = require('../core/prisma');
 const laundryWorksRepository = require('../repositories/laundryWorks.repository');
 
 const DEFAULT_TAKE = 50;
@@ -8,23 +7,6 @@ const toPositiveInt = (value, fallback) => {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
-
-const buildWorkInclude = () => ({
-  resort: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
-  _count: {
-    select: {
-      bags: true,
-      countLines: true,
-      issues: true,
-      movements: true,
-    },
-  },
-});
 
 const listLaundryWorks = async (query = {}) => {
   const take = Math.min(toPositiveInt(query.take, DEFAULT_TAKE), MAX_TAKE);
@@ -100,11 +82,10 @@ const updateLaundryWorkStatus = async (workId, payload = {}) => {
     throw error;
   }
 
-  return prisma.$transaction(async (tx) => {
-    const currentWork = await tx.laundryWork.findUnique({
-      where: {
-        id: Number(workId),
-      },
+  return laundryWorksRepository.transaction(async (tx) => {
+    const currentWork = await laundryWorksRepository.findLaundryWorkByIdForUpdate({
+      workId,
+      client: tx,
     });
 
     if (!currentWork) {
@@ -113,17 +94,13 @@ const updateLaundryWorkStatus = async (workId, payload = {}) => {
       throw error;
     }
 
-    const updatedWork = await tx.laundryWork.update({
-      where: {
-        id: Number(workId),
-      },
-      data: {
-        currentStatus: payload.toStatus,
-      },
-      include: buildWorkInclude(),
+    const updatedWork = await laundryWorksRepository.updateLaundryWorkStatus({
+      workId,
+      toStatus: payload.toStatus,
+      client: tx,
     });
 
-    await tx.workStatusLog.create({
+    await laundryWorksRepository.createWorkStatusLog({
       data: {
         workId: Number(workId),
         fromStatus: currentWork.currentStatus,
@@ -132,6 +109,7 @@ const updateLaundryWorkStatus = async (workId, payload = {}) => {
         changedByName: payload.changedByName || null,
         note: payload.note || null,
       },
+      client: tx,
     });
 
     return updatedWork;
