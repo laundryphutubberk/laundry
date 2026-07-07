@@ -16,7 +16,7 @@ Task: BE-03 - REST API Layer
 [x] Execution Domain
 
 Status:
-READY_FOR_DOMAIN_ENTRY_WITH_RUNTIME_VERIFICATION_GAP
+READY_FOR_DOMAIN_ENTRY
 
 ## Read Documents
 
@@ -61,12 +61,41 @@ BE-03 owns REST route, service, request validation, and response contract work f
 
 BE-03 must not change schema, business flow, permission rules, or workspace boundary without explicit approval and ADR review.
 
+## Runtime Verification
+
+BE-01 Runtime Foundation is complete.
+
+Verified runtime baseline:
+
+- Commit: 6b83b71 - BE-01: adapt runtime foundation to Prisma 7
+- `npx prisma generate`: passed
+- `npm run verify:runtime`: passed
+- `npm run dev`: backend started on port 3000
+- `GET /api/health`: passed with database dependency status `ok`
+
+Runtime foundation includes:
+
+- Server entry
+- App bootstrap
+- Environment loader
+- Prisma 7 adapter runtime
+- Middleware order
+- Request ID and request context
+- Response envelope
+- Error handling
+- Route registry
+- Health endpoint
+- Database health check
+- Graceful shutdown
+- Runtime verification script
+
 ## Open Questions and Gaps
 
-- Runtime verification has not been executed in a live backend environment through GitHub Connector.
 - Auth-derived workspace scope is not implemented yet.
 - Status transition policy is not enforced yet; expected to belong to BE-07 Policy and Domain Rules unless explicitly moved earlier.
 
 ## Notes
+
+BE-01 runtime verification gap is closed.
 
 BE-03 documentation and API contract were added after the initial implementation to close the Boot execution-package gap.
