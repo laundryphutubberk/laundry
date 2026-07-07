@@ -1,4 +1,5 @@
 const { prisma } = require('../core/prisma');
+const { buildResortScopedWhere } = require('../shared/workspaceScope');
 
 const buildWorkInclude = () => ({
   resort: {
@@ -18,24 +19,10 @@ const buildWorkInclude = () => ({
 });
 
 const buildWorkspaceWhere = ({ workspaceType, resortId, status }) => {
-  const where = {};
+  const where = buildResortScopedWhere({ workspaceType, resortId });
 
   if (status) {
     where.currentStatus = status;
-  }
-
-  if (workspaceType === 'RESORT') {
-    if (!resortId) {
-      const error = new Error('resortId is required for Resort Workspace requests');
-      error.statusCode = 400;
-      throw error;
-    }
-
-    where.resortId = Number(resortId);
-  }
-
-  if (workspaceType !== 'RESORT' && resortId) {
-    where.resortId = Number(resortId);
   }
 
   return where;
