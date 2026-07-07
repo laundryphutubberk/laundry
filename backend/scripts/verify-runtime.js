@@ -34,6 +34,7 @@ const be03Checks = [
   ['createLaundryWork service exported', typeof laundryWorksService.createLaundryWork === 'function'],
   ['updateLaundryWorkStatus service exported', typeof laundryWorksService.updateLaundryWorkStatus === 'function'],
   ['laundry work validator parseRequest exported', typeof laundryWorksValidator.parseRequest === 'function'],
+  ['laundry work validator workIdParamSchema exported', typeof laundryWorksValidator.workIdParamSchema === 'object'],
   ['BE-03 contract documents list endpoint', contract.includes('GET /api/laundry/works')],
   ['BE-03 contract documents detail endpoint', contract.includes('GET /api/laundry/works/:workId')],
   ['BE-03 contract documents create endpoint', contract.includes('POST /api/laundry/works')],
