@@ -9,6 +9,7 @@ const {
 } = require('../services/laundryWorks.service');
 const {
   parseRequest,
+  workIdParamSchema,
   listLaundryWorksQuerySchema,
   getLaundryWorkQuerySchema,
   createLaundryWorkBodySchema,
@@ -29,8 +30,9 @@ router.get('/', async function listLaundryWorksHandler(req, res, next) {
 
 router.get('/:workId', async function getLaundryWorkHandler(req, res, next) {
   try {
+    const params = parseRequest(workIdParamSchema, req.params);
     const query = parseRequest(getLaundryWorkQuerySchema, req.query);
-    const work = await getLaundryWorkById(req.params.workId, query);
+    const work = await getLaundryWorkById(params.workId, query);
     return sendSuccess(res, work);
   } catch (error) {
     return next(error);
@@ -49,8 +51,9 @@ router.post('/', async function createLaundryWorkHandler(req, res, next) {
 
 router.patch('/:workId/status', async function updateLaundryWorkStatusHandler(req, res, next) {
   try {
+    const params = parseRequest(workIdParamSchema, req.params);
     const body = parseRequest(updateLaundryWorkStatusBodySchema, req.body);
-    const work = await updateLaundryWorkStatus(req.params.workId, body);
+    const work = await updateLaundryWorkStatus(params.workId, body);
     return sendSuccess(res, work);
   } catch (error) {
     return next(error);
