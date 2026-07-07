@@ -1,12 +1,15 @@
 const express = require('express');
+const { sendSuccess } = require('../core/httpResponse');
 
 const router = express.Router();
 
 router.get('/health', function healthHandler(_req, res) {
-  return res.status(200).json({
+  const payload = {
     status: 'ok',
     service: 'laundry-backend'
-  });
+  };
+
+  return sendSuccess(res, payload);
 });
 
 module.exports = router;
