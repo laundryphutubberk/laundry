@@ -1,4 +1,5 @@
 const { prisma } = require('../core/prisma');
+const laundryBagsRepository = require('../repositories/laundryBags.repository');
 
 const DEFAULT_TAKE = 50;
 const MAX_TAKE = 100;
@@ -80,7 +81,7 @@ const listLaundryBags = async (workId, query = {}) => {
   const skip = Math.max(toPositiveInt(query.skip, 0), 0);
 
   const where = {
-    ...buildWorkspaceWhere({
+    ...laundryBagsRepository.buildWorkspaceWhere({
       workspaceType: query.workspaceType,
       resortId: query.resortId,
       status: query.status,
@@ -88,23 +89,16 @@ const listLaundryBags = async (workId, query = {}) => {
     workId: Number(workId),
   };
 
-  const [items, total] = await Promise.all([
-    prisma.laundryBag.findMany({
-      where,
-      orderBy: {
-        createdAt: 'asc',
-      },
-      skip,
-      take,
-      include: buildBagInclude(),
-    }),
-    prisma.laundryBag.count({ where }),
-  ]);
+  const result = await laundryBagsRepository.listLaundryBags({
+    where,
+    skip,
+    take,
+  });
 
   return {
-    items,
+    items: result.items,
     pagination: {
-      total,
+      total: result.total,
       skip,
       take,
     },
