@@ -1,11 +1,17 @@
+const { runWithRequestContext } = require('../core/requestContext');
+
 const requestContextMiddleware = (req, _res, next) => {
-  req.context = {
+  const context = {
     requestId: req.requestId,
     method: req.method,
-    path: req.originalUrl,
+    path: req.originalUrl
   };
 
-  next();
+  req.context = context;
+
+  runWithRequestContext(context, function runNext() {
+    next();
+  });
 };
 
 module.exports = {
