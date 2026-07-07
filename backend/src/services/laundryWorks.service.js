@@ -26,30 +26,6 @@ const buildWorkInclude = () => ({
   },
 });
 
-const buildWorkspaceWhere = ({ workspaceType, resortId, status }) => {
-  const where = {};
-
-  if (status) {
-    where.currentStatus = status;
-  }
-
-  if (workspaceType === 'RESORT') {
-    if (!resortId) {
-      const error = new Error('resortId is required for Resort Workspace requests');
-      error.statusCode = 400;
-      throw error;
-    }
-
-    where.resortId = Number(resortId);
-  }
-
-  if (workspaceType !== 'RESORT' && resortId) {
-    where.resortId = Number(resortId);
-  }
-
-  return where;
-};
-
 const listLaundryWorks = async (query = {}) => {
   const take = Math.min(toPositiveInt(query.take, DEFAULT_TAKE), MAX_TAKE);
   const skip = Math.max(toPositiveInt(query.skip, 0), 0);
@@ -77,28 +53,14 @@ const listLaundryWorks = async (query = {}) => {
 };
 
 const getLaundryWorkById = async (workId, query = {}) => {
-  const where = buildWorkspaceWhere({
+  const where = laundryWorksRepository.buildWorkspaceWhere({
     workspaceType: query.workspaceType,
     resortId: query.resortId,
   });
 
-  const work = await prisma.laundryWork.findFirst({
-    where: {
-      ...where,
-      id: Number(workId),
-    },
-    include: {
-      ...buildWorkInclude(),
-      bags: true,
-      countLines: true,
-      issues: true,
-      movements: true,
-      statusLogs: {
-        orderBy: {
-          changedAt: 'desc',
-        },
-      },
-    },
+  const work = await laundryWorksRepository.findLaundryWorkById({
+    workId,
+    where,
   });
 
   if (!work) {
