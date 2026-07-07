@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 
 const routes = require('./routes');
+const { requestIdMiddleware } = require('./middlewares/requestId.middleware');
 const { notFoundMiddleware } = require('./middlewares/notFound.middleware');
 const { errorMiddleware } = require('./middlewares/error.middleware');
 
@@ -13,6 +14,7 @@ const createApp = () => {
   app.use(helmet());
   app.use(cors());
   app.use(express.json());
+  app.use(requestIdMiddleware);
   app.use(morgan('dev'));
 
   app.use('/api', routes);
