@@ -4,8 +4,13 @@ const { sendSuccess } = require('../core/httpResponse');
 
 const router = express.Router();
 
-router.get('/health', function healthHandler(_req, res) {
-  return sendSuccess(res, getHealthStatus());
+router.get('/health', async function healthHandler(_req, res, next) {
+  try {
+    const healthStatus = await getHealthStatus();
+    return sendSuccess(res, healthStatus);
+  } catch (error) {
+    return next(error);
+  }
 });
 
 module.exports = router;
