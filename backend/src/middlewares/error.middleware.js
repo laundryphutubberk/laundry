@@ -1,13 +1,10 @@
+const { sendFailure } = require('../core/httpResponse');
+
 const errorMiddleware = (error, _req, res, _next) => {
   const statusCode = error.statusCode || 500;
+  const message = statusCode === 500 ? 'Internal server error' : error.message;
 
-  res.status(statusCode).json({
-    success: false,
-    error: {
-      message: statusCode === 500 ? 'Internal server error' : error.message,
-      statusCode,
-    },
-  });
+  return sendFailure(res, { message }, statusCode);
 };
 
 module.exports = {
