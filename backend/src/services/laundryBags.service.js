@@ -1,4 +1,3 @@
-const { prisma } = require('../core/prisma');
 const laundryBagsRepository = require('../repositories/laundryBags.repository');
 
 const DEFAULT_TAKE = 50;
@@ -9,62 +8,16 @@ const toPositiveInt = (value, fallback) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
-const buildBagInclude = () => ({
-  work: {
-    select: {
-      id: true,
-      workNo: true,
-      currentStatus: true,
-    },
-  },
-  resort: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
-  _count: {
-    select: {
-      countLines: true,
-    },
-  },
-});
-
-const buildWorkspaceWhere = ({ workspaceType, resortId, status }) => {
-  const where = {};
-
-  if (status) {
-    where.status = status;
-  }
-
-  if (workspaceType === 'RESORT') {
-    if (!resortId) {
-      const error = new Error('resortId is required for Resort Workspace requests');
-      error.statusCode = 400;
-      throw error;
-    }
-
-    where.resortId = Number(resortId);
-  }
-
-  if (workspaceType !== 'RESORT' && resortId) {
-    where.resortId = Number(resortId);
-  }
-
-  return where;
-};
-
-const assertWorkAccessible = async (tx, workId, query = {}) => {
-  const where = buildWorkspaceWhere({
+const assertWorkAccessible = async (client, workId, query = {}) => {
+  const where = laundryBagsRepository.buildWorkspaceWhere({
     workspaceType: query.workspaceType,
     resortId: query.resortId,
   });
 
-  const work = await tx.laundryWork.findFirst({
-    where: {
-      id: Number(workId),
-      ...(where.resortId ? { resortId: where.resortId } : {}),
-    },
+  const work = await laundryBagsRepository.findAccessibleWork({
+    workId,
+    where,
+    client,
   });
 
   if (!work) {
@@ -107,7 +60,7 @@ const listLaundryBags = async (workId, query = {}) => {
 
 const getLaundryBagById = async (workId, bagId, query = {}) => {
   const where = {
-    ...buildWorkspaceWhere({
+    ...laundryBagsRepository.buildWorkspaceWhere({
       workspaceType: query.workspaceType,
       resortId: query.resortId,
     }),
@@ -115,10 +68,7 @@ const getLaundryBagById = async (workId, bagId, query = {}) => {
     id: Number(bagId),
   };
 
-  const bag = await prisma.laundryBag.findFirst({
-    where,
-    include: buildBagInclude(),
-  });
+  const bag = await laundryBagsRepository.findLaundryBagById({ where });
 
   if (!bag) {
     const error = new Error('Laundry Bag not found');
@@ -130,10 +80,10 @@ const getLaundryBagById = async (workId, bagId, query = {}) => {
 };
 
 const createLaundryBag = async (workId, payload = {}) => {
-  return prisma.$transaction(async (tx) => {
+  return laundryBagsRepository.transaction(async (tx) => {
     const work = await assertWorkAccessible(tx, workId);
 
-    const bag = await tx.laundryBag.create({
+    const bag = await laundryBagsRepository.createLaundryBag({
       data: {
         workId: work.id,
         resortId: work.resortId,
@@ -141,29 +91,24 @@ const createLaundryBag = async (workId, payload = {}) => {
         receivedAt: payload.receivedAt ? new Date(payload.receivedAt) : new Date(),
         note: payload.note || null,
       },
-      include: buildBagInclude(),
+      client: tx,
     });
 
-    await tx.laundryWork.update({
-      where: {
-        id: work.id,
-      },
-      data: {
-        bagCount: {
-          increment: 1,
-        },
-        currentStatus: work.currentStatus === 'DRAFT' ? 'BAG_RECEIVED' : work.currentStatus,
-      },
+    await laundryBagsRepository.incrementLaundryWorkBagCount({
+      workId: work.id,
+      currentStatus: work.currentStatus,
+      client: tx,
     });
 
     if (work.currentStatus === 'DRAFT') {
-      await tx.workStatusLog.create({
+      await laundryBagsRepository.createWorkStatusLog({
         data: {
           workId: work.id,
           fromStatus: 'DRAFT',
           toStatus: 'BAG_RECEIVED',
           note: 'First bag received',
         },
+        client: tx,
       });
     }
 
@@ -172,14 +117,15 @@ const createLaundryBag = async (workId, payload = {}) => {
 };
 
 const updateLaundryBagStatus = async (workId, bagId, payload = {}) => {
-  return prisma.$transaction(async (tx) => {
+  return laundryBagsRepository.transaction(async (tx) => {
     await assertWorkAccessible(tx, workId);
 
-    const currentBag = await tx.laundryBag.findFirst({
+    const currentBag = await laundryBagsRepository.findLaundryBagById({
       where: {
         id: Number(bagId),
         workId: Number(workId),
       },
+      client: tx,
     });
 
     if (!currentBag) {
@@ -190,10 +136,8 @@ const updateLaundryBagStatus = async (workId, bagId, payload = {}) => {
 
     const shouldSetOpenedAt = payload.toStatus === 'OPENED' && !currentBag.openedAt;
 
-    return tx.laundryBag.update({
-      where: {
-        id: currentBag.id,
-      },
+    return laundryBagsRepository.updateLaundryBagStatus({
+      bagId: currentBag.id,
       data: {
         status: payload.toStatus,
         openedAt: payload.openedAt
@@ -203,7 +147,7 @@ const updateLaundryBagStatus = async (workId, bagId, payload = {}) => {
             : currentBag.openedAt,
         note: payload.note !== undefined ? payload.note : currentBag.note,
       },
-      include: buildBagInclude(),
+      client: tx,
     });
   });
 };
