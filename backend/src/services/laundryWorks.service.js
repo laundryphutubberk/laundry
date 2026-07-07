@@ -54,29 +54,22 @@ const listLaundryWorks = async (query = {}) => {
   const take = Math.min(toPositiveInt(query.take, DEFAULT_TAKE), MAX_TAKE);
   const skip = Math.max(toPositiveInt(query.skip, 0), 0);
 
-  const where = buildWorkspaceWhere({
+  const where = laundryWorksRepository.buildWorkspaceWhere({
     workspaceType: query.workspaceType,
     resortId: query.resortId,
     status: query.status,
   });
 
-  const [items, total] = await Promise.all([
-    prisma.laundryWork.findMany({
-      where,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take,
-      include: buildWorkInclude(),
-    }),
-    prisma.laundryWork.count({ where }),
-  ]);
+  const result = await laundryWorksRepository.listLaundryWorks({
+    where,
+    skip,
+    take,
+  });
 
   return {
-    items,
+    items: result.items,
     pagination: {
-      total,
+      total: result.total,
       skip,
       take,
     },
