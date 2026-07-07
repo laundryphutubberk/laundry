@@ -13,7 +13,7 @@ const schema = fs.readFileSync(schemaPath, 'utf8');
 const schemaChecks = [
   ['generator client', schema.includes('generator client')],
   ['datasource provider', schema.includes('provider = "postgresql"')],
-  ['datasource DATABASE_URL', schema.includes('env("DATABASE_URL")')],
+
 ];
 
 const failedChecks = schemaChecks.filter(([, passed]) => !passed);
