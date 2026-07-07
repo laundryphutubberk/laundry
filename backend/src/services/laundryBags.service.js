@@ -1,12 +1,5 @@
 const laundryBagsRepository = require('../repositories/laundryBags.repository');
-
-const DEFAULT_TAKE = 50;
-const MAX_TAKE = 100;
-
-const toPositiveInt = (value, fallback) => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-};
+const { normalizePagination } = require('../shared/pagination');
 
 const assertWorkAccessible = async (client, workId, query = {}) => {
   const where = laundryBagsRepository.buildWorkspaceWhere({
@@ -30,8 +23,7 @@ const assertWorkAccessible = async (client, workId, query = {}) => {
 };
 
 const listLaundryBags = async (workId, query = {}) => {
-  const take = Math.min(toPositiveInt(query.take, DEFAULT_TAKE), MAX_TAKE);
-  const skip = Math.max(toPositiveInt(query.skip, 0), 0);
+  const { skip, take } = normalizePagination(query);
 
   const where = {
     ...laundryBagsRepository.buildWorkspaceWhere({
