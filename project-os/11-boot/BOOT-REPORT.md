@@ -89,8 +89,26 @@ Runtime foundation includes:
 - Graceful shutdown
 - Runtime verification script
 
+BE-03 verification coverage has been added to `backend/scripts/verify-runtime.js`.
+
+BE-03 verification coverage includes:
+
+- Laundry Works route module load check
+- Laundry Works service export checks
+- Laundry Works validator export check
+- BE-03 API contract endpoint checks
+- BE-03 execution package active-state check
+
+Required local verification command:
+
+```text
+cd backend
+npm run verify:runtime
+```
+
 ## Open Questions and Gaps
 
+- BE-03 extended runtime verification has been prepared in repo but has not been executed through this GitHub Connector session.
 - Auth-derived workspace scope is not implemented yet.
 - Status transition policy is not enforced yet; expected to belong to BE-07 Policy and Domain Rules unless explicitly moved earlier.
 
@@ -99,3 +117,5 @@ Runtime foundation includes:
 BE-01 runtime verification gap is closed.
 
 BE-03 documentation and API contract were added after the initial implementation to close the Boot execution-package gap.
+
+BE-03 runtime verification coverage was added after BE-03 implementation so the existing verification command can now check BE-03 module loading and documentation contract presence.
