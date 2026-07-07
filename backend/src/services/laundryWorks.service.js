@@ -81,7 +81,7 @@ const createLaundryWork = async (payload = {}) => {
 
   const workNo = payload.workNo || `LW-${Date.now()}`;
 
-  return prisma.laundryWork.create({
+  return laundryWorksRepository.createLaundryWork({
     data: {
       workNo,
       resortId: Number(payload.resortId),
@@ -90,7 +90,6 @@ const createLaundryWork = async (payload = {}) => {
       note: payload.note || null,
       currentStatus: payload.currentStatus || 'DRAFT',
     },
-    include: buildWorkInclude(),
   });
 };
 
