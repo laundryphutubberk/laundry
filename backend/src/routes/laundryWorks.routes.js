@@ -7,12 +7,20 @@ const {
   createLaundryWork,
   updateLaundryWorkStatus,
 } = require('../services/laundryWorks.service');
+const {
+  parseRequest,
+  listLaundryWorksQuerySchema,
+  getLaundryWorkQuerySchema,
+  createLaundryWorkBodySchema,
+  updateLaundryWorkStatusBodySchema,
+} = require('../validators/laundryWorks.validator');
 
 const router = express.Router();
 
 router.get('/', async function listLaundryWorksHandler(req, res, next) {
   try {
-    const result = await listLaundryWorks(req.query);
+    const query = parseRequest(listLaundryWorksQuerySchema, req.query);
+    const result = await listLaundryWorks(query);
     return sendSuccess(res, result.items, { pagination: result.pagination });
   } catch (error) {
     return next(error);
@@ -21,7 +29,8 @@ router.get('/', async function listLaundryWorksHandler(req, res, next) {
 
 router.get('/:workId', async function getLaundryWorkHandler(req, res, next) {
   try {
-    const work = await getLaundryWorkById(req.params.workId, req.query);
+    const query = parseRequest(getLaundryWorkQuerySchema, req.query);
+    const work = await getLaundryWorkById(req.params.workId, query);
     return sendSuccess(res, work);
   } catch (error) {
     return next(error);
@@ -30,7 +39,8 @@ router.get('/:workId', async function getLaundryWorkHandler(req, res, next) {
 
 router.post('/', async function createLaundryWorkHandler(req, res, next) {
   try {
-    const work = await createLaundryWork(req.body);
+    const body = parseRequest(createLaundryWorkBodySchema, req.body);
+    const work = await createLaundryWork(body);
     return sendSuccess(res, work, undefined, 201);
   } catch (error) {
     return next(error);
@@ -39,7 +49,8 @@ router.post('/', async function createLaundryWorkHandler(req, res, next) {
 
 router.patch('/:workId/status', async function updateLaundryWorkStatusHandler(req, res, next) {
   try {
-    const work = await updateLaundryWorkStatus(req.params.workId, req.body);
+    const body = parseRequest(updateLaundryWorkStatusBodySchema, req.body);
+    const work = await updateLaundryWorkStatus(req.params.workId, body);
     return sendSuccess(res, work);
   } catch (error) {
     return next(error);
