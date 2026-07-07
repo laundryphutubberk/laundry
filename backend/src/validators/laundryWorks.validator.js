@@ -21,6 +21,10 @@ const optionalPositiveIntString = z
   .regex(/^\d+$/)
   .optional();
 
+const workIdParamSchema = z.object({
+  workId: z.coerce.number().int().positive(),
+});
+
 const listLaundryWorksQuerySchema = z.object({
   workspaceType: workspaceTypeSchema.optional(),
   resortId: optionalPositiveIntString,
@@ -65,6 +69,7 @@ const parseRequest = (schema, value) => {
 
 module.exports = {
   parseRequest,
+  workIdParamSchema,
   listLaundryWorksQuerySchema,
   getLaundryWorkQuerySchema,
   createLaundryWorkBodySchema,
