@@ -1,19 +1,8 @@
 const { prisma } = require('../core/prisma');
-const { buildResortScopedWhere } = require('../shared/workspaceScope');
 
 const getClient = (client) => client || prisma;
 
-const buildWorkspaceWhere = ({ workspaceType, resortId, status } = {}) => {
-  const where = buildResortScopedWhere({ workspaceType, resortId });
-
-  if (status) {
-    where.status = status;
-  }
-
-  return where;
-};
-
-const findWorkById = async ({ workId, where, client } = {}) => {
+const findAccessibleWork = async ({ workId, where, client } = {}) => {
   const db = getClient(client);
 
   return db.laundryWork.findFirst({
@@ -122,8 +111,7 @@ const incrementWorkIssueCount = async ({ workId, client } = {}) => {
 const transaction = async (callback) => prisma.$transaction(callback);
 
 module.exports = {
-  buildWorkspaceWhere,
-  findWorkById,
+  findAccessibleWork,
   findIssueById,
   findItemTypeById,
   listIssueReports,
