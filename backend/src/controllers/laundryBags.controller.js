@@ -1,4 +1,5 @@
 const { sendSuccess } = require('../core/httpResponse');
+const { getRequestPolicyContext } = require('../core/policyContext');
 const {
   listLaundryBags,
   getLaundryBagById,
@@ -10,10 +11,6 @@ const {
   getLaundryBagQuerySchema,
   createLaundryBagBodySchema,
 } = require('../validators/laundryBags.validator');
-
-const getRequestPolicyContext = (req) => ({
-  actor: req.context ? req.context.actor : null,
-});
 
 const listLaundryBagsController = async (req, res, next) => {
   try {
