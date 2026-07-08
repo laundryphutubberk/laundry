@@ -67,10 +67,17 @@ const createIssueReport = async (workId, payload = {}, context = {}) => {
     });
 
     if (issueReportsBusiness.shouldIncrementWorkIssueCount(issue.status)) {
-      await issueReportsRepository.incrementWorkIssueCount({
+      const workUpdateResult = await issueReportsRepository.incrementWorkIssueCount({
         workId: work.id,
+        expectedStatus: work.currentStatus,
         client: tx,
       });
+
+      if (workUpdateResult.count === 0) {
+        const error = new Error('Laundry Work status changed during issue report creation');
+        error.statusCode = 409;
+        throw error;
+      }
     }
 
     return issue;
