@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
 
 const routes = require('./routes');
 const { requestIdMiddleware } = require('./middlewares/requestId.middleware');
@@ -9,6 +8,7 @@ const { requestContextMiddleware } = require('./middlewares/requestContext.middl
 const { optionalActorMiddleware } = require('./middlewares/optionalActor.middleware');
 const { notFoundMiddleware } = require('./middlewares/notFound.middleware');
 const { errorMiddleware } = require('./middlewares/error.middleware');
+const { requestObservabilityMiddleware } = require('./core/observability');
 
 const createApp = () => {
   const app = express();
@@ -19,7 +19,7 @@ const createApp = () => {
   app.use(requestIdMiddleware);
   app.use(requestContextMiddleware);
   app.use(optionalActorMiddleware);
-  app.use(morgan('dev'));
+  app.use(requestObservabilityMiddleware);
 
   app.use('/api', routes);
 
