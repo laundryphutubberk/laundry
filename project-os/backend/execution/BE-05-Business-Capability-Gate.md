@@ -1,6 +1,6 @@
 # BE-05 — Business Capability Gate
 
-Status: IN_PROGRESS
+Status: READY_FOR_FREEZE_REVIEW
 Mode: IMPLEMENTATION GATE
 
 ## Purpose
@@ -38,7 +38,7 @@ BE-05 is done when all items below are complete:
 | Prisma Model | Category | Source of Truth Role | Business Layer Status | Reason |
 |---|---|---|---|---|
 | User | Infrastructure | Identity, role, and workspace binding | Not required | Supports access context rather than laundry workflow decisions. |
-| Resort | Required Business Layer | Customer/workspace owner for linen assets | Required | Owns customer activation and Resort Workspace boundary assumptions. |
+| Resort | Required Business Layer | Customer/workspace owner for linen assets | Complete | Owns customer activation and Resort Workspace boundary assumptions. |
 | LaundryItemType | Lookup | Linen type reference and per-piece weight | Not required | Used by count/load rules but does not own workflow state. |
 | LaundryWork | Required Business Layer | Aggregate root for receive-wash-return workflow | Complete | Owns work lifecycle, status transitions, resort scope, and operational state. |
 | LaundryBag | Required Business Layer | Intake unit for received laundry | Complete | Owns bag lifecycle, bag uniqueness within work, and receive/open/count readiness. |
@@ -72,6 +72,11 @@ Photo/image handling is intentionally excluded from BE-05 because it is not part
 
 ## Completed
 
+- Resort Business Layer
+  - Resort name is required.
+  - Resort must exist before updates.
+  - Resort cannot be deactivated while active Laundry Work exists.
+  - Resort activation state remains the business boundary for receiving work.
 - Laundry Work Business Layer
   - Resort must exist and be active before Work creation.
   - `workNo` must be unique.
@@ -126,18 +131,17 @@ Photo/image handling is intentionally excluded from BE-05 because it is not part
 
 ## Remaining Required Business Layers
 
-1. Resort Business Layer
-2. Runtime verification expansion for all BE-05 required domains
+None.
 
 ## Freeze Condition
 
-BE-05 may be frozen only after:
+BE-05 may be frozen after review because:
 
-- Domain Coverage Matrix is complete and reviewed.
-- Operational Domain Map is complete and reviewed.
-- Every required domain has a business layer or an approved exception.
+- Domain Coverage Matrix is complete.
+- Operational Domain Map is complete.
+- Every required domain has a business layer.
 - Runtime verification confirms business layer exports and boundaries.
-- No stop condition is triggered.
+- No stop condition was triggered.
 
 ## Stop Conditions
 
