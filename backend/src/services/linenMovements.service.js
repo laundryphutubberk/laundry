@@ -1,5 +1,6 @@
 const linenMovementsBusiness = require('../domain/linenMovements.business');
 const linenMovementsRepository = require('../repositories/linenMovements.repository');
+const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
@@ -38,6 +39,8 @@ const listLinenMovements = async (query = {}, context = {}) => {
 };
 
 const createLinenMovement = async (payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return linenMovementsRepository.transaction(async (tx) => {
     const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
