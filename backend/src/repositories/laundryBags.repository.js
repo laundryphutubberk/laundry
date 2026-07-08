@@ -85,12 +85,13 @@ const createLaundryBag = async ({ data, client } = {}) => {
   });
 };
 
-const incrementLaundryWorkBagCount = async ({ workId, nextStatus, client } = {}) => {
+const incrementLaundryWorkBagCount = async ({ workId, expectedStatus, nextStatus, client } = {}) => {
   const db = getClient(client);
 
-  return db.laundryWork.update({
+  return db.laundryWork.updateMany({
     where: {
       id: Number(workId),
+      currentStatus: expectedStatus,
     },
     data: {
       bagCount: {
