@@ -108,11 +108,18 @@ const createLaundryBag = async (workId, payload = {}, context = {}) => {
       client: tx,
     });
 
-    await laundryBagsRepository.incrementLaundryWorkBagCount({
+    const workUpdateResult = await laundryBagsRepository.incrementLaundryWorkBagCount({
       workId: work.id,
+      expectedStatus: work.currentStatus,
       nextStatus: laundryBagsBusiness.getNextWorkStatusAfterBagReceived(work.currentStatus),
       client: tx,
     });
+
+    if (workUpdateResult.count === 0) {
+      const error = new Error('Laundry Work status changed during bag receive');
+      error.statusCode = 409;
+      throw error;
+    }
 
     if (laundryBagsBusiness.shouldCreateFirstBagStatusLog(work)) {
       await laundryBagsRepository.createWorkStatusLog({
