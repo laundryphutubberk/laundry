@@ -17,7 +17,7 @@ router.get('/health', async function healthHandler(_req, res, next) {
   }
 });
 
-router.use('/laundry/works', authActorMiddleware, laundryWorksRoutes);
 router.use('/laundry/works/:workId/bags', authActorMiddleware, laundryBagsRoutes);
+router.use('/laundry/works', authActorMiddleware, laundryWorksRoutes);
 
 module.exports = router;
