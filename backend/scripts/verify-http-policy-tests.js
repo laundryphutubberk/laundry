@@ -171,22 +171,6 @@ const createLaundryBagRepositoryMock = (calls) => ({
   },
 });
 
-const createAppWithMocks = async (calls) => {
-  const mocks = {
-    '../repositories/laundryWorks.repository': createLaundryWorkRepositoryMock(calls),
-    '../repositories/laundryWorksBusiness.repository': {},
-    '../repositories/laundryBags.repository': createLaundryBagRepositoryMock(calls),
-  };
-
-  let app;
-  await withMockedModules(mocks, async () => {
-    const { createApp } = require('../src/app');
-    app = createApp();
-  });
-
-  return app;
-};
-
 const runUnauthenticatedRouteTest = async () => {
   const calls = [];
 
@@ -325,11 +309,53 @@ const runOperationalWriteAllowRouteTest = async () => {
   );
 };
 
+const runScopedStatusUpdateRouteTest = async () => {
+  const calls = [];
+  const token = createToken({
+    userId: 3,
+    role: USER_ROLES.RESORT_STAFF,
+    workspaceType: WORKSPACE_TYPES.RESORT,
+    resortId: 10,
+    active: true,
+  });
+
+  await withMockedModules(
+    {
+      '../repositories/laundryWorks.repository': createLaundryWorkRepositoryMock(calls),
+      '../repositories/laundryWorksBusiness.repository': {},
+      '../repositories/laundryBags.repository': createLaundryBagRepositoryMock(calls),
+    },
+    async () => {
+      const { createApp } = require('../src/app');
+      const server = await listen(createApp());
+      try {
+        const response = await requestJson(server, {
+          method: 'PATCH',
+          path: '/api/laundry/works/9/status',
+          token,
+          body: {
+            toStatus: 'FACTORY_RECEIVED',
+            note: 'Factory received through HTTP',
+          },
+        });
+
+        assert.equal(response.statusCode, 403);
+        assert.equal(response.body.success, false);
+        assert.equal(response.body.meta.code, 'AUTHORIZATION_POLICY_VIOLATION');
+        assert.equal(calls.some((call) => call.fn === 'updateLaundryWorkStatus'), false);
+      } finally {
+        await close(server);
+      }
+    },
+  );
+};
+
 const run = async () => {
   await runUnauthenticatedRouteTest();
   await runActorScopedListRouteTest();
   await runOperationalWriteDenyRouteTest();
   await runOperationalWriteAllowRouteTest();
+  await runScopedStatusUpdateRouteTest();
 
   console.log('BE-07 HTTP policy integration tests passed.');
 };
