@@ -1,8 +1,14 @@
 const resortsBusiness = require('../domain/resorts.business');
 const resortsRepository = require('../repositories/resorts.repository');
+const {
+  assertLaundryManagementActor,
+  assertLaundryStaffActor,
+} = require('../policies/authorization.policy');
 const { normalizePagination } = require('../shared/pagination');
 
-const listResorts = async (query = {}) => {
+const listResorts = async (query = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   const { skip, take } = normalizePagination(query);
   const where = {};
 
@@ -26,7 +32,9 @@ const listResorts = async (query = {}) => {
   };
 };
 
-const createResort = async (payload = {}) => {
+const createResort = async (payload = {}, context = {}) => {
+  assertLaundryManagementActor(context.actor);
+
   return resortsRepository.transaction(async (tx) => {
     return resortsRepository.createResort({
       data: resortsBusiness.buildCreateResortData(payload),
@@ -35,7 +43,9 @@ const createResort = async (payload = {}) => {
   });
 };
 
-const updateResort = async (resortId, payload = {}) => {
+const updateResort = async (resortId, payload = {}, context = {}) => {
+  assertLaundryManagementActor(context.actor);
+
   return resortsRepository.transaction(async (tx) => {
     const currentResort = await resortsRepository.findResortById({
       resortId,
