@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const routes = require('./routes');
 const { requestIdMiddleware } = require('./middlewares/requestId.middleware');
 const { requestContextMiddleware } = require('./middlewares/requestContext.middleware');
+const { optionalActorMiddleware } = require('./middlewares/optionalActor.middleware');
 const { notFoundMiddleware } = require('./middlewares/notFound.middleware');
 const { errorMiddleware } = require('./middlewares/error.middleware');
 
@@ -17,6 +18,7 @@ const createApp = () => {
   app.use(express.json());
   app.use(requestIdMiddleware);
   app.use(requestContextMiddleware);
+  app.use(optionalActorMiddleware);
   app.use(morgan('dev'));
 
   app.use('/api', routes);
