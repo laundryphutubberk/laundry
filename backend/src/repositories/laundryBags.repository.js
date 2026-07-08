@@ -76,6 +76,17 @@ const findLaundryBagById = async ({ where, client } = {}) => {
   });
 };
 
+const findLaundryBagByBagNo = async ({ workId, bagNo, client } = {}) => {
+  const db = getClient(client);
+
+  return db.laundryBag.findFirst({
+    where: {
+      workId: Number(workId),
+      bagNo,
+    },
+  });
+};
+
 const createLaundryBag = async ({ data, client } = {}) => {
   const db = getClient(client);
 
@@ -85,7 +96,7 @@ const createLaundryBag = async ({ data, client } = {}) => {
   });
 };
 
-const incrementLaundryWorkBagCount = async ({ workId, currentStatus, client } = {}) => {
+const incrementLaundryWorkBagCount = async ({ workId, nextStatus, client } = {}) => {
   const db = getClient(client);
 
   return db.laundryWork.update({
@@ -96,7 +107,7 @@ const incrementLaundryWorkBagCount = async ({ workId, currentStatus, client } = 
       bagCount: {
         increment: 1,
       },
-      currentStatus: currentStatus === 'DRAFT' ? 'BAG_RECEIVED' : currentStatus,
+      currentStatus: nextStatus,
     },
   });
 };
@@ -128,6 +139,7 @@ module.exports = {
   findAccessibleWork,
   listLaundryBags,
   findLaundryBagById,
+  findLaundryBagByBagNo,
   createLaundryBag,
   incrementLaundryWorkBagCount,
   createWorkStatusLog,
