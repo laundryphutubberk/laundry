@@ -2,14 +2,14 @@ const { getRequestContext } = require('./requestContext');
 
 const SENSITIVE_KEYS = new Set([
   'password',
-  'passwordHash',
+  'passwordhash',
   'token',
-  'accessToken',
-  'refreshToken',
+  'accesstoken',
+  'refreshtoken',
   'authorization',
   'cookie',
   'secret',
-  'apiKey',
+  'apikey',
 ]);
 
 const metrics = {
