@@ -10,7 +10,23 @@ const getRequestContext = () => {
   return requestContextStorage.getStore();
 };
 
+const setRequestActor = (actor) => {
+  const context = getRequestContext();
+
+  if (context) {
+    context.actor = actor;
+  }
+
+  return actor;
+};
+
+const getRequestActor = () => {
+  return getRequestContext()?.actor || null;
+};
+
 module.exports = {
   runWithRequestContext,
   getRequestContext,
+  setRequestActor,
+  getRequestActor,
 };
