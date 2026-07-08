@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "verify:runtime": "node scripts/verify-runtime.js"
+    "verify:runtime": "node scripts/verify-runtime.js",
+    "verify:policy": "node scripts/verify-policy-tests.js",
+    "verify:be07": "npm run verify:policy && npm run verify:runtime"
   },
   "keywords": [],
   "author": "",
