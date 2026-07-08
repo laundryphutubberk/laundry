@@ -1,4 +1,5 @@
 const { getDatabaseHealth } = require('./databaseHealth');
+const { getMetricsSnapshot } = require('./observability');
 
 const getHealthStatus = async () => {
   const database = await getDatabaseHealth();
@@ -10,8 +11,11 @@ const getHealthStatus = async () => {
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     dependencies: {
-      database: database
-    }
+      database,
+    },
+    observability: {
+      metrics: getMetricsSnapshot(),
+    },
   };
 };
 
