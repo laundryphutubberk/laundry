@@ -1,5 +1,6 @@
 const laundryBagsBusiness = require('../domain/laundryBags.business');
 const laundryBagsRepository = require('../repositories/laundryBags.repository');
+const { logger } = require('../core/observability');
 const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
@@ -13,6 +14,13 @@ const buildLaundryBagWhere = ({ actor, status } = {}) => {
 
   return where;
 };
+
+const buildActorLogContext = (actor) => ({
+  actorId: actor?.id,
+  actorRole: actor?.role,
+  workspaceType: actor?.workspaceType,
+  actorResortId: actor?.resortId,
+});
 
 const assertWorkAccessible = async (client, workId, query = {}, context = {}) => {
   const where = buildLaundryBagWhere({
@@ -86,7 +94,7 @@ const getLaundryBagById = async (workId, bagId, query = {}, context = {}) => {
 const createLaundryBag = async (workId, payload = {}, context = {}) => {
   assertLaundryStaffActor(context.actor);
 
-  return laundryBagsRepository.transaction(async (tx) => {
+  const bag = await laundryBagsRepository.transaction(async (tx) => {
     const work = await assertWorkAccessible(tx, workId, {}, context);
     laundryBagsBusiness.assertWorkCanReceiveBag(work);
 
@@ -97,7 +105,7 @@ const createLaundryBag = async (workId, payload = {}, context = {}) => {
     });
     laundryBagsBusiness.assertUniqueBagNo(existingBag);
 
-    const bag = await laundryBagsRepository.createLaundryBag({
+    const createdBag = await laundryBagsRepository.createLaundryBag({
       data: {
         workId: work.id,
         resortId: work.resortId,
@@ -133,14 +141,25 @@ const createLaundryBag = async (workId, payload = {}, context = {}) => {
       });
     }
 
-    return bag;
+    return createdBag;
   });
+
+  logger.business('laundry.bag.received', {
+    ...buildActorLogContext(context.actor),
+    workId: bag.workId,
+    bagId: bag.id,
+    bagNo: bag.bagNo,
+    resortId: bag.resortId,
+    status: bag.status,
+  });
+
+  return bag;
 };
 
 const updateLaundryBagStatus = async (workId, bagId, payload = {}, context = {}) => {
   assertLaundryStaffActor(context.actor);
 
-  return laundryBagsRepository.transaction(async (tx) => {
+  const result = await laundryBagsRepository.transaction(async (tx) => {
     await assertWorkAccessible(tx, workId, {}, context);
 
     const currentBag = await laundryBagsRepository.findLaundryBagById({
@@ -170,8 +189,23 @@ const updateLaundryBagStatus = async (workId, bagId, payload = {}, context = {})
       throw error;
     }
 
-    return updatedBag;
+    return {
+      currentBag,
+      updatedBag,
+    };
   });
+
+  logger.business('laundry.bag.status_changed', {
+    ...buildActorLogContext(context.actor),
+    workId: result.updatedBag.workId,
+    bagId: result.updatedBag.id,
+    bagNo: result.updatedBag.bagNo,
+    resortId: result.updatedBag.resortId,
+    fromStatus: result.currentBag.status,
+    toStatus: result.updatedBag.status,
+  });
+
+  return result.updatedBag;
 };
 
 module.exports = {
