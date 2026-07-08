@@ -10,6 +10,11 @@ const verificationSteps = [
     args: ['scripts/verify-policy-tests.js'],
   },
   {
+    name: 'Service policy verification',
+    command: 'node',
+    args: ['scripts/verify-service-policy-tests.js'],
+  },
+  {
     name: 'Runtime architecture verification',
     command: 'node',
     args: ['scripts/verify-runtime.js'],
