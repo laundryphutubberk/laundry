@@ -1,12 +1,23 @@
 const laundryWorksBusiness = require('../domain/laundryWorks.business');
 const laundryWorksRepository = require('../repositories/laundryWorks.repository');
 const laundryWorksBusinessRepository = require('../repositories/laundryWorksBusiness.repository');
+const { buildResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
+
+const buildLaundryWorkWhere = ({ workspaceType, resortId, status } = {}) => {
+  const where = buildResortScopedWhere({ workspaceType, resortId });
+
+  if (status) {
+    where.currentStatus = status;
+  }
+
+  return where;
+};
 
 const listLaundryWorks = async (query = {}) => {
   const { skip, take } = normalizePagination(query);
 
-  const where = laundryWorksRepository.buildWorkspaceWhere({
+  const where = buildLaundryWorkWhere({
     workspaceType: query.workspaceType,
     resortId: query.resortId,
     status: query.status,
@@ -29,7 +40,7 @@ const listLaundryWorks = async (query = {}) => {
 };
 
 const getLaundryWorkById = async (workId, query = {}) => {
-  const where = laundryWorksRepository.buildWorkspaceWhere({
+  const where = buildLaundryWorkWhere({
     workspaceType: query.workspaceType,
     resortId: query.resortId,
   });
