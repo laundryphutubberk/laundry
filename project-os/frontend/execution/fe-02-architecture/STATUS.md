@@ -1,18 +1,24 @@
 # FE-02 Architecture — STATUS
 
-Status: READY
+Status: BASELINE_DRAFT_READY
 
 ## Tracks
 
-- [ ] Layer Model
-- [ ] Domain Boundaries
-- [ ] Dependency Direction
-- [ ] Package Structure
+- [x] Layer Model
+- [x] Domain Boundaries
+- [x] Dependency Direction
+- [x] Package Structure
 
 ## Review
 
-- [ ] Domain Review
+- [x] Domain Review Draft
 
 ## Handoff
 
-- [ ] Handoff Ready
+- [x] Handoff Draft Ready
+
+## Notes
+
+FE-02 baseline architecture artifacts have been created under this domain.
+
+Human review is still required before freezing this domain.
