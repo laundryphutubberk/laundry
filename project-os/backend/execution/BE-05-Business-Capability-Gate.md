@@ -49,7 +49,7 @@ BE-05 is done when all items below are complete:
 | WorkStatusLog | Internal Only | Audit/projection source for workflow history | Not required | Created by business domains; should not own business decisions. |
 | LaundryMachine | Lookup | Machine capacity reference | Not required | Master data for load planning; does not own workflow state. |
 | LaundryMachineLoadRule | Required Business Layer | Owner-defined load standards | Complete | Owns min/target/max load constraints used by planning. |
-| WashLoadPlan | Required Business Layer | Machine load planning for a work | Required | Owns load composition, fit status, and planning lifecycle. |
+| WashLoadPlan | Required Business Layer | Machine load planning for a work | Complete | Owns load composition, fit status, and planning lifecycle. |
 
 ## Operational Domain Map
 
@@ -114,12 +114,20 @@ Photo/image handling is intentionally excluded from BE-05 because it is not part
   - `targetKg` cannot exceed `maxWeightKg`.
   - `maxWeightKg` cannot exceed machine capacity.
   - Active load rule names must be unique per machine.
+- Wash Load Plan Business Layer
+  - Work must be in a load-planning capable status.
+  - Machine must exist and be active before planning.
+  - Optional load rule must be active and belong to the selected machine.
+  - `loadNo` must be unique within a Laundry Work.
+  - Estimated piece count must be a non-negative integer.
+  - Total load weight must be greater than zero.
+  - Fit status is calculated from load rule min/max thresholds.
+  - Wash load status transitions are constrained by business rules.
 
 ## Remaining Required Business Layers
 
 1. Resort Business Layer
-2. Wash Load Plan Business Layer
-3. Runtime verification expansion for all BE-05 required domains
+2. Runtime verification expansion for all BE-05 required domains
 
 ## Freeze Condition
 
