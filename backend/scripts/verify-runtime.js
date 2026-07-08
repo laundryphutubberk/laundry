@@ -31,6 +31,10 @@ const issueReportsService = require('../src/services/issueReports.service');
 const issueReportsBusiness = require('../src/domain/issueReports.business');
 const issueReportsRepository = require('../src/repositories/issueReports.repository');
 
+const laundryMachineLoadRulesService = require('../src/services/laundryMachineLoadRules.service');
+const laundryMachineLoadRulesBusiness = require('../src/domain/laundryMachineLoadRules.business');
+const laundryMachineLoadRulesRepository = require('../src/repositories/laundryMachineLoadRules.repository');
+
 const schemaPath = path.resolve(__dirname, '../prisma/schema.prisma');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 
@@ -48,6 +52,7 @@ const schemaChecks = [
   ['LaundryCountLine model', schema.includes('model LaundryCountLine')],
   ['LinenMovement model', schema.includes('model LinenMovement')],
   ['IssueReport model', schema.includes('model IssueReport')],
+  ['LaundryMachineLoadRule model', schema.includes('model LaundryMachineLoadRule')],
   ['WorkStatus enum', schema.includes('enum WorkStatus')],
   ['BagStatus enum', schema.includes('enum BagStatus')],
   ['MovementType enum', schema.includes('enum MovementType')],
@@ -103,6 +108,12 @@ const be05Checks = [
   ['issue report work readiness rule exported', typeof issueReportsBusiness.assertWorkCanReceiveIssue === 'function'],
   ['issue report status update builder exported', typeof issueReportsBusiness.buildIssueStatusUpdateData === 'function'],
   ['issue report repository work lookup exported', typeof issueReportsRepository.findWorkById === 'function'],
+  ['listLoadRules service exported', typeof laundryMachineLoadRulesService.listLoadRules === 'function'],
+  ['createLoadRule service exported', typeof laundryMachineLoadRulesService.createLoadRule === 'function'],
+  ['updateLoadRule service exported', typeof laundryMachineLoadRulesService.updateLoadRule === 'function'],
+  ['machine load rule weight rule exported', typeof laundryMachineLoadRulesBusiness.assertLoadRuleWeights === 'function'],
+  ['machine load rule create data builder exported', typeof laundryMachineLoadRulesBusiness.buildCreateLoadRuleData === 'function'],
+  ['machine load rule repository machine lookup exported', typeof laundryMachineLoadRulesRepository.findMachineById === 'function'],
 ];
 
 const failedChecks = [...schemaChecks, ...be03Checks, ...be05Checks].filter(([, passed]) => !passed);
@@ -114,4 +125,4 @@ if (failedChecks.length > 0) {
 
 console.log('Backend runtime verification loaded successfully.');
 console.log('BE-03 REST API layer verification loaded successfully.');
-console.log('BE-05 Laundry Work, Laundry Bag, Count Line, Linen Movement, and Issue Report business layer verification loaded successfully.');
+console.log('BE-05 business layer verification loaded successfully through Machine Load Rule.');
