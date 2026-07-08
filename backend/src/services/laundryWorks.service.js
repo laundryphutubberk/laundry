@@ -109,8 +109,6 @@ const createLaundryWork = async (payload = {}, context = {}) => {
 };
 
 const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
-  assertLaundryStaffActor(context.actor);
-
   if (!payload.toStatus) {
     const error = new Error('toStatus is required');
     error.statusCode = 400;
