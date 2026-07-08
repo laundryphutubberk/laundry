@@ -110,14 +110,25 @@ const createWorkStatusLog = async ({ data, client } = {}) => {
   });
 };
 
-const updateLaundryBagStatus = async ({ bagId, data, client } = {}) => {
+const updateLaundryBagStatus = async ({ bagId, expectedStatus, data, client } = {}) => {
   const db = getClient(client);
 
-  return db.laundryBag.update({
+  const updateResult = await db.laundryBag.updateMany({
+    where: {
+      id: Number(bagId),
+      status: expectedStatus,
+    },
+    data,
+  });
+
+  if (updateResult.count === 0) {
+    return null;
+  }
+
+  return db.laundryBag.findFirst({
     where: {
       id: Number(bagId),
     },
-    data,
     include: buildBagInclude(),
   });
 };
