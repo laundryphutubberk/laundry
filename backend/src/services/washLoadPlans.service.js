@@ -1,13 +1,30 @@
 const washLoadPlansBusiness = require('../domain/washLoadPlans.business');
 const washLoadPlansRepository = require('../repositories/washLoadPlans.repository');
+const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
-const listWashLoadPlans = async (query = {}) => {
+const buildWashLoadPlanWhere = ({ actor, status } = {}) => {
+  const workWhere = buildRequiredActorResortScopedWhere({ actor });
+  const where = {};
+
+  if (status) {
+    where.status = status;
+  }
+
+  if (workWhere.resortId) {
+    where.work = {
+      resortId: workWhere.resortId,
+    };
+  }
+
+  return where;
+};
+
+const listWashLoadPlans = async (query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
 
-  const where = washLoadPlansRepository.buildWorkspaceWhere({
-    workspaceType: query.workspaceType,
-    resortId: query.resortId,
+  const where = buildWashLoadPlanWhere({
+    actor: context.actor,
     status: query.status,
   });
 
@@ -31,11 +48,11 @@ const listWashLoadPlans = async (query = {}) => {
   };
 };
 
-const createWashLoadPlan = async (workId, payload = {}, query = {}) => {
+const createWashLoadPlan = async (workId, payload = {}, context = {}) => {
   return washLoadPlansRepository.transaction(async (tx) => {
-    const workWhere = query.resortId ? { resortId: Number(query.resortId) } : {};
+    const workWhere = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
-    const work = await washLoadPlansRepository.findWorkById({
+    const work = await washLoadPlansRepository.findAccessibleWork({
       workId,
       where: workWhere,
       client: tx,
@@ -75,12 +92,9 @@ const createWashLoadPlan = async (workId, payload = {}, query = {}) => {
   });
 };
 
-const updateWashLoadPlanStatus = async (planId, payload = {}, query = {}) => {
+const updateWashLoadPlanStatus = async (planId, payload = {}, context = {}) => {
   return washLoadPlansRepository.transaction(async (tx) => {
-    const where = washLoadPlansRepository.buildWorkspaceWhere({
-      workspaceType: query.workspaceType,
-      resortId: query.resortId,
-    });
+    const where = buildWashLoadPlanWhere({ actor: context.actor });
 
     const currentPlan = await washLoadPlansRepository.findPlanById({
       planId,
