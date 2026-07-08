@@ -1,5 +1,4 @@
 const { prisma } = require('../../core/prisma');
-const { buildResortScopedWhere } = require('../../shared/workspaceScope');
 
 const buildWorkInclude = () => ({
   resort: {
@@ -17,16 +16,6 @@ const buildWorkInclude = () => ({
     },
   },
 });
-
-const buildWorkspaceWhere = ({ workspaceType, resortId, status }) => {
-  const where = buildResortScopedWhere({ workspaceType, resortId });
-
-  if (status) {
-    where.currentStatus = status;
-  }
-
-  return where;
-};
 
 const getClient = (client) => client || prisma;
 
@@ -84,11 +73,12 @@ const createLaundryWork = async ({ data, client } = {}) => {
   });
 };
 
-const findLaundryWorkByIdForUpdate = async ({ workId, client } = {}) => {
+const findLaundryWorkByIdForUpdate = async ({ workId, where, client } = {}) => {
   const db = getClient(client);
 
-  return db.laundryWork.findUnique({
+  return db.laundryWork.findFirst({
     where: {
+      ...where,
       id: Number(workId),
     },
   });
@@ -139,7 +129,6 @@ const findLaundryWorkByWorkNo = async ({ workNo, client } = {}) => {
 const transaction = async (callback) => prisma.$transaction(callback);
 
 module.exports = {
-  buildWorkspaceWhere,
   listLaundryWorks,
   findLaundryWorkById,
   createLaundryWork,
