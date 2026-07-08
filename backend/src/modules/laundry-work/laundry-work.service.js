@@ -1,13 +1,24 @@
 const laundryWorksBusiness = require('./laundry-work.business');
 const laundryWorksRepository = require('./laundry-work.repository');
+const { assertLaundryStaffActor } = require('../../policies/authorization.policy');
+const { buildRequiredActorResortScopedWhere } = require('../../policies/workspace.policy');
 const { normalizePagination } = require('../../shared/pagination');
 
-const listLaundryWorks = async (query = {}) => {
+const buildLaundryWorkWhere = ({ actor, status } = {}) => {
+  const where = buildRequiredActorResortScopedWhere({ actor });
+
+  if (status) {
+    where.currentStatus = status;
+  }
+
+  return where;
+};
+
+const listLaundryWorks = async (query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
 
-  const where = laundryWorksRepository.buildWorkspaceWhere({
-    workspaceType: query.workspaceType,
-    resortId: query.resortId,
+  const where = buildLaundryWorkWhere({
+    actor: context.actor,
     status: query.status,
   });
 
@@ -27,10 +38,9 @@ const listLaundryWorks = async (query = {}) => {
   };
 };
 
-const getLaundryWorkById = async (workId, query = {}) => {
-  const where = laundryWorksRepository.buildWorkspaceWhere({
-    workspaceType: query.workspaceType,
-    resortId: query.resortId,
+const getLaundryWorkById = async (workId, query = {}, context = {}) => {
+  const where = buildLaundryWorkWhere({
+    actor: context.actor,
   });
 
   const work = await laundryWorksRepository.findLaundryWorkById({
@@ -47,7 +57,9 @@ const getLaundryWorkById = async (workId, query = {}) => {
   return work;
 };
 
-const createLaundryWork = async (payload = {}) => {
+const createLaundryWork = async (payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   if (!payload.resortId) {
     const error = new Error('resortId is required');
     error.statusCode = 400;
@@ -77,7 +89,9 @@ const createLaundryWork = async (payload = {}) => {
   });
 };
 
-const updateLaundryWorkStatus = async (workId, payload = {}) => {
+const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   if (!payload.toStatus) {
     const error = new Error('toStatus is required');
     error.statusCode = 400;
@@ -85,8 +99,11 @@ const updateLaundryWorkStatus = async (workId, payload = {}) => {
   }
 
   return laundryWorksRepository.transaction(async (tx) => {
+    const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
+
     const currentWork = await laundryWorksRepository.findLaundryWorkByIdForUpdate({
       workId,
+      where,
       client: tx,
     });
 
