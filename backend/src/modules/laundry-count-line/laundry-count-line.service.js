@@ -1,15 +1,16 @@
 const laundryCountLinesBusiness = require('./laundry-count-line.business');
 const laundryCountLinesRepository = require('./laundry-count-line.repository');
+const { assertLaundryStaffActor } = require('../../policies/authorization.policy');
+const { buildRequiredActorResortScopedWhere } = require('../../policies/workspace.policy');
 const { normalizePagination } = require('../../shared/pagination');
 
-const listLaundryCountLines = async (workId, query = {}) => {
+const buildLaundryCountLineWhere = ({ actor } = {}) => buildRequiredActorResortScopedWhere({ actor });
+
+const listLaundryCountLines = async (workId, query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
 
   const where = {
-    ...laundryCountLinesRepository.buildWorkspaceWhere({
-      workspaceType: query.workspaceType,
-      resortId: query.resortId,
-    }),
+    ...buildLaundryCountLineWhere({ actor: context.actor }),
     workId: Number(workId),
   };
 
@@ -29,12 +30,11 @@ const listLaundryCountLines = async (workId, query = {}) => {
   };
 };
 
-const createLaundryCountLine = async (workId, payload = {}, query = {}) => {
+const createLaundryCountLine = async (workId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return laundryCountLinesRepository.transaction(async (tx) => {
-    const where = laundryCountLinesRepository.buildWorkspaceWhere({
-      workspaceType: query.workspaceType,
-      resortId: query.resortId,
-    });
+    const where = buildLaundryCountLineWhere({ actor: context.actor });
 
     const work = await laundryCountLinesRepository.findAccessibleWork({
       workId,
