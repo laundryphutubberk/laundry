@@ -1,6 +1,7 @@
 const laundryWorksBusiness = require('../domain/laundryWorks.business');
 const laundryWorksRepository = require('../repositories/laundryWorks.repository');
 const laundryWorksBusinessRepository = require('../repositories/laundryWorksBusiness.repository');
+const { logger } = require('../core/observability');
 const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
@@ -14,6 +15,13 @@ const buildLaundryWorkWhere = ({ actor, status } = {}) => {
 
   return where;
 };
+
+const buildActorLogContext = (actor) => ({
+  actorId: actor?.id,
+  actorRole: actor?.role,
+  workspaceType: actor?.workspaceType,
+  actorResortId: actor?.resortId,
+});
 
 const listLaundryWorks = async (query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
@@ -67,7 +75,7 @@ const createLaundryWork = async (payload = {}, context = {}) => {
     throw error;
   }
 
-  return laundryWorksRepository.transaction(async (tx) => {
+  const work = await laundryWorksRepository.transaction(async (tx) => {
     laundryWorksBusiness.assertInitialWorkStatus(payload.currentStatus);
 
     const resort = await laundryWorksBusinessRepository.findResortById({
@@ -88,6 +96,16 @@ const createLaundryWork = async (payload = {}, context = {}) => {
       client: tx,
     });
   });
+
+  logger.business('laundry.work.created', {
+    ...buildActorLogContext(context.actor),
+    workId: work.id,
+    workNo: work.workNo,
+    resortId: work.resortId,
+    status: work.currentStatus,
+  });
+
+  return work;
 };
 
 const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
@@ -99,7 +117,7 @@ const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
     throw error;
   }
 
-  return laundryWorksRepository.transaction(async (tx) => {
+  const result = await laundryWorksRepository.transaction(async (tx) => {
     const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
     const currentWork = await laundryWorksRepository.findLaundryWorkByIdForUpdate({
@@ -139,8 +157,22 @@ const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
       client: tx,
     });
 
-    return updatedWork;
+    return {
+      currentWork,
+      updatedWork,
+    };
   });
+
+  logger.business('laundry.work.status_changed', {
+    ...buildActorLogContext(context.actor),
+    workId: result.updatedWork.id,
+    workNo: result.updatedWork.workNo,
+    resortId: result.updatedWork.resortId,
+    fromStatus: result.currentWork.currentStatus,
+    toStatus: result.updatedWork.currentStatus,
+  });
+
+  return result.updatedWork;
 };
 
 module.exports = {
