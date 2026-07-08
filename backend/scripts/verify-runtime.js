@@ -39,6 +39,10 @@ const washLoadPlansService = require('../src/services/washLoadPlans.service');
 const washLoadPlansBusiness = require('../src/domain/washLoadPlans.business');
 const washLoadPlansRepository = require('../src/repositories/washLoadPlans.repository');
 
+const resortsService = require('../src/services/resorts.service');
+const resortsBusiness = require('../src/domain/resorts.business');
+const resortsRepository = require('../src/repositories/resorts.repository');
+
 const schemaPath = path.resolve(__dirname, '../prisma/schema.prisma');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 
@@ -51,6 +55,7 @@ const executionPackage = fs.readFileSync(executionPackagePath, 'utf8');
 const schemaChecks = [
   ['generator client', schema.includes('generator client')],
   ['datasource provider', schema.includes('provider = "postgresql"')],
+  ['Resort model', schema.includes('model Resort')],
   ['LaundryWork model', schema.includes('model LaundryWork')],
   ['LaundryBag model', schema.includes('model LaundryBag')],
   ['LaundryCountLine model', schema.includes('model LaundryCountLine')],
@@ -82,6 +87,12 @@ const be03Checks = [
 ];
 
 const be05Checks = [
+  ['resort list service exported', typeof resortsService.listResorts === 'function'],
+  ['resort create service exported', typeof resortsService.createResort === 'function'],
+  ['resort update service exported', typeof resortsService.updateResort === 'function'],
+  ['resort name rule exported', typeof resortsBusiness.assertResortName === 'function'],
+  ['resort deactivation rule exported', typeof resortsBusiness.assertResortCanBeDeactivated === 'function'],
+  ['resort repository active work count exported', typeof resortsRepository.countActiveWorksByResort === 'function'],
   ['laundry work business initial status rule exported', typeof laundryWorksBusiness.assertInitialWorkStatus === 'function'],
   ['laundry work business transition rule exported', typeof laundryWorksBusiness.assertWorkStatusTransition === 'function'],
   ['laundry work business create data builder exported', typeof laundryWorksBusiness.buildCreateWorkData === 'function'],
@@ -138,4 +149,4 @@ if (failedChecks.length > 0) {
 
 console.log('Backend runtime verification loaded successfully.');
 console.log('BE-03 REST API layer verification loaded successfully.');
-console.log('BE-05 business layer verification loaded successfully through Wash Load Plan.');
+console.log('BE-05 business layer verification loaded successfully for all required domains.');
