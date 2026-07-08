@@ -93,12 +93,13 @@ const updateIssueReportStatus = async ({ issueId, data, client } = {}) => {
   });
 };
 
-const incrementWorkIssueCount = async ({ workId, client } = {}) => {
+const incrementWorkIssueCount = async ({ workId, expectedStatus, client } = {}) => {
   const db = getClient(client);
 
-  return db.laundryWork.update({
+  return db.laundryWork.updateMany({
     where: {
       id: Number(workId),
+      currentStatus: expectedStatus,
     },
     data: {
       issueCount: {
