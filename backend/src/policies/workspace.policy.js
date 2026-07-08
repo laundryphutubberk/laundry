@@ -1,11 +1,9 @@
-const WORKSPACE_TYPES = Object.freeze({
-  LAUNDRY: 'LAUNDRY',
-  RESORT: 'RESORT',
-});
+const { WORKSPACE_TYPES, assertValidActor } = require('../core/actor');
 
 const createPolicyError = (message, statusCode = 400) => {
   const error = new Error(message);
   error.statusCode = statusCode;
+  error.code = 'WORKSPACE_POLICY_VIOLATION';
   return error;
 };
 
@@ -29,34 +27,52 @@ const getWorkspaceScope = ({ actor, workspaceType, resortId } = {}) => {
   };
 };
 
+const getRequiredActorWorkspaceScope = (actor) => {
+  const validActor = assertValidActor(actor);
+
+  return {
+    workspaceType: validActor.workspaceType,
+    resortId: validActor.resortId,
+  };
+};
+
 const assertResortWorkspaceScope = ({ workspaceType, resortId } = {}) => {
   if (workspaceType === WORKSPACE_TYPES.RESORT && !resortId) {
     throw createPolicyError('resortId is required for Resort Workspace requests');
   }
 };
 
-const buildResortScopedWhere = ({ actor, workspaceType, resortId } = {}) => {
-  const scope = getWorkspaceScope({ actor, workspaceType, resortId });
-  assertResortWorkspaceScope(scope);
+const buildResortScopedWhereFromScope = ({ workspaceType, resortId } = {}) => {
+  assertResortWorkspaceScope({ workspaceType, resortId });
 
   const where = {};
 
-  if (scope.workspaceType === WORKSPACE_TYPES.RESORT) {
-    where.resortId = Number(scope.resortId);
+  if (workspaceType === WORKSPACE_TYPES.RESORT) {
+    where.resortId = Number(resortId);
     return where;
   }
 
-  if (scope.resortId) {
-    where.resortId = Number(scope.resortId);
+  if (resortId) {
+    where.resortId = Number(resortId);
   }
 
   return where;
+};
+
+const buildResortScopedWhere = ({ actor, workspaceType, resortId } = {}) => {
+  return buildResortScopedWhereFromScope(getWorkspaceScope({ actor, workspaceType, resortId }));
+};
+
+const buildRequiredActorResortScopedWhere = ({ actor } = {}) => {
+  return buildResortScopedWhereFromScope(getRequiredActorWorkspaceScope(actor));
 };
 
 module.exports = {
   WORKSPACE_TYPES,
   assertResortWorkspaceScope,
   buildResortScopedWhere,
+  buildRequiredActorResortScopedWhere,
+  getRequiredActorWorkspaceScope,
   getWorkspaceScope,
   getWorkspaceScopeFromActor,
 };
