@@ -7,6 +7,13 @@ require('../src/core/runtimeShutdown');
 require('../src/app');
 require('../src/routes');
 
+const actorCore = require('../src/core/actor');
+const requestContextCore = require('../src/core/requestContext');
+const workspacePolicy = require('../src/policies/workspace.policy');
+const authActorMiddlewareModule = require('../src/middlewares/authActor.middleware');
+const optionalActorMiddlewareModule = require('../src/middlewares/optionalActor.middleware');
+const errorMiddlewareModule = require('../src/middlewares/error.middleware');
+
 const laundryWorksRoutes = require('../src/routes/laundryWorks.routes');
 const laundryWorksService = require('../src/services/laundryWorks.service');
 const laundryWorksValidator = require('../src/validators/laundryWorks.validator');
@@ -140,7 +147,19 @@ const be05Checks = [
   ['wash load plan repository work lookup exported', typeof washLoadPlansRepository.findWorkById === 'function'],
 ];
 
-const failedChecks = [...schemaChecks, ...be03Checks, ...be05Checks].filter(([, passed]) => !passed);
+const be07Checks = [
+  ['actor normalizer exported', typeof actorCore.normalizeActor === 'function'],
+  ['actor validator exported', typeof actorCore.assertValidActor === 'function'],
+  ['request actor getter exported', typeof requestContextCore.getRequestActor === 'function'],
+  ['request actor setter exported', typeof requestContextCore.setRequestActor === 'function'],
+  ['workspace strict actor scope exported', typeof workspacePolicy.buildRequiredActorResortScopedWhere === 'function'],
+  ['workspace scope fallback exported', typeof workspacePolicy.buildResortScopedWhere === 'function'],
+  ['auth actor middleware exported', typeof authActorMiddlewareModule.authActorMiddleware === 'function'],
+  ['optional actor middleware exported', typeof optionalActorMiddlewareModule.optionalActorMiddleware === 'function'],
+  ['error middleware exported', typeof errorMiddlewareModule.errorMiddleware === 'function'],
+];
+
+const failedChecks = [...schemaChecks, ...be03Checks, ...be05Checks, ...be07Checks].filter(([, passed]) => !passed);
 
 if (failedChecks.length > 0) {
   const labels = failedChecks.map(([label]) => label).join(', ');
@@ -150,3 +169,4 @@ if (failedChecks.length > 0) {
 console.log('Backend runtime verification loaded successfully.');
 console.log('BE-03 REST API layer verification loaded successfully.');
 console.log('BE-05 business layer verification loaded successfully for all required domains.');
+console.log('BE-07 policy and actor layer verification loaded successfully.');
