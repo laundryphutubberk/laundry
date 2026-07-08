@@ -14,8 +14,6 @@ const workStatusSchema = z.enum([
   'CANCELLED',
 ]);
 
-const workspaceTypeSchema = z.enum(['LAUNDRY', 'RESORT']);
-
 const optionalPositiveIntString = z
   .string()
   .regex(/^\d+$/)
@@ -26,17 +24,12 @@ const workIdParamSchema = z.object({
 });
 
 const listLaundryWorksQuerySchema = z.object({
-  workspaceType: workspaceTypeSchema.optional(),
-  resortId: optionalPositiveIntString,
   status: workStatusSchema.optional(),
   skip: optionalPositiveIntString,
   take: optionalPositiveIntString,
 });
 
-const getLaundryWorkQuerySchema = z.object({
-  workspaceType: workspaceTypeSchema.optional(),
-  resortId: optionalPositiveIntString,
-});
+const getLaundryWorkQuerySchema = z.object({}).strict();
 
 const createLaundryWorkBodySchema = z.object({
   resortId: z.coerce.number().int().positive(),
