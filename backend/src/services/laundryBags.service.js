@@ -1,3 +1,4 @@
+const laundryBagsBusiness = require('../domain/laundryBags.business');
 const laundryBagsRepository = require('../repositories/laundryBags.repository');
 const { normalizePagination } = require('../shared/pagination');
 
@@ -24,6 +25,8 @@ const assertWorkAccessible = async (client, workId, query = {}) => {
 
 const listLaundryBags = async (workId, query = {}) => {
   const { skip, take } = normalizePagination(query);
+
+  await assertWorkAccessible(undefined, workId, query);
 
   const where = {
     ...laundryBagsRepository.buildWorkspaceWhere({
@@ -74,6 +77,14 @@ const getLaundryBagById = async (workId, bagId, query = {}) => {
 const createLaundryBag = async (workId, payload = {}) => {
   return laundryBagsRepository.transaction(async (tx) => {
     const work = await assertWorkAccessible(tx, workId);
+    laundryBagsBusiness.assertWorkCanReceiveBag(work);
+
+    const existingBag = await laundryBagsRepository.findLaundryBagByBagNo({
+      workId: work.id,
+      bagNo: payload.bagNo,
+      client: tx,
+    });
+    laundryBagsBusiness.assertUniqueBagNo(existingBag);
 
     const bag = await laundryBagsRepository.createLaundryBag({
       data: {
@@ -88,11 +99,11 @@ const createLaundryBag = async (workId, payload = {}) => {
 
     await laundryBagsRepository.incrementLaundryWorkBagCount({
       workId: work.id,
-      currentStatus: work.currentStatus,
+      nextStatus: laundryBagsBusiness.getNextWorkStatusAfterBagReceived(work.currentStatus),
       client: tx,
     });
 
-    if (work.currentStatus === 'DRAFT') {
+    if (laundryBagsBusiness.shouldCreateFirstBagStatusLog(work)) {
       await laundryBagsRepository.createWorkStatusLog({
         data: {
           workId: work.id,
@@ -126,19 +137,9 @@ const updateLaundryBagStatus = async (workId, bagId, payload = {}) => {
       throw error;
     }
 
-    const shouldSetOpenedAt = payload.toStatus === 'OPENED' && !currentBag.openedAt;
-
     return laundryBagsRepository.updateLaundryBagStatus({
       bagId: currentBag.id,
-      data: {
-        status: payload.toStatus,
-        openedAt: payload.openedAt
-          ? new Date(payload.openedAt)
-          : shouldSetOpenedAt
-            ? new Date()
-            : currentBag.openedAt,
-        note: payload.note !== undefined ? payload.note : currentBag.note,
-      },
+      data: laundryBagsBusiness.buildBagStatusUpdateData({ currentBag, payload }),
       client: tx,
     });
   });
