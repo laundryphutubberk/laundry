@@ -1,5 +1,6 @@
 const issueReportsBusiness = require('../domain/issueReports.business');
 const issueReportsRepository = require('../repositories/issueReports.repository');
+const { logger } = require('../core/observability');
 const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
@@ -13,6 +14,13 @@ const buildIssueReportWhere = ({ actor, status } = {}) => {
 
   return where;
 };
+
+const buildActorLogContext = (actor) => ({
+  actorId: actor?.id,
+  actorRole: actor?.role,
+  workspaceType: actor?.workspaceType,
+  actorResortId: actor?.resortId,
+});
 
 const listIssueReports = async (query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
@@ -45,7 +53,7 @@ const listIssueReports = async (query = {}, context = {}) => {
 const createIssueReport = async (workId, payload = {}, context = {}) => {
   assertLaundryStaffActor(context.actor);
 
-  return issueReportsRepository.transaction(async (tx) => {
+  const issue = await issueReportsRepository.transaction(async (tx) => {
     const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
     const work = await issueReportsRepository.findAccessibleWork({
@@ -61,12 +69,12 @@ const createIssueReport = async (workId, payload = {}, context = {}) => {
     });
     issueReportsBusiness.assertOptionalItemTypeCanBeUsed(itemType);
 
-    const issue = await issueReportsRepository.createIssueReport({
+    const createdIssue = await issueReportsRepository.createIssueReport({
       data: issueReportsBusiness.buildCreateIssueReportData({ work, payload }),
       client: tx,
     });
 
-    if (issueReportsBusiness.shouldIncrementWorkIssueCount(issue.status)) {
+    if (issueReportsBusiness.shouldIncrementWorkIssueCount(createdIssue.status)) {
       const workUpdateResult = await issueReportsRepository.incrementWorkIssueCount({
         workId: work.id,
         expectedStatus: work.currentStatus,
@@ -80,14 +88,28 @@ const createIssueReport = async (workId, payload = {}, context = {}) => {
       }
     }
 
-    return issue;
+    return createdIssue;
   });
+
+  logger.business('laundry.issue.reported', {
+    ...buildActorLogContext(context.actor),
+    issueId: issue.id,
+    workId: issue.workId,
+    resortId: issue.resortId,
+    itemTypeId: issue.itemTypeId,
+    colorGroup: issue.colorGroup,
+    issueType: issue.issueType,
+    quantity: issue.quantity,
+    status: issue.status,
+  });
+
+  return issue;
 };
 
 const updateIssueReportStatus = async (issueId, payload = {}, context = {}) => {
   assertLaundryStaffActor(context.actor);
 
-  return issueReportsRepository.transaction(async (tx) => {
+  const result = await issueReportsRepository.transaction(async (tx) => {
     const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
     const issue = await issueReportsRepository.findIssueById({
@@ -109,8 +131,22 @@ const updateIssueReportStatus = async (issueId, payload = {}, context = {}) => {
       throw error;
     }
 
-    return updatedIssue;
+    return {
+      issue,
+      updatedIssue,
+    };
   });
+
+  logger.business('laundry.issue.status_changed', {
+    ...buildActorLogContext(context.actor),
+    issueId: result.updatedIssue.id,
+    workId: result.updatedIssue.workId,
+    resortId: result.updatedIssue.resortId,
+    fromStatus: result.issue.status,
+    toStatus: result.updatedIssue.status,
+  });
+
+  return result.updatedIssue;
 };
 
 module.exports = {
