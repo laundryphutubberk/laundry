@@ -40,7 +40,7 @@ BE-05 is done when all items below are complete:
 | User | Infrastructure | Identity, role, and workspace binding | Not required | Supports access context rather than laundry workflow decisions. |
 | Resort | Required Business Layer | Customer/workspace owner for linen assets | Required | Owns customer activation and Resort Workspace boundary assumptions. |
 | LaundryItemType | Lookup | Linen type reference and per-piece weight | Not required | Used by count/load rules but does not own workflow state. |
-| LaundryWork | Required Business Layer | Aggregate root for receive-wash-return workflow | Required | Owns work lifecycle, status transitions, resort scope, and operational state. |
+| LaundryWork | Required Business Layer | Aggregate root for receive-wash-return workflow | Complete | Owns work lifecycle, status transitions, resort scope, and operational state. |
 | LaundryBag | Required Business Layer | Intake unit for received laundry | Complete | Owns bag lifecycle, bag uniqueness within work, and receive/open/count readiness. |
 | LaundryCountLine | Required Business Layer | Real item count captured after opening bags | Required | Owns counted quantity, item type, color group, issue quantity, and movement trigger. |
 | LinenMovement | Required Business Layer | Linen inventory movement history | Required | Owns inventory-affecting movement semantics and adjustment constraints. |
@@ -72,6 +72,12 @@ Photo/image handling is intentionally excluded from BE-05 because it is not part
 
 ## Completed
 
+- Laundry Work Business Layer
+  - Resort must exist and be active before Work creation.
+  - `workNo` must be unique.
+  - Work can only be created as `DRAFT` or `BAG_RECEIVED`.
+  - Work status transition is constrained by the business workflow.
+  - Status changes are logged through `WorkStatusLog`.
 - Laundry Bag Business Layer
   - Work must exist before bag operations.
   - Resort Workspace must remain scoped by `resortId`.
@@ -83,13 +89,12 @@ Photo/image handling is intentionally excluded from BE-05 because it is not part
 ## Remaining Required Business Layers
 
 1. Resort Business Layer
-2. Laundry Work Business Layer
-3. Laundry Count Line Business Layer
-4. Linen Movement Business Layer
-5. Issue Report Business Layer
-6. Laundry Machine Load Rule Business Layer
-7. Wash Load Plan Business Layer
-8. Runtime verification expansion for all BE-05 required domains
+2. Laundry Count Line Business Layer
+3. Linen Movement Business Layer
+4. Issue Report Business Layer
+5. Laundry Machine Load Rule Business Layer
+6. Wash Load Plan Business Layer
+7. Runtime verification expansion for all BE-05 required domains
 
 ## Freeze Condition
 
