@@ -1,190 +1,252 @@
 # BE-07 Policy and Domain Rules
 
-Status: Standard
-Scope: Backend Policy and Domain Rules
+Status: IN_PROGRESS_CONTINUE
+Scope: Backend Policy, Workspace Boundary, Actor Context, Authorization, Domain Rule Standardization
 Owner: Backend Architecture
 Execution Package: BE-07
 
 ## Purpose
 
-BE-07 defines and maintains backend policy boundaries and domain rules.
+BE-07 defines the backend policy layer for the Laundry platform.
 
-The package exists to make reusable domain decisions explicit, testable, and safe without moving business meaning into controllers, repositories, shared foundation, frontend, or Prisma schema ownership.
+The goal is to make workspace boundaries, actor context, authorization decisions, and domain rules explicit, testable, and reusable without moving business meaning into controllers, repositories, frontend code, or Prisma schema ownership.
 
-## Scope
+## Current Architecture Standard
 
-BE-07 owns:
+All policy-sensitive backend runtime code should follow this flow:
 
-- policy files inside target backend modules
-- domain rule naming
-- service calls to policy boundaries
-- domain error alignment for policy decisions
-- policy review and freeze documentation
+```text
+Request
+  -> actor auth middleware
+  -> request actor context
+  -> Controller parse/transport only
+  -> shared policy context helper
+  -> Service
+  -> Authorization Policy
+  -> Workspace Policy
+  -> Domain Business Rules
+  -> Repository
+```
 
-BE-07 does not own:
+## BE-07 Core Files
 
-- repository query behavior unless explicitly required by a service-owned policy workflow
-- controller business decisions
-- unrelated module behavior
-- frontend behavior
-- Prisma schema truth
-- BE-01 through BE-06 foundation work
-- BE-08 transaction and consistency work
+Current core/policy files:
 
-## Development Authority
+- `backend/src/core/actor.js`
+- `backend/src/core/requestContext.js`
+- `backend/src/core/policyContext.js`
+- `backend/src/middlewares/authActor.middleware.js`
+- `backend/src/middlewares/optionalActor.middleware.js`
+- `backend/src/policies/workspace.policy.js`
+- `backend/src/policies/authorization.policy.js`
+- `backend/src/middlewares/error.middleware.js`
 
-BE-07 is currently in early development.
+## Actor Standard
 
-Within the active BE-07 responsibility boundary, the steward is authorized to:
+Actor is the source of truth for backend policy decisions.
 
-- edit existing files when they are part of BE-07 policy/domain-rule work
-- delete obsolete files when they are redundant, stale, or conflicting with the intended BE-07 architecture
-- move, split, merge, or rename files when it improves policy clarity
-- refactor policy and service policy-call structure without preserving temporary backward compatibility during development
-- replace earlier BE-07 documentation when the newer source of truth is clearer
+Required actor fields:
 
-This authority applies only when the change stays inside the current BE-07 responsibility boundary.
+- `userId`
+- `role`
+- `workspaceType`
+- `resortId` for Resort workspace actors
+- `active=true`
 
-Any change that touches another execution package must have a clear BE-07 policy/domain-rule reason or wait for explicit assignment.
+Supported roles:
 
-When old files are changed or removed, BE-07 documentation should be kept aligned through README, inventory, or the accumulated return-contract draft.
+- `LAUNDRY_OWNER`
+- `LAUNDRY_MANAGER`
+- `LAUNDRY_STAFF`
+- `RESORT_OWNER`
+- `RESORT_STAFF`
 
-## Canonical Package File
+Supported workspace types:
 
-Read first:
+- `LAUNDRY`
+- `RESORT`
 
-- `BE-07-policy-domain-rules.md`
+## Workspace Boundary Standard
 
-This is the execution package contract for BE-07.
+Client-supplied workspace boundary fields must not be trusted for runtime scope decisions.
 
-## Current Package Documents
+Do not use these as policy source of truth:
 
-- `README.md` — package entry point and index
-- `BE-07-policy-domain-rules.md` — canonical BE-07 execution package
-- `BE-07-policy-inventory.md` — verified policy inventory and progress notes
-- `BE-07-task-return-contract.md` — accumulated return contract draft for the current BE-07 scope
+- `query.workspaceType`
+- `query.resortId`
 
-## Milestones
+Runtime scope must come from actor context through the strict actor workspace policy helper.
 
-BE-07 milestones:
+Repository files must not import workspace policy directly. Repositories receive already-scoped `where` objects from services.
 
-- BE-07.01 Policy Inventory
-- BE-07.02 Domain Rule Extraction
-- BE-07.03 Policy Naming Alignment
-- BE-07.04 Domain Error Alignment
-- BE-07.05 Policy Freeze
+## Authorization Standard
 
-## Development Workflow
+Read/list flow:
 
-Current workflow decision:
+- must be actor-scoped
+- may support both Laundry workspace and Resort workspace when the domain allows resort-owned visibility
 
-- Do not stop for backend tests after each small BE-07 segment.
-- Do not perform small/intermediate return-contract review gates during development.
-- Continue BE-07 implementation until the assigned BE-07 scope is complete.
-- Run backend tests once at the end of the full assigned BE-07 work.
-- Review the final BE-07 return contract once at the end of the full assigned BE-07 work.
+Operational write flow:
 
-Progress and evidence documents may still be updated during development.
+- must be gated by Laundry staff-level authorization
+
+Master-data management flow:
+
+- list/read requires Laundry staff-level authorization
+- create/update requires Laundry management-level authorization
+
+Current authorization helpers:
+
+- `assertLaundryWorkspaceActor`
+- `assertLaundryStaffActor`
+- `assertLaundryManagementActor`
+
+## Controller Standard
+
+Controllers must remain transport-focused.
+
+Controllers should:
+
+- parse request params/query/body
+- call the shared policy context helper
+- pass policy context into services
+- return response through response helpers
+
+Controllers should not:
+
+- decide workspace boundaries
+- decide permissions
+- build Prisma policy where clauses
+- trust client-supplied workspace boundary fields as runtime scope
+
+## Service Standard
+
+Services own policy orchestration.
+
+Services should:
+
+- call authorization policy when permission is required
+- call workspace policy to build scoped `where`
+- call domain business rules for business meaning
+- call repositories with already-scoped data/where
+
+Services should not:
+
+- trust query boundary fields
+- delegate policy decisions to repositories
+- allow write flows without role gate
+
+## Repository Standard
+
+Repositories are data-focused.
+
+Repositories should:
+
+- accept scoped `where` from services
+- execute Prisma queries
+- return data
+
+Repositories should not:
+
+- import workspace policy
+- import authorization policy
+- export `buildWorkspaceWhere`
+- decide permissions
+- decide workspace boundaries
+
+## Hardened Domains
+
+The current BE-07 standardization pass covers:
+
+- `LaundryWork`
+- `LaundryBag`
+- `LaundryCountLine`
+- `LinenMovement`
+- `IssueReport`
+- `WashLoadPlan`
+- `LaundryMachineLoadRule`
+- `Resort` management
+
+## Runtime Route Standard
+
+Public route:
+
+- `/api/health`
+
+Authenticated actor routes:
+
+- `/api/laundry/works`
+- `/api/laundry/works/:workId/bags`
+
+Nested routes must be mounted before broader parent routes when path collision is possible.
+
+Current required route order:
+
+```text
+/laundry/works/:workId/bags
+/laundry/works
+```
+
+## Environment Requirements
+
+Required runtime environment variables:
+
+- `NODE_ENV`
+- `PORT`
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `ENABLE_DEV_ACTOR_HEADER`
+
+`JWT_SECRET` must be at least 32 characters.
+
+## Verification Standard
+
+The canonical executable verification is:
+
+```bash
+cd backend
+node scripts/verify-runtime.js
+```
+
+`verify-runtime.js` currently checks:
+
+- schema availability
+- BE-03 route/service contract exports
+- BE-05 business-layer exports
+- actor core exports
+- request context exports
+- policy context exports
+- auth middleware exports
+- optional dev actor middleware exports
+- error middleware exports
+- route auth middleware usage
+- nested route order
+- controller policy context usage
+- strict actor workspace policy usage in services
+- no client boundary scope usage in hardened services
+- staff write gates in operational services
+- management gates in master-data services
+- repositories remain policy-free
 
 ## Current Status
 
-Current completed target scopes:
-
-- Equipment manual status update ownership policy
-- Field Session lifecycle policy coverage
-- Issue policy coverage
-- Remaining policy discovery
+BE-07 is not frozen yet.
 
 Current result:
 
-- Equipment policy scope is implemented for the initial BE-07 target scope.
-- Field Session lifecycle policy coverage has been expanded and documented.
-- Issue policy and validator coverage has been added and documented.
-- Remaining active-module policy discovery has been recorded.
-- README entry point exists.
-- Progress inventory exists.
-- Return contract draft exists.
-- Source-level verification and test-coverage-by-inspection are complete for current completed scopes.
-- Final backend tests and final return-contract review are deferred until the end of the full assigned BE-07 work.
-
-Current development status:
-
-- `IN_PROGRESS_CONTINUE`
-
-## Equipment Policy Decisions
-
-- `READY` -> `manualAllowed`
-- `IN_USE` -> `scannerOwned`
-- `MISSING` -> `issueOwned`
-- `DAMAGED` -> `issueOwned`
-- `INSPECTION_REQUIRED` -> `manualAllowed`
-- `RETIRED` -> `adminRestricted`
-- unknown status -> blocked by default
-
-## Field Session Lifecycle Policy Decisions
-
-- active session statuses are centralized
-- legacy field-session status aliases are normalized centrally
-- scan mode runtime config is centralized
-- scan modes are allowed only in owned session statuses
-- field-session transitions are declared in policy
-- session-item transitions are declared in policy
-- closure is blocked by pending-return and issue item statuses
-
-## Issue Policy Decisions
-
-- organization context is required before repository access
-- issue existence is required after repository lookup
-- create issue requires sessionId, type, and title
-- create/update payload fields are allow-listed
-- string payload fields are trimmed and empty strings become null
-- reportedAt/resolvedAt values are converted to Date when present
-- empty update payload is blocked
-
-## Remaining Discovery Decisions
-
-- active module routes are verified from `fieldops-be/src/routes/module.routes.js`
-- current mounted modules are auth, organizations, users, members, field-sessions, invites, issues, and equipments
-- team route is not mounted on the active branch
-- vehicle route is not mounted on the active branch
-- notification route is not mounted on the active branch
-- no team policy implementation is included because no active mounted team route or team service file was verified
-- no vehicle policy implementation is included because no active mounted vehicle route was verified
-- no notification policy implementation is included because no active mounted notification route or notification policy/service file was verified
-
-## Verification Notes
-
-Relevant source files:
-
-- `fieldops-be/src/routes/module.routes.js`
-- `fieldops-be/src/modules/equipment/equipmentLifecycle.policy.js`
-- `fieldops-be/src/modules/equipment/equipmentLifecycle.policy.test.js`
-- `fieldops-be/src/modules/equipment/equipment.service.js`
-- `fieldops-be/src/modules/equipment/equipment.service.test.js`
-- `fieldops-be/src/modules/field-session/fieldSessionLifecycle.policy.js`
-- `fieldops-be/src/modules/field-session/fieldSessionLifecycle.guard.js`
-- `fieldops-be/src/modules/field-session/fieldSession.service.js`
-- `fieldops-be/src/modules/field-session/fieldSessionLifecycle.policy.test.js`
-- `fieldops-be/src/modules/issue/issue.policy.js`
-- `fieldops-be/src/modules/issue/issue.errors.js`
-- `fieldops-be/src/modules/issue/issue.validator.js`
-- `fieldops-be/src/modules/issue/issue.service.js`
-- `fieldops-be/src/modules/issue/issue.policy.test.js`
-- `fieldops-be/src/modules/issue/issue.validator.test.js`
-
-Relevant documentation files:
-
-- `docs/project-os/backend/execution/BE-07/BE-07-policy-domain-rules.md`
-- `docs/project-os/backend/execution/BE-07/BE-07-policy-inventory.md`
-- `docs/project-os/backend/execution/BE-07/BE-07-task-return-contract.md`
+- Actor-first runtime scope is implemented for current Laundry backend domains.
+- Operational write flows are Laundry-staff gated.
+- Master-data flows are Laundry staff/management gated.
+- Repository policy leakage is guarded by runtime verification.
+- Controller policy context standard is established for active controllers.
+- Final verification should be run in the development environment before freeze.
 
 ## Next Action
 
-Recommended next action:
+Recommended next actions:
 
-1. Confirm whether BE-07 scope should close at the current completed scopes.
-2. If confirmed, run final backend tests once for the full assigned BE-07 work.
-3. Review and finalize the BE-07 return contract once.
-4. Freeze BE-07 after final verification/review.
-
-Do not expand BE-07 to vehicle, team, billing, notification, or other domains until ownership is explicitly assigned or verified as a BE-07 policy/domain-rule need.
+1. Run `node scripts/verify-runtime.js` locally.
+2. Fix any verification failures.
+3. Add tests for policy functions and representative service flows.
+4. Review BE-07 return contract.
+5. Freeze BE-07 only after verification and review pass.
