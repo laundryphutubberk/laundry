@@ -1,9 +1,20 @@
 const laundryBagsBusiness = require('../domain/laundryBags.business');
 const laundryBagsRepository = require('../repositories/laundryBags.repository');
+const { buildResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
+const buildLaundryBagWhere = ({ workspaceType, resortId, status } = {}) => {
+  const where = buildResortScopedWhere({ workspaceType, resortId });
+
+  if (status) {
+    where.status = status;
+  }
+
+  return where;
+};
+
 const assertWorkAccessible = async (client, workId, query = {}) => {
-  const where = laundryBagsRepository.buildWorkspaceWhere({
+  const where = buildLaundryBagWhere({
     workspaceType: query.workspaceType,
     resortId: query.resortId,
   });
@@ -29,7 +40,7 @@ const listLaundryBags = async (workId, query = {}) => {
   await assertWorkAccessible(undefined, workId, query);
 
   const where = {
-    ...laundryBagsRepository.buildWorkspaceWhere({
+    ...buildLaundryBagWhere({
       workspaceType: query.workspaceType,
       resortId: query.resortId,
       status: query.status,
@@ -55,7 +66,7 @@ const listLaundryBags = async (workId, query = {}) => {
 
 const getLaundryBagById = async (workId, bagId, query = {}) => {
   const where = {
-    ...laundryBagsRepository.buildWorkspaceWhere({
+    ...buildLaundryBagWhere({
       workspaceType: query.workspaceType,
       resortId: query.resortId,
     }),
