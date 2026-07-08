@@ -35,6 +35,10 @@ const laundryMachineLoadRulesService = require('../src/services/laundryMachineLo
 const laundryMachineLoadRulesBusiness = require('../src/domain/laundryMachineLoadRules.business');
 const laundryMachineLoadRulesRepository = require('../src/repositories/laundryMachineLoadRules.repository');
 
+const washLoadPlansService = require('../src/services/washLoadPlans.service');
+const washLoadPlansBusiness = require('../src/domain/washLoadPlans.business');
+const washLoadPlansRepository = require('../src/repositories/washLoadPlans.repository');
+
 const schemaPath = path.resolve(__dirname, '../prisma/schema.prisma');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 
@@ -53,10 +57,13 @@ const schemaChecks = [
   ['LinenMovement model', schema.includes('model LinenMovement')],
   ['IssueReport model', schema.includes('model IssueReport')],
   ['LaundryMachineLoadRule model', schema.includes('model LaundryMachineLoadRule')],
+  ['WashLoadPlan model', schema.includes('model WashLoadPlan')],
   ['WorkStatus enum', schema.includes('enum WorkStatus')],
   ['BagStatus enum', schema.includes('enum BagStatus')],
   ['MovementType enum', schema.includes('enum MovementType')],
   ['IssueStatus enum', schema.includes('enum IssueStatus')],
+  ['WashLoadStatus enum', schema.includes('enum WashLoadStatus')],
+  ['WashLoadFitStatus enum', schema.includes('enum WashLoadFitStatus')],
 ];
 
 const be03Checks = [
@@ -114,6 +121,12 @@ const be05Checks = [
   ['machine load rule weight rule exported', typeof laundryMachineLoadRulesBusiness.assertLoadRuleWeights === 'function'],
   ['machine load rule create data builder exported', typeof laundryMachineLoadRulesBusiness.buildCreateLoadRuleData === 'function'],
   ['machine load rule repository machine lookup exported', typeof laundryMachineLoadRulesRepository.findMachineById === 'function'],
+  ['listWashLoadPlans service exported', typeof washLoadPlansService.listWashLoadPlans === 'function'],
+  ['createWashLoadPlan service exported', typeof washLoadPlansService.createWashLoadPlan === 'function'],
+  ['updateWashLoadPlanStatus service exported', typeof washLoadPlansService.updateWashLoadPlanStatus === 'function'],
+  ['wash load plan readiness rule exported', typeof washLoadPlansBusiness.assertWorkCanReceiveWashLoadPlan === 'function'],
+  ['wash load plan fit status calculator exported', typeof washLoadPlansBusiness.calculateFitStatus === 'function'],
+  ['wash load plan repository work lookup exported', typeof washLoadPlansRepository.findWorkById === 'function'],
 ];
 
 const failedChecks = [...schemaChecks, ...be03Checks, ...be05Checks].filter(([, passed]) => !passed);
@@ -125,4 +138,4 @@ if (failedChecks.length > 0) {
 
 console.log('Backend runtime verification loaded successfully.');
 console.log('BE-03 REST API layer verification loaded successfully.');
-console.log('BE-05 business layer verification loaded successfully through Machine Load Rule.');
+console.log('BE-05 business layer verification loaded successfully through Wash Load Plan.');
