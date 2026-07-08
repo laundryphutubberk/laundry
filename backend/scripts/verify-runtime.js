@@ -82,6 +82,10 @@ const serviceSources = {
   resorts: readSource('src/services/resorts.service.js'),
 };
 
+const repositorySources = {
+  laundryWorks: readSource('src/repositories/laundryWorks.repository.js'),
+};
+
 const schemaChecks = [
   ['generator client', schema.includes('generator client')],
   ['datasource provider', schema.includes('provider = "postgresql"')],
@@ -209,6 +213,8 @@ const be07Checks = [
   ['optional actor middleware exported', typeof optionalActorMiddlewareModule.optionalActorMiddleware === 'function'],
   ['error middleware exported', typeof errorMiddlewareModule.errorMiddleware === 'function'],
   ['nested bag route mounted before work route', nestedBagRouteIndex >= 0 && workRouteIndex >= 0 && nestedBagRouteIndex < workRouteIndex],
+  ['work service write methods call staff authorization policy', serviceSources.laundryWorks.includes('assertLaundryStaffActor')],
+  ['work repository update lookup accepts scoped where', repositorySources.laundryWorks.includes('findLaundryWorkByIdForUpdate = async ({ workId, where, client }')],
   ...repositoriesWithoutWorkspacePolicy.map(([label, repository]) => [
     `${label} does not export buildWorkspaceWhere`,
     repository.buildWorkspaceWhere === undefined,
