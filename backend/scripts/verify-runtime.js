@@ -53,6 +53,9 @@ const resortsRepository = require('../src/repositories/resorts.repository');
 const schemaPath = path.resolve(__dirname, '../prisma/schema.prisma');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 
+const routesIndexPath = path.resolve(__dirname, '../src/routes/index.js');
+const routesIndex = fs.readFileSync(routesIndexPath, 'utf8');
+
 const contractPath = path.resolve(__dirname, '../../project-os/04-contracts/BE-03-Laundry-Works-API.md');
 const contract = fs.readFileSync(contractPath, 'utf8');
 
@@ -147,6 +150,9 @@ const be05Checks = [
   ['wash load plan repository work lookup exported', typeof washLoadPlansRepository.findWorkById === 'function'],
 ];
 
+const nestedBagRouteIndex = routesIndex.indexOf("router.use('/laundry/works/:workId/bags'");
+const workRouteIndex = routesIndex.indexOf("router.use('/laundry/works'");
+
 const be07Checks = [
   ['actor normalizer exported', typeof actorCore.normalizeActor === 'function'],
   ['actor validator exported', typeof actorCore.assertValidActor === 'function'],
@@ -157,6 +163,7 @@ const be07Checks = [
   ['auth actor middleware exported', typeof authActorMiddlewareModule.authActorMiddleware === 'function'],
   ['optional actor middleware exported', typeof optionalActorMiddlewareModule.optionalActorMiddleware === 'function'],
   ['error middleware exported', typeof errorMiddlewareModule.errorMiddleware === 'function'],
+  ['nested bag route mounted before work route', nestedBagRouteIndex >= 0 && workRouteIndex >= 0 && nestedBagRouteIndex < workRouteIndex],
 ];
 
 const failedChecks = [...schemaChecks, ...be03Checks, ...be05Checks, ...be07Checks].filter(([, passed]) => !passed);
