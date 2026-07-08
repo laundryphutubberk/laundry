@@ -96,11 +96,20 @@ const updateIssueReportStatus = async (issueId, payload = {}, context = {}) => {
       client: tx,
     });
 
-    return issueReportsRepository.updateIssueReportStatus({
+    const updatedIssue = await issueReportsRepository.updateIssueReportStatus({
       issueId,
+      expectedStatus: issue.status,
       data: issueReportsBusiness.buildIssueStatusUpdateData({ issue, payload }),
       client: tx,
     });
+
+    if (!updatedIssue) {
+      const error = new Error('Issue Report status changed during update');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    return updatedIssue;
   });
 };
 
