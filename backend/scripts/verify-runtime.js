@@ -10,6 +10,7 @@ require('../src/routes');
 const actorCore = require('../src/core/actor');
 const requestContextCore = require('../src/core/requestContext');
 const workspacePolicy = require('../src/policies/workspace.policy');
+const authorizationPolicy = require('../src/policies/authorization.policy');
 const authActorMiddlewareModule = require('../src/middlewares/authActor.middleware');
 const optionalActorMiddlewareModule = require('../src/middlewares/optionalActor.middleware');
 const errorMiddlewareModule = require('../src/middlewares/error.middleware');
@@ -148,7 +149,7 @@ const be05Checks = [
   ['updateWashLoadPlanStatus service exported', typeof washLoadPlansService.updateWashLoadPlanStatus === 'function'],
   ['wash load plan readiness rule exported', typeof washLoadPlansBusiness.assertWorkCanReceiveWashLoadPlan === 'function'],
   ['wash load plan fit status calculator exported', typeof washLoadPlansBusiness.calculateFitStatus === 'function'],
-  ['wash load plan repository work lookup exported', typeof washLoadPlansRepository.findWorkById === 'function'],
+  ['wash load plan repository work lookup exported', typeof washLoadPlansRepository.findAccessibleWork === 'function'],
 ];
 
 const nestedBagRouteIndex = routesIndex.indexOf("router.use('/laundry/works/:workId/bags'");
@@ -160,6 +161,7 @@ const repositoriesWithoutWorkspacePolicy = [
   ['laundry count lines repository', laundryCountLinesRepository],
   ['linen movements repository', linenMovementsRepository],
   ['issue reports repository', issueReportsRepository],
+  ['wash load plans repository', washLoadPlansRepository],
 ];
 
 const be07Checks = [
@@ -169,6 +171,8 @@ const be07Checks = [
   ['request actor setter exported', typeof requestContextCore.setRequestActor === 'function'],
   ['workspace strict actor scope exported', typeof workspacePolicy.buildRequiredActorResortScopedWhere === 'function'],
   ['workspace scope fallback exported', typeof workspacePolicy.buildResortScopedWhere === 'function'],
+  ['authorization laundry staff policy exported', typeof authorizationPolicy.assertLaundryStaffActor === 'function'],
+  ['authorization laundry management policy exported', typeof authorizationPolicy.assertLaundryManagementActor === 'function'],
   ['auth actor middleware exported', typeof authActorMiddlewareModule.authActorMiddleware === 'function'],
   ['optional actor middleware exported', typeof optionalActorMiddlewareModule.optionalActorMiddleware === 'function'],
   ['error middleware exported', typeof errorMiddlewareModule.errorMiddleware === 'function'],
