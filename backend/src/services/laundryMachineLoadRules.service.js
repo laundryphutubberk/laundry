@@ -1,8 +1,14 @@
 const laundryMachineLoadRulesBusiness = require('../domain/laundryMachineLoadRules.business');
 const laundryMachineLoadRulesRepository = require('../repositories/laundryMachineLoadRules.repository');
+const {
+  assertLaundryManagementActor,
+  assertLaundryStaffActor,
+} = require('../policies/authorization.policy');
 const { normalizePagination } = require('../shared/pagination');
 
-const listLoadRules = async (query = {}) => {
+const listLoadRules = async (query = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   const { skip, take } = normalizePagination(query);
   const where = {};
 
@@ -30,7 +36,9 @@ const listLoadRules = async (query = {}) => {
   };
 };
 
-const createLoadRule = async (payload = {}) => {
+const createLoadRule = async (payload = {}, context = {}) => {
+  assertLaundryManagementActor(context.actor);
+
   return laundryMachineLoadRulesRepository.transaction(async (tx) => {
     const machine = await laundryMachineLoadRulesRepository.findMachineById({
       machineId: payload.machineId,
@@ -52,7 +60,9 @@ const createLoadRule = async (payload = {}) => {
   });
 };
 
-const updateLoadRule = async (loadRuleId, payload = {}) => {
+const updateLoadRule = async (loadRuleId, payload = {}, context = {}) => {
+  assertLaundryManagementActor(context.actor);
+
   return laundryMachineLoadRulesRepository.transaction(async (tx) => {
     const currentRule = await laundryMachineLoadRulesRepository.findLoadRuleById({
       loadRuleId,
