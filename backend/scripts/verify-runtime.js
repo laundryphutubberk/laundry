@@ -52,6 +52,8 @@ const resortsService = require('../src/services/resorts.service');
 const resortsBusiness = require('../src/domain/resorts.business');
 const resortsRepository = require('../src/repositories/resorts.repository');
 
+const readSource = (relativePath) => fs.readFileSync(path.resolve(__dirname, '..', relativePath), 'utf8');
+
 const schemaPath = path.resolve(__dirname, '../prisma/schema.prisma');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 
@@ -63,6 +65,17 @@ const contract = fs.readFileSync(contractPath, 'utf8');
 
 const executionPackagePath = path.resolve(__dirname, '../../project-os/backend/execution/BE-03-REST-API-Layer.md');
 const executionPackage = fs.readFileSync(executionPackagePath, 'utf8');
+
+const serviceSources = {
+  laundryWorks: readSource('src/services/laundryWorks.service.js'),
+  laundryBags: readSource('src/services/laundryBags.service.js'),
+  laundryCountLines: readSource('src/services/laundryCountLines.service.js'),
+  linenMovements: readSource('src/services/linenMovements.service.js'),
+  issueReports: readSource('src/services/issueReports.service.js'),
+  washLoadPlans: readSource('src/services/washLoadPlans.service.js'),
+  loadRules: readSource('src/services/laundryMachineLoadRules.service.js'),
+  resorts: readSource('src/services/resorts.service.js'),
+};
 
 const schemaChecks = [
   ['generator client', schema.includes('generator client')],
@@ -164,6 +177,20 @@ const repositoriesWithoutWorkspacePolicy = [
   ['wash load plans repository', washLoadPlansRepository],
 ];
 
+const actorScopedServiceSources = [
+  ['laundry works service', serviceSources.laundryWorks],
+  ['laundry bags service', serviceSources.laundryBags],
+  ['laundry count lines service', serviceSources.laundryCountLines],
+  ['linen movements service', serviceSources.linenMovements],
+  ['issue reports service', serviceSources.issueReports],
+  ['wash load plans service', serviceSources.washLoadPlans],
+];
+
+const authorizationScopedServiceSources = [
+  ['load rules service', serviceSources.loadRules],
+  ['resorts service', serviceSources.resorts],
+];
+
 const be07Checks = [
   ['actor normalizer exported', typeof actorCore.normalizeActor === 'function'],
   ['actor validator exported', typeof actorCore.assertValidActor === 'function'],
@@ -180,6 +207,14 @@ const be07Checks = [
   ...repositoriesWithoutWorkspacePolicy.map(([label, repository]) => [
     `${label} does not export buildWorkspaceWhere`,
     repository.buildWorkspaceWhere === undefined,
+  ]),
+  ...actorScopedServiceSources.map(([label, source]) => [
+    `${label} calls strict actor workspace policy`,
+    source.includes('buildRequiredActorResortScopedWhere'),
+  ]),
+  ...authorizationScopedServiceSources.map(([label, source]) => [
+    `${label} calls authorization policy`,
+    source.includes('assertLaundryStaffActor') && source.includes('assertLaundryManagementActor'),
   ]),
 ];
 
