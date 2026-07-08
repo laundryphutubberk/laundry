@@ -1,5 +1,6 @@
 const issueReportsBusiness = require('../domain/issueReports.business');
 const issueReportsRepository = require('../repositories/issueReports.repository');
+const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
@@ -42,6 +43,8 @@ const listIssueReports = async (query = {}, context = {}) => {
 };
 
 const createIssueReport = async (workId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return issueReportsRepository.transaction(async (tx) => {
     const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
@@ -75,6 +78,8 @@ const createIssueReport = async (workId, payload = {}, context = {}) => {
 };
 
 const updateIssueReportStatus = async (issueId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return issueReportsRepository.transaction(async (tx) => {
     const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
