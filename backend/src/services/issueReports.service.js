@@ -1,13 +1,23 @@
 const issueReportsBusiness = require('../domain/issueReports.business');
 const issueReportsRepository = require('../repositories/issueReports.repository');
+const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
-const listIssueReports = async (query = {}) => {
+const buildIssueReportWhere = ({ actor, status } = {}) => {
+  const where = buildRequiredActorResortScopedWhere({ actor });
+
+  if (status) {
+    where.status = status;
+  }
+
+  return where;
+};
+
+const listIssueReports = async (query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
 
-  const where = issueReportsRepository.buildWorkspaceWhere({
-    workspaceType: query.workspaceType,
-    resortId: query.resortId,
+  const where = buildIssueReportWhere({
+    actor: context.actor,
     status: query.status,
   });
 
@@ -31,14 +41,11 @@ const listIssueReports = async (query = {}) => {
   };
 };
 
-const createIssueReport = async (workId, payload = {}, query = {}) => {
+const createIssueReport = async (workId, payload = {}, context = {}) => {
   return issueReportsRepository.transaction(async (tx) => {
-    const where = issueReportsRepository.buildWorkspaceWhere({
-      workspaceType: query.workspaceType,
-      resortId: query.resortId,
-    });
+    const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
-    const work = await issueReportsRepository.findWorkById({
+    const work = await issueReportsRepository.findAccessibleWork({
       workId,
       where,
       client: tx,
@@ -67,12 +74,9 @@ const createIssueReport = async (workId, payload = {}, query = {}) => {
   });
 };
 
-const updateIssueReportStatus = async (issueId, payload = {}, query = {}) => {
+const updateIssueReportStatus = async (issueId, payload = {}, context = {}) => {
   return issueReportsRepository.transaction(async (tx) => {
-    const where = issueReportsRepository.buildWorkspaceWhere({
-      workspaceType: query.workspaceType,
-      resortId: query.resortId,
-    });
+    const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
     const issue = await issueReportsRepository.findIssueById({
       issueId,
