@@ -2,7 +2,7 @@ const express = require('express');
 
 const { getHealthStatus } = require('../core/health');
 const { sendSuccess } = require('../core/httpResponse');
-const laundryWorksRoutes = require('./laundryWorks.routes');
+const laundryWorksRoutes = require('../modules/laundry-work');
 const laundryBagsRoutes = require('./laundryBags.routes');
 
 const router = express.Router();
