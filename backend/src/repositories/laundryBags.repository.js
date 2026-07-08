@@ -1,5 +1,5 @@
 const { prisma } = require('../core/prisma');
-const { buildResortScopedWhere } = require('../shared/workspaceScope');
+const { buildResortScopedWhere } = require('../policies/workspace.policy');
 
 const buildBagInclude = () => ({
   work: {
