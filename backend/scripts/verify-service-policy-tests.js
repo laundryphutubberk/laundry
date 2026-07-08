@@ -122,8 +122,13 @@ const runOperationalWritePermissionTest = async () => {
 };
 
 const runMasterDataManagementPermissionTest = async () => {
+  const createdRecords = [];
   const repository = {
-    transaction: async (callback) => callback({}),
+    transaction: async (callback) => callback({ testClient: true }),
+    createResort: async ({ data, client }) => {
+      createdRecords.push({ data, client });
+      return { id: 1, ...data };
+    },
   };
 
   await withMockedModules(
@@ -139,10 +144,12 @@ const runMasterDataManagementPermissionTest = async () => {
         'AUTHORIZATION_POLICY_VIOLATION',
       );
 
-      await assert.rejects(
-        () => createResort({ name: 'Resort A' }, { actor: laundryManagerActor }),
-        (error) => error.code !== 'AUTHORIZATION_POLICY_VIOLATION',
-      );
+      const created = await createResort({ name: ' Resort A ' }, { actor: laundryManagerActor });
+
+      assert.equal(created.id, 1);
+      assert.equal(created.name, 'Resort A');
+      assert.equal(created.active, true);
+      assert.deepEqual(createdRecords[0].client, { testClient: true });
     },
   );
 };
