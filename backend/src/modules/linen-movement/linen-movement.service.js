@@ -1,13 +1,24 @@
 const linenMovementsBusiness = require('./linen-movement.business');
 const linenMovementsRepository = require('./linen-movement.repository');
+const { assertLaundryStaffActor } = require('../../policies/authorization.policy');
+const { buildRequiredActorResortScopedWhere } = require('../../policies/workspace.policy');
 const { normalizePagination } = require('../../shared/pagination');
 
-const listLinenMovements = async (query = {}) => {
+const buildLinenMovementWhere = ({ actor, movementType } = {}) => {
+  const where = buildRequiredActorResortScopedWhere({ actor });
+
+  if (movementType) {
+    where.movementType = movementType;
+  }
+
+  return where;
+};
+
+const listLinenMovements = async (query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
 
-  const where = linenMovementsRepository.buildWorkspaceWhere({
-    workspaceType: query.workspaceType,
-    resortId: query.resortId,
+  const where = buildLinenMovementWhere({
+    actor: context.actor,
     movementType: query.movementType,
   });
 
@@ -27,10 +38,15 @@ const listLinenMovements = async (query = {}) => {
   };
 };
 
-const createLinenMovement = async (payload = {}) => {
+const createLinenMovement = async (payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return linenMovementsRepository.transaction(async (tx) => {
-    const work = await linenMovementsRepository.findWorkById({
+    const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
+
+    const work = await linenMovementsRepository.findAccessibleWork({
       workId: payload.workId,
+      where,
       client: tx,
     });
     linenMovementsBusiness.assertWorkCanCreateMovement(work);
