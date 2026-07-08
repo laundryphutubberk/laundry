@@ -4,6 +4,20 @@ Status: Active
 Owner: Chief Architect  
 Project: `laundryphutubberk/laundry`
 
+## Golden Rule
+
+Every new task MUST start from this file:
+
+```text
+project-os/00-core/BOOT-MANIFEST.md
+```
+
+Do not directly load Blueprint, Engineering, Backend, Frontend, Domain Model, or Execution documents first.
+
+Always resolve the required boot path from this manifest before reading deeper documents.
+
+This file is the single entry point for Project OS boot.
+
 ## Purpose
 
 This file is the central index for the layered boot system.
@@ -93,6 +107,26 @@ Read only:
 2. Responsibility Boot for the assigned role
 3. Execution Boot for the assigned phase
 4. Module Boot for the assigned module, if any
+```
+
+## Self-Booting Task Rule
+
+A task may be invoked with a short command such as:
+
+```text
+BE-06
+FE-03
+Domain Model Review
+```
+
+The task must then:
+
+```text
+1. Open BOOT-MANIFEST.md
+2. Resolve the correct boot path
+3. Read only required context
+4. Start in the correct responsibility mode
+5. Stop if a stop condition is triggered
 ```
 
 ## Stop Conditions
