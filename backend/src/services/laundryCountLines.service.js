@@ -64,11 +64,17 @@ const createLaundryCountLine = async (workId, payload = {}, context = {}) => {
     });
 
     if (laundryCountLinesBusiness.shouldMoveWorkToItemCounted(work.currentStatus)) {
-      await laundryCountLinesRepository.updateWorkAfterCountLine({
+      const workUpdateResult = await laundryCountLinesRepository.updateWorkAfterCountLine({
         workId: work.id,
-        currentStatus: work.currentStatus,
+        expectedStatus: work.currentStatus,
         client: tx,
       });
+
+      if (workUpdateResult.count === 0) {
+        const error = new Error('Laundry Work status changed during count line creation');
+        error.statusCode = 409;
+        throw error;
+      }
 
       await laundryCountLinesRepository.createWorkStatusLog({
         data: {
