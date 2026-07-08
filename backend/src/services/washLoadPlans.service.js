@@ -1,5 +1,6 @@
 const washLoadPlansBusiness = require('../domain/washLoadPlans.business');
 const washLoadPlansRepository = require('../repositories/washLoadPlans.repository');
+const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
@@ -49,6 +50,8 @@ const listWashLoadPlans = async (query = {}, context = {}) => {
 };
 
 const createWashLoadPlan = async (workId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return washLoadPlansRepository.transaction(async (tx) => {
     const workWhere = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
@@ -93,6 +96,8 @@ const createWashLoadPlan = async (workId, payload = {}, context = {}) => {
 };
 
 const updateWashLoadPlanStatus = async (planId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return washLoadPlansRepository.transaction(async (tx) => {
     const where = buildWashLoadPlanWhere({ actor: context.actor });
 
