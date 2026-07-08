@@ -84,15 +84,28 @@ const findLaundryWorkByIdForUpdate = async ({ workId, where, client } = {}) => {
   });
 };
 
-const updateLaundryWorkStatus = async ({ workId, toStatus, client } = {}) => {
+const updateLaundryWorkStatus = async ({ workId, where, expectedStatus, toStatus, client } = {}) => {
   const db = getClient(client);
 
-  return db.laundryWork.update({
+  const updateResult = await db.laundryWork.updateMany({
     where: {
+      ...where,
       id: Number(workId),
+      currentStatus: expectedStatus,
     },
     data: {
       currentStatus: toStatus,
+    },
+  });
+
+  if (updateResult.count === 0) {
+    return null;
+  }
+
+  return db.laundryWork.findFirst({
+    where: {
+      ...where,
+      id: Number(workId),
     },
     include: buildWorkInclude(),
   });
