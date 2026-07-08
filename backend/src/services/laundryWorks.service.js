@@ -118,9 +118,17 @@ const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
 
     const updatedWork = await laundryWorksRepository.updateLaundryWorkStatus({
       workId,
+      where,
+      expectedStatus: currentWork.currentStatus,
       toStatus: payload.toStatus,
       client: tx,
     });
+
+    if (!updatedWork) {
+      const error = new Error('Laundry Work status changed during update');
+      error.statusCode = 409;
+      throw error;
+    }
 
     await laundryWorksRepository.createWorkStatusLog({
       data: laundryWorksBusiness.buildStatusLogData({
