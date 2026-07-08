@@ -121,6 +121,72 @@ const runOperationalWritePermissionTest = async () => {
   );
 };
 
+const runOperationalWriteSuccessTest = async () => {
+  const calls = [];
+  const repository = {
+    transaction: async (callback) => callback({ testClient: true }),
+    findAccessibleWork: async ({ workId, where, client }) => {
+      calls.push({ fn: 'findAccessibleWork', workId, where, client });
+      return {
+        id: Number(workId),
+        resortId: 22,
+        currentStatus: 'DRAFT',
+      };
+    },
+    findLaundryBagByBagNo: async ({ workId, bagNo, client }) => {
+      calls.push({ fn: 'findLaundryBagByBagNo', workId, bagNo, client });
+      return null;
+    },
+    createLaundryBag: async ({ data, client }) => {
+      calls.push({ fn: 'createLaundryBag', data, client });
+      return { id: 101, ...data };
+    },
+    incrementLaundryWorkBagCount: async ({ workId, nextStatus, client }) => {
+      calls.push({ fn: 'incrementLaundryWorkBagCount', workId, nextStatus, client });
+      return { id: workId, currentStatus: nextStatus };
+    },
+    createWorkStatusLog: async ({ data, client }) => {
+      calls.push({ fn: 'createWorkStatusLog', data, client });
+      return { id: 1, ...data };
+    },
+  };
+
+  await withMockedModules(
+    {
+      '../repositories/laundryBags.repository': repository,
+    },
+    async () => {
+      clearModule('../src/services/laundryBags.service');
+      const { createLaundryBag } = require('../src/services/laundryBags.service');
+
+      const created = await createLaundryBag(
+        7,
+        {
+          bagNo: 'BAG-001',
+          resortId: 999,
+          note: 'First bag',
+        },
+        { actor: laundryStaffActor },
+      );
+
+      assert.equal(created.id, 101);
+      assert.equal(created.workId, 7);
+      assert.equal(created.resortId, 22);
+      assert.equal(created.bagNo, 'BAG-001');
+      assert.equal(calls[0].fn, 'findAccessibleWork');
+      assert.deepEqual(calls[0].where, {});
+      assert.deepEqual(calls[0].client, { testClient: true });
+
+      const createCall = calls.find((call) => call.fn === 'createLaundryBag');
+      assert.equal(createCall.data.resortId, 22);
+      assert.equal(createCall.data.resortId === 999, false);
+
+      const statusCall = calls.find((call) => call.fn === 'incrementLaundryWorkBagCount');
+      assert.equal(statusCall.nextStatus, 'BAG_RECEIVED');
+    },
+  );
+};
+
 const runMasterDataManagementPermissionTest = async () => {
   const createdRecords = [];
   const repository = {
@@ -157,6 +223,7 @@ const runMasterDataManagementPermissionTest = async () => {
 const run = async () => {
   await runActorScopedReadServiceTest();
   await runOperationalWritePermissionTest();
+  await runOperationalWriteSuccessTest();
   await runMasterDataManagementPermissionTest();
 
   console.log('BE-07 representative service policy tests passed.');
