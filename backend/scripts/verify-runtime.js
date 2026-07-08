@@ -14,6 +14,7 @@ require('../src/routes');
 
 const actorCore = require('../src/core/actor');
 const requestContextCore = require('../src/core/requestContext');
+const policyContextCore = require('../src/core/policyContext');
 const workspacePolicy = require('../src/policies/workspace.policy');
 const authorizationPolicy = require('../src/policies/authorization.policy');
 const authActorMiddlewareModule = require('../src/middlewares/authActor.middleware');
@@ -71,6 +72,11 @@ const contract = fs.readFileSync(contractPath, 'utf8');
 const executionPackagePath = path.resolve(__dirname, '../../project-os/backend/execution/BE-03-REST-API-Layer.md');
 const executionPackage = fs.readFileSync(executionPackagePath, 'utf8');
 
+const controllerSources = {
+  laundryWorks: readSource('src/controllers/laundryWorks.controller.js'),
+  laundryBags: readSource('src/controllers/laundryBags.controller.js'),
+};
+
 const serviceSources = {
   laundryWorks: readSource('src/services/laundryWorks.service.js'),
   laundryBags: readSource('src/services/laundryBags.service.js'),
@@ -84,6 +90,11 @@ const serviceSources = {
 
 const repositorySources = {
   laundryWorks: readSource('src/repositories/laundryWorks.repository.js'),
+  laundryBags: readSource('src/repositories/laundryBags.repository.js'),
+  laundryCountLines: readSource('src/repositories/laundryCountLines.repository.js'),
+  linenMovements: readSource('src/repositories/linenMovements.repository.js'),
+  issueReports: readSource('src/repositories/issueReports.repository.js'),
+  washLoadPlans: readSource('src/repositories/washLoadPlans.repository.js'),
 };
 
 const schemaChecks = [
@@ -178,12 +189,12 @@ const nestedBagRouteIndex = routesIndex.indexOf("router.use('/laundry/works/:wor
 const workRouteIndex = routesIndex.indexOf("router.use('/laundry/works'");
 
 const repositoriesWithoutWorkspacePolicy = [
-  ['laundry works repository', laundryWorksRepository],
-  ['laundry bags repository', laundryBagsRepository],
-  ['laundry count lines repository', laundryCountLinesRepository],
-  ['linen movements repository', linenMovementsRepository],
-  ['issue reports repository', issueReportsRepository],
-  ['wash load plans repository', washLoadPlansRepository],
+  ['laundry works repository', laundryWorksRepository, repositorySources.laundryWorks],
+  ['laundry bags repository', laundryBagsRepository, repositorySources.laundryBags],
+  ['laundry count lines repository', laundryCountLinesRepository, repositorySources.laundryCountLines],
+  ['linen movements repository', linenMovementsRepository, repositorySources.linenMovements],
+  ['issue reports repository', issueReportsRepository, repositorySources.issueReports],
+  ['wash load plans repository', washLoadPlansRepository, repositorySources.washLoadPlans],
 ];
 
 const actorScopedServiceSources = [
@@ -209,11 +220,17 @@ const authorizationScopedServiceSources = [
   ['resorts service', serviceSources.resorts],
 ];
 
+const controllerPolicyContextSources = [
+  ['laundry works controller', controllerSources.laundryWorks],
+  ['laundry bags controller', controllerSources.laundryBags],
+];
+
 const be07Checks = [
   ['actor normalizer exported', typeof actorCore.normalizeActor === 'function'],
   ['actor validator exported', typeof actorCore.assertValidActor === 'function'],
   ['request actor getter exported', typeof requestContextCore.getRequestActor === 'function'],
   ['request actor setter exported', typeof requestContextCore.setRequestActor === 'function'],
+  ['policy context helper exported', typeof policyContextCore.getRequestPolicyContext === 'function'],
   ['workspace strict actor scope exported', typeof workspacePolicy.buildRequiredActorResortScopedWhere === 'function'],
   ['workspace scope fallback exported', typeof workspacePolicy.buildResortScopedWhere === 'function'],
   ['authorization laundry staff policy exported', typeof authorizationPolicy.assertLaundryStaffActor === 'function'],
@@ -222,14 +239,24 @@ const be07Checks = [
   ['optional actor middleware exported', typeof optionalActorMiddlewareModule.optionalActorMiddleware === 'function'],
   ['error middleware exported', typeof errorMiddlewareModule.errorMiddleware === 'function'],
   ['nested bag route mounted before work route', nestedBagRouteIndex >= 0 && workRouteIndex >= 0 && nestedBagRouteIndex < workRouteIndex],
+  ['work routes require actor auth', routesIndex.includes("router.use('/laundry/works', authActorMiddleware, laundryWorksRoutes)")],
+  ['bag routes require actor auth', routesIndex.includes("router.use('/laundry/works/:workId/bags', authActorMiddleware, laundryBagsRoutes)")],
   ['work repository update lookup accepts scoped where', repositorySources.laundryWorks.includes('findLaundryWorkByIdForUpdate = async ({ workId, where, client }')],
-  ...repositoriesWithoutWorkspacePolicy.map(([label, repository]) => [
-    `${label} does not export buildWorkspaceWhere`,
-    repository.buildWorkspaceWhere === undefined,
+  ...controllerPolicyContextSources.map(([label, source]) => [
+    `${label} uses shared policy context`,
+    source.includes("require('../core/policyContext')") && source.includes('getRequestPolicyContext(req)'),
+  ]),
+  ...repositoriesWithoutWorkspacePolicy.map(([label, repository, source]) => [
+    `${label} does not export or import workspace policy`,
+    repository.buildWorkspaceWhere === undefined &&
+      !source.includes("../shared/workspaceScope") &&
+      !source.includes("../policies/workspace.policy"),
   ]),
   ...actorScopedServiceSources.map(([label, source]) => [
-    `${label} calls strict actor workspace policy`,
-    source.includes('buildRequiredActorResortScopedWhere'),
+    `${label} calls strict actor workspace policy and rejects client boundary scope`,
+    source.includes('buildRequiredActorResortScopedWhere') &&
+      !source.includes('query.workspaceType') &&
+      !source.includes('query.resortId'),
   ]),
   ...staffWriteServiceSources.map(([label, source]) => [
     `${label} write flow calls staff authorization policy`,
