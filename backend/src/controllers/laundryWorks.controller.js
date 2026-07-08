@@ -14,10 +14,14 @@ const {
   updateLaundryWorkStatusBodySchema,
 } = require('../validators/laundryWorks.validator');
 
+const getRequestPolicyContext = (req) => ({
+  actor: req.context ? req.context.actor : null,
+});
+
 const listLaundryWorksController = async (req, res, next) => {
   try {
     const query = parseRequest(listLaundryWorksQuerySchema, req.query);
-    const result = await listLaundryWorks(query);
+    const result = await listLaundryWorks(query, getRequestPolicyContext(req));
     return sendSuccess(res, result.items, { pagination: result.pagination });
   } catch (error) {
     return next(error);
@@ -28,7 +32,7 @@ const getLaundryWorkController = async (req, res, next) => {
   try {
     const params = parseRequest(workIdParamSchema, req.params);
     const query = parseRequest(getLaundryWorkQuerySchema, req.query);
-    const work = await getLaundryWorkById(params.workId, query);
+    const work = await getLaundryWorkById(params.workId, query, getRequestPolicyContext(req));
     return sendSuccess(res, work);
   } catch (error) {
     return next(error);
