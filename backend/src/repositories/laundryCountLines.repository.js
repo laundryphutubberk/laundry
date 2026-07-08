@@ -74,16 +74,13 @@ const createLaundryCountLine = async ({ data, client } = {}) => {
   });
 };
 
-const updateWorkAfterCountLine = async ({ workId, currentStatus, client } = {}) => {
+const updateWorkAfterCountLine = async ({ workId, expectedStatus, client } = {}) => {
   const db = getClient(client);
 
-  if (currentStatus !== 'BAG_OPENED') {
-    return null;
-  }
-
-  return db.laundryWork.update({
+  return db.laundryWork.updateMany({
     where: {
       id: Number(workId),
+      currentStatus: expectedStatus,
     },
     data: {
       currentStatus: 'ITEM_COUNTED',
