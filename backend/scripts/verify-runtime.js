@@ -27,6 +27,10 @@ const linenMovementsService = require('../src/services/linenMovements.service');
 const linenMovementsBusiness = require('../src/domain/linenMovements.business');
 const linenMovementsRepository = require('../src/repositories/linenMovements.repository');
 
+const issueReportsService = require('../src/services/issueReports.service');
+const issueReportsBusiness = require('../src/domain/issueReports.business');
+const issueReportsRepository = require('../src/repositories/issueReports.repository');
+
 const schemaPath = path.resolve(__dirname, '../prisma/schema.prisma');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 
@@ -43,9 +47,11 @@ const schemaChecks = [
   ['LaundryBag model', schema.includes('model LaundryBag')],
   ['LaundryCountLine model', schema.includes('model LaundryCountLine')],
   ['LinenMovement model', schema.includes('model LinenMovement')],
+  ['IssueReport model', schema.includes('model IssueReport')],
   ['WorkStatus enum', schema.includes('enum WorkStatus')],
   ['BagStatus enum', schema.includes('enum BagStatus')],
   ['MovementType enum', schema.includes('enum MovementType')],
+  ['IssueStatus enum', schema.includes('enum IssueStatus')],
 ];
 
 const be03Checks = [
@@ -91,6 +97,12 @@ const be05Checks = [
   ['linen movement work readiness rule exported', typeof linenMovementsBusiness.assertWorkCanCreateMovement === 'function'],
   ['linen movement data builder exported', typeof linenMovementsBusiness.buildCreateMovementData === 'function'],
   ['linen movement repository item type lookup exported', typeof linenMovementsRepository.findItemTypeById === 'function'],
+  ['listIssueReports service exported', typeof issueReportsService.listIssueReports === 'function'],
+  ['createIssueReport service exported', typeof issueReportsService.createIssueReport === 'function'],
+  ['updateIssueReportStatus service exported', typeof issueReportsService.updateIssueReportStatus === 'function'],
+  ['issue report work readiness rule exported', typeof issueReportsBusiness.assertWorkCanReceiveIssue === 'function'],
+  ['issue report status update builder exported', typeof issueReportsBusiness.buildIssueStatusUpdateData === 'function'],
+  ['issue report repository work lookup exported', typeof issueReportsRepository.findWorkById === 'function'],
 ];
 
 const failedChecks = [...schemaChecks, ...be03Checks, ...be05Checks].filter(([, passed]) => !passed);
@@ -102,4 +114,4 @@ if (failedChecks.length > 0) {
 
 console.log('Backend runtime verification loaded successfully.');
 console.log('BE-03 REST API layer verification loaded successfully.');
-console.log('BE-05 Laundry Work, Laundry Bag, Count Line, and Linen Movement business layer verification loaded successfully.');
+console.log('BE-05 Laundry Work, Laundry Bag, Count Line, Linen Movement, and Issue Report business layer verification loaded successfully.');
