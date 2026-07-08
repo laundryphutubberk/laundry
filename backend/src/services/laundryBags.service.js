@@ -1,5 +1,6 @@
 const laundryBagsBusiness = require('../domain/laundryBags.business');
 const laundryBagsRepository = require('../repositories/laundryBags.repository');
+const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
@@ -83,6 +84,8 @@ const getLaundryBagById = async (workId, bagId, query = {}, context = {}) => {
 };
 
 const createLaundryBag = async (workId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return laundryBagsRepository.transaction(async (tx) => {
     const work = await assertWorkAccessible(tx, workId, {}, context);
     laundryBagsBusiness.assertWorkCanReceiveBag(work);
@@ -128,6 +131,8 @@ const createLaundryBag = async (workId, payload = {}, context = {}) => {
 };
 
 const updateLaundryBagStatus = async (workId, bagId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return laundryBagsRepository.transaction(async (tx) => {
     await assertWorkAccessible(tx, workId, {}, context);
 
