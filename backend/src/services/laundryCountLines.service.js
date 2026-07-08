@@ -1,10 +1,18 @@
 const laundryCountLinesBusiness = require('../domain/laundryCountLines.business');
 const laundryCountLinesRepository = require('../repositories/laundryCountLines.repository');
+const { logger } = require('../core/observability');
 const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
 const buildLaundryCountLineWhere = ({ actor } = {}) => buildRequiredActorResortScopedWhere({ actor });
+
+const buildActorLogContext = (actor) => ({
+  actorId: actor?.id,
+  actorRole: actor?.role,
+  workspaceType: actor?.workspaceType,
+  actorResortId: actor?.resortId,
+});
 
 const listLaundryCountLines = async (workId, query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
@@ -33,7 +41,7 @@ const listLaundryCountLines = async (workId, query = {}, context = {}) => {
 const createLaundryCountLine = async (workId, payload = {}, context = {}) => {
   assertLaundryStaffActor(context.actor);
 
-  return laundryCountLinesRepository.transaction(async (tx) => {
+  const countLine = await laundryCountLinesRepository.transaction(async (tx) => {
     const where = buildLaundryCountLineWhere({ actor: context.actor });
 
     const work = await laundryCountLinesRepository.findAccessibleWork({
@@ -58,7 +66,7 @@ const createLaundryCountLine = async (workId, payload = {}, context = {}) => {
     });
     laundryCountLinesBusiness.assertItemTypeCanBeCounted(itemType);
 
-    const countLine = await laundryCountLinesRepository.createLaundryCountLine({
+    const createdCountLine = await laundryCountLinesRepository.createLaundryCountLine({
       data: laundryCountLinesBusiness.buildCreateCountLineData({ work, payload }),
       client: tx,
     });
@@ -87,8 +95,22 @@ const createLaundryCountLine = async (workId, payload = {}, context = {}) => {
       });
     }
 
-    return countLine;
+    return createdCountLine;
   });
+
+  logger.business('laundry.count_line.created', {
+    ...buildActorLogContext(context.actor),
+    workId: countLine.workId,
+    bagId: countLine.bagId,
+    countLineId: countLine.id,
+    resortId: countLine.resortId,
+    itemTypeId: countLine.itemTypeId,
+    colorGroup: countLine.colorGroup,
+    quantity: countLine.quantity,
+    issueQuantity: countLine.issueQuantity,
+  });
+
+  return countLine;
 };
 
 module.exports = {
