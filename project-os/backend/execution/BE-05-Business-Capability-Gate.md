@@ -45,7 +45,7 @@ BE-05 is done when all items below are complete:
 | LaundryCountLine | Required Business Layer | Real item count captured after opening bags | Complete | Owns counted quantity, item type, color group, issue quantity, and movement trigger. |
 | LinenMovement | Required Business Layer | Linen inventory movement history | Complete | Owns inventory-affecting movement semantics and adjustment constraints. |
 | LinenInventorySummary | Derived | Current inventory projection | No direct layer | Must be derived from movement/work history, not edited directly. |
-| IssueReport | Required Business Layer | Damage, missing, mismatch, and operational issue records | Required | Owns issue lifecycle, quantity impact, and reporting/resolution rules. |
+| IssueReport | Required Business Layer | Damage, missing, mismatch, and operational issue records | Complete | Owns issue lifecycle, quantity impact, and reporting/resolution rules. |
 | WorkStatusLog | Internal Only | Audit/projection source for workflow history | Not required | Created by business domains; should not own business decisions. |
 | LaundryMachine | Lookup | Machine capacity reference | Not required | Master data for load planning; does not own workflow state. |
 | LaundryMachineLoadRule | Required Business Layer | Owner-defined load standards | Required | Owns min/target/max load constraints used by planning. |
@@ -100,14 +100,20 @@ Photo/image handling is intentionally excluded from BE-05 because it is not part
   - Work-linked movements require a movement-ready Work status.
   - Movement `resortId` must match the linked Work resort.
   - Laundry Item Type must exist and be active before movement creation.
+- Issue Report Business Layer
+  - Work must be in an issue-capable status before issue reports are created.
+  - Issue quantity must be a non-negative integer.
+  - Optional Laundry Item Type must be active when referenced.
+  - Issue status transitions are constrained by business rules.
+  - Closed Issue Reports cannot be updated.
+  - Open or reviewing issues increment Work issue count on creation.
 
 ## Remaining Required Business Layers
 
 1. Resort Business Layer
-2. Issue Report Business Layer
-3. Laundry Machine Load Rule Business Layer
-4. Wash Load Plan Business Layer
-5. Runtime verification expansion for all BE-05 required domains
+2. Laundry Machine Load Rule Business Layer
+3. Wash Load Plan Business Layer
+4. Runtime verification expansion for all BE-05 required domains
 
 ## Freeze Condition
 
