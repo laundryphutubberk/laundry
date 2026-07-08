@@ -16,15 +16,16 @@ const errorMiddlewareModule = require('../src/middlewares/error.middleware');
 
 const laundryWorksRoutes = require('../src/routes/laundryWorks.routes');
 const laundryWorksService = require('../src/services/laundryWorks.service');
+const laundryWorksRepository = require('../src/repositories/laundryWorks.repository');
 const laundryWorksValidator = require('../src/validators/laundryWorks.validator');
 const laundryWorksBusiness = require('../src/domain/laundryWorks.business');
 const laundryWorksBusinessRepository = require('../src/repositories/laundryWorksBusiness.repository');
 
 const laundryBagsRoutes = require('../src/routes/laundryBags.routes');
 const laundryBagsService = require('../src/services/laundryBags.service');
+const laundryBagsRepository = require('../src/repositories/laundryBags.repository');
 const laundryBagsValidator = require('../src/validators/laundryBags.validator');
 const laundryBagsBusiness = require('../src/domain/laundryBags.business');
-const laundryBagsRepository = require('../src/repositories/laundryBags.repository');
 
 const laundryCountLinesService = require('../src/services/laundryCountLines.service');
 const laundryCountLinesBusiness = require('../src/domain/laundryCountLines.business');
@@ -135,7 +136,7 @@ const be05Checks = [
   ['updateIssueReportStatus service exported', typeof issueReportsService.updateIssueReportStatus === 'function'],
   ['issue report work readiness rule exported', typeof issueReportsBusiness.assertWorkCanReceiveIssue === 'function'],
   ['issue report status update builder exported', typeof issueReportsBusiness.buildIssueStatusUpdateData === 'function'],
-  ['issue report repository work lookup exported', typeof issueReportsRepository.findWorkById === 'function'],
+  ['issue report repository work lookup exported', typeof issueReportsRepository.findAccessibleWork === 'function'],
   ['listLoadRules service exported', typeof laundryMachineLoadRulesService.listLoadRules === 'function'],
   ['createLoadRule service exported', typeof laundryMachineLoadRulesService.createLoadRule === 'function'],
   ['updateLoadRule service exported', typeof laundryMachineLoadRulesService.updateLoadRule === 'function'],
@@ -153,6 +154,14 @@ const be05Checks = [
 const nestedBagRouteIndex = routesIndex.indexOf("router.use('/laundry/works/:workId/bags'");
 const workRouteIndex = routesIndex.indexOf("router.use('/laundry/works'");
 
+const repositoriesWithoutWorkspacePolicy = [
+  ['laundry works repository', laundryWorksRepository],
+  ['laundry bags repository', laundryBagsRepository],
+  ['laundry count lines repository', laundryCountLinesRepository],
+  ['linen movements repository', linenMovementsRepository],
+  ['issue reports repository', issueReportsRepository],
+];
+
 const be07Checks = [
   ['actor normalizer exported', typeof actorCore.normalizeActor === 'function'],
   ['actor validator exported', typeof actorCore.assertValidActor === 'function'],
@@ -164,6 +173,10 @@ const be07Checks = [
   ['optional actor middleware exported', typeof optionalActorMiddlewareModule.optionalActorMiddleware === 'function'],
   ['error middleware exported', typeof errorMiddlewareModule.errorMiddleware === 'function'],
   ['nested bag route mounted before work route', nestedBagRouteIndex >= 0 && workRouteIndex >= 0 && nestedBagRouteIndex < workRouteIndex],
+  ...repositoriesWithoutWorkspacePolicy.map(([label, repository]) => [
+    `${label} does not export buildWorkspaceWhere`,
+    repository.buildWorkspaceWhere === undefined,
+  ]),
 ];
 
 const failedChecks = [...schemaChecks, ...be03Checks, ...be05Checks, ...be07Checks].filter(([, passed]) => !passed);
