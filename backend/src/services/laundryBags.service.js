@@ -157,11 +157,20 @@ const updateLaundryBagStatus = async (workId, bagId, payload = {}, context = {})
       throw error;
     }
 
-    return laundryBagsRepository.updateLaundryBagStatus({
+    const updatedBag = await laundryBagsRepository.updateLaundryBagStatus({
       bagId: currentBag.id,
+      expectedStatus: currentBag.status,
       data: laundryBagsBusiness.buildBagStatusUpdateData({ currentBag, payload }),
       client: tx,
     });
+
+    if (!updatedBag) {
+      const error = new Error('Laundry Bag status changed during update');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    return updatedBag;
   });
 };
 
