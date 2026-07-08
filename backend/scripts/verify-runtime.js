@@ -1,6 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
+process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://verify:verify@localhost:5432/laundry_verify';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'verify-runtime-jwt-secret-at-least-32-chars';
+process.env.ENABLE_DEV_ACTOR_HEADER = process.env.ENABLE_DEV_ACTOR_HEADER || 'false';
+
 require('../src/config/env');
 require('../src/core/prisma');
 require('../src/core/runtimeShutdown');
