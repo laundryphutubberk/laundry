@@ -1,4 +1,5 @@
 const { sendSuccess } = require('../core/httpResponse');
+const { getRequestPolicyContext } = require('../core/policyContext');
 const {
   listLaundryWorks,
   getLaundryWorkById,
@@ -13,10 +14,6 @@ const {
   createLaundryWorkBodySchema,
   updateLaundryWorkStatusBodySchema,
 } = require('../validators/laundryWorks.validator');
-
-const getRequestPolicyContext = (req) => ({
-  actor: req.context ? req.context.actor : null,
-});
 
 const listLaundryWorksController = async (req, res, next) => {
   try {
@@ -42,7 +39,7 @@ const getLaundryWorkController = async (req, res, next) => {
 const createLaundryWorkController = async (req, res, next) => {
   try {
     const body = parseRequest(createLaundryWorkBodySchema, req.body);
-    const work = await createLaundryWork(body);
+    const work = await createLaundryWork(body, getRequestPolicyContext(req));
     return sendSuccess(res, work, undefined, 201);
   } catch (error) {
     return next(error);
@@ -53,7 +50,7 @@ const updateLaundryWorkStatusController = async (req, res, next) => {
   try {
     const params = parseRequest(workIdParamSchema, req.params);
     const body = parseRequest(updateLaundryWorkStatusBodySchema, req.body);
-    const work = await updateLaundryWorkStatus(params.workId, body);
+    const work = await updateLaundryWorkStatus(params.workId, body, getRequestPolicyContext(req));
     return sendSuccess(res, work);
   } catch (error) {
     return next(error);
