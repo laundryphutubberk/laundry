@@ -1,3 +1,4 @@
+const { normalizeActor } = require('../core/actor');
 const { setRequestActor } = require('../core/requestContext');
 
 const parseActorHeader = (rawActor) => {
@@ -6,19 +7,7 @@ const parseActorHeader = (rawActor) => {
   }
 
   try {
-    const actor = JSON.parse(rawActor);
-
-    if (!actor || typeof actor !== 'object') {
-      return null;
-    }
-
-    return {
-      userId: actor.userId || null,
-      role: actor.role || null,
-      workspaceType: actor.workspaceType || null,
-      resortId: actor.resortId || null,
-      active: actor.active !== undefined ? Boolean(actor.active) : null,
-    };
+    return normalizeActor(JSON.parse(rawActor));
   } catch (_error) {
     return null;
   }
