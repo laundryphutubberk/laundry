@@ -48,7 +48,7 @@ BE-05 is done when all items below are complete:
 | IssueReport | Required Business Layer | Damage, missing, mismatch, and operational issue records | Complete | Owns issue lifecycle, quantity impact, and reporting/resolution rules. |
 | WorkStatusLog | Internal Only | Audit/projection source for workflow history | Not required | Created by business domains; should not own business decisions. |
 | LaundryMachine | Lookup | Machine capacity reference | Not required | Master data for load planning; does not own workflow state. |
-| LaundryMachineLoadRule | Required Business Layer | Owner-defined load standards | Required | Owns min/target/max load constraints used by planning. |
+| LaundryMachineLoadRule | Required Business Layer | Owner-defined load standards | Complete | Owns min/target/max load constraints used by planning. |
 | WashLoadPlan | Required Business Layer | Machine load planning for a work | Required | Owns load composition, fit status, and planning lifecycle. |
 
 ## Operational Domain Map
@@ -107,13 +107,19 @@ Photo/image handling is intentionally excluded from BE-05 because it is not part
   - Issue status transitions are constrained by business rules.
   - Closed Issue Reports cannot be updated.
   - Open or reviewing issues increment Work issue count on creation.
+- Laundry Machine Load Rule Business Layer
+  - Machine must exist and be active before receiving load rules.
+  - Load rule min, target, and max weights must be positive numbers.
+  - `minWeightKg` cannot exceed `targetKg`.
+  - `targetKg` cannot exceed `maxWeightKg`.
+  - `maxWeightKg` cannot exceed machine capacity.
+  - Active load rule names must be unique per machine.
 
 ## Remaining Required Business Layers
 
 1. Resort Business Layer
-2. Laundry Machine Load Rule Business Layer
-3. Wash Load Plan Business Layer
-4. Runtime verification expansion for all BE-05 required domains
+2. Wash Load Plan Business Layer
+3. Runtime verification expansion for all BE-05 required domains
 
 ## Freeze Condition
 
