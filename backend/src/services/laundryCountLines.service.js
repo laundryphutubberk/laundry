@@ -1,5 +1,6 @@
 const laundryCountLinesBusiness = require('../domain/laundryCountLines.business');
 const laundryCountLinesRepository = require('../repositories/laundryCountLines.repository');
+const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
@@ -30,6 +31,8 @@ const listLaundryCountLines = async (workId, query = {}, context = {}) => {
 };
 
 const createLaundryCountLine = async (workId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return laundryCountLinesRepository.transaction(async (tx) => {
     const where = buildLaundryCountLineWhere({ actor: context.actor });
 
