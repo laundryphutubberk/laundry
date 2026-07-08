@@ -154,6 +154,71 @@ Repositories should not:
 - decide permissions
 - decide workspace boundaries
 
+## Policy Decision Log
+
+BE-07 currently establishes these architecture decisions:
+
+| Decision | Standard |
+|---|---|
+| Actor source of truth | Runtime policy scope comes from actor context. |
+| Client boundary fields | Client-provided workspace boundary fields are never policy source of truth. |
+| Controller responsibility | Controllers are transport-only and pass policy context into services. |
+| Service responsibility | Services orchestrate policy, domain rules, and repository calls. |
+| Repository responsibility | Repositories are data-focused and policy-free. |
+| Read/list access | Read/list flow must be actor-scoped. |
+| Operational writes | Operational write flow must require Laundry staff-level authorization. |
+| Master-data writes | Master-data create/update flow must require Laundry management-level authorization. |
+| Runtime verification | BE-07 standards must be executable through `verify-runtime.js`. |
+
+## ADR Policy
+
+Architecture-level policy changes require an ADR or equivalent project decision record before implementation.
+
+ADR-required changes include:
+
+- Actor model changes
+- Workspace boundary model changes
+- Permission model changes
+- Role hierarchy changes
+- Repository ownership changes
+- Cross-workspace visibility changes
+- New runtime policy source of truth
+
+Small implementation refactors that preserve these decisions do not require a new ADR.
+
+## Module Coverage Matrix
+
+| Module / Domain | Scope | BE-07 Status | Notes |
+|---|---|---:|---|
+| LaundryWork | Operational | ✅ Hardened | Actor-scoped read/list; staff-gated writes. |
+| LaundryBag | Operational | ✅ Hardened | Actor-scoped parent work access; staff-gated writes. |
+| LaundryCountLine | Operational | ✅ Hardened | Actor-scoped work access; staff-gated count writes. |
+| LinenMovement | Operational ledger | ✅ Hardened | Actor-scoped movement access; staff-gated movement writes. |
+| IssueReport | Operational issue | ✅ Hardened | Actor-scoped issue visibility; staff-gated issue writes. |
+| WashLoadPlan | Operational planning | ✅ Hardened | Actor-scoped work/plan access; staff-gated writes. |
+| LaundryMachineLoadRule | Master data | ✅ Hardened | Staff read; management create/update. |
+| Resort | Master data | ✅ Hardened | Staff read; management create/update. |
+| Auth/User token issuance | Auth foundation | ⏳ Future hardening | Actor payload generation should be reviewed before freeze if auth endpoints are added. |
+| Billing/Finance | Future module | ⏳ Out of current scope | Requires separate policy inventory when module is introduced. |
+| Notification | Future module | ⏳ Out of current scope | Requires separate policy inventory when module is introduced. |
+| Reporting | Future module | ⏳ Out of current scope | Requires read visibility and aggregation policy review. |
+| Inventory beyond linen movement | Future module | ⏳ Out of current scope | Requires stock truth and movement boundary policy review. |
+
+## Runtime Guarantees
+
+When BE-07 verification passes, the current hardened backend domain guarantees:
+
+- protected runtime routes require actor context
+- read/list flows are actor-scoped
+- operational write flows are staff-gated
+- master-data write flows are management-gated
+- controllers do not own workspace or permission decisions
+- services own policy orchestration
+- repositories remain policy-free
+- client-supplied workspace boundary fields are not accepted as runtime scope
+- nested route order is protected where route collision is possible
+- source-level regression checks guard the current BE-07 architecture standard
+
 ## Hardened Domains
 
 The current BE-07 standardization pass covers:
@@ -228,6 +293,38 @@ node scripts/verify-runtime.js
 - management gates in master-data services
 - repositories remain policy-free
 
+## Definition of Done
+
+BE-07 is considered complete only when all of these are true:
+
+- all current protected routes require actor context
+- all active controllers use the shared policy context helper
+- all current read/list flows are actor-scoped
+- all current operational write flows are staff-gated
+- all current master-data write flows are management-gated
+- all hardened repositories are policy-free
+- client boundary fields are not used as runtime policy scope
+- `node scripts/verify-runtime.js` passes locally
+- policy unit tests exist for actor, workspace, and authorization policy helpers
+- representative service-level policy tests exist for at least one operational domain and one master-data domain
+- BE-07 documentation and return contract have been reviewed
+- any architecture-level change required by ADR policy has a recorded decision
+
+## Future Extensions / Out of Scope
+
+The following are intentionally outside the current BE-07 implementation scope unless explicitly assigned later:
+
+- attribute-based access control
+- delegated permissions
+- cross-resort sharing
+- organization-level multi-tenancy beyond current actor workspace boundary
+- audit policy
+- reporting aggregation policy
+- billing or finance policy
+- notification policy
+- frontend permission UI
+- Prisma schema redesign
+
 ## Current Status
 
 BE-07 is not frozen yet.
@@ -239,6 +336,7 @@ Current result:
 - Master-data flows are Laundry staff/management gated.
 - Repository policy leakage is guarded by runtime verification.
 - Controller policy context standard is established for active controllers.
+- Architecture governance sections are documented.
 - Final verification should be run in the development environment before freeze.
 
 ## Next Action
