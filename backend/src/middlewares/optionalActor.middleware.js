@@ -1,5 +1,6 @@
-const { normalizeActor } = require('../core/actor');
-const { setRequestActor } = require('../core/requestContext');
+const { normalizeAndAssertActor } = require('../core/actor');
+const { setActorOnRequest } = require('./authActor.middleware');
+const { env } = require('../config/env');
 
 const parseActorHeader = (rawActor) => {
   if (!rawActor) {
@@ -7,19 +8,21 @@ const parseActorHeader = (rawActor) => {
   }
 
   try {
-    return normalizeActor(JSON.parse(rawActor));
+    return normalizeAndAssertActor(JSON.parse(rawActor));
   } catch (_error) {
     return null;
   }
 };
 
 const optionalActorMiddleware = (req, _res, next) => {
+  if (!env.ENABLE_DEV_ACTOR_HEADER || req.context?.actor) {
+    return next();
+  }
+
   const actor = parseActorHeader(req.headers['x-dev-actor']);
 
   if (actor) {
-    req.context = req.context || {};
-    req.context.actor = actor;
-    setRequestActor(actor);
+    setActorOnRequest(req, actor);
   }
 
   return next();
