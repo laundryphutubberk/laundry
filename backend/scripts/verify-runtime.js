@@ -10,6 +10,8 @@ require('../src/routes');
 const laundryWorksRoutes = require('../src/routes/laundryWorks.routes');
 const laundryWorksService = require('../src/services/laundryWorks.service');
 const laundryWorksValidator = require('../src/validators/laundryWorks.validator');
+const laundryWorksBusiness = require('../src/domain/laundryWorks.business');
+const laundryWorksBusinessRepository = require('../src/repositories/laundryWorksBusiness.repository');
 
 const laundryBagsRoutes = require('../src/routes/laundryBags.routes');
 const laundryBagsService = require('../src/services/laundryBags.service');
@@ -51,6 +53,11 @@ const be03Checks = [
 ];
 
 const be05Checks = [
+  ['laundry work business initial status rule exported', typeof laundryWorksBusiness.assertInitialWorkStatus === 'function'],
+  ['laundry work business transition rule exported', typeof laundryWorksBusiness.assertWorkStatusTransition === 'function'],
+  ['laundry work business create data builder exported', typeof laundryWorksBusiness.buildCreateWorkData === 'function'],
+  ['laundry work business repository resort lookup exported', typeof laundryWorksBusinessRepository.findResortById === 'function'],
+  ['laundry work business repository workNo lookup exported', typeof laundryWorksBusinessRepository.findLaundryWorkByWorkNo === 'function'],
   ['laundry bags router loaded', typeof laundryBagsRoutes === 'function'],
   ['listLaundryBags service exported', typeof laundryBagsService.listLaundryBags === 'function'],
   ['getLaundryBagById service exported', typeof laundryBagsService.getLaundryBagById === 'function'],
@@ -72,4 +79,4 @@ if (failedChecks.length > 0) {
 
 console.log('Backend runtime verification loaded successfully.');
 console.log('BE-03 REST API layer verification loaded successfully.');
-console.log('BE-05 Laundry Bag business layer verification loaded successfully.');
+console.log('BE-05 Laundry Work and Laundry Bag business layer verification loaded successfully.');
