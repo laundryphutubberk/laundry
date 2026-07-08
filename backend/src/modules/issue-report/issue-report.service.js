@@ -1,13 +1,24 @@
 const issueReportsBusiness = require('./issue-report.business');
 const issueReportsRepository = require('./issue-report.repository');
+const { assertLaundryStaffActor } = require('../../policies/authorization.policy');
+const { buildRequiredActorResortScopedWhere } = require('../../policies/workspace.policy');
 const { normalizePagination } = require('../../shared/pagination');
 
-const listIssueReports = async (query = {}) => {
+const buildIssueReportWhere = ({ actor, status } = {}) => {
+  const where = buildRequiredActorResortScopedWhere({ actor });
+
+  if (status) {
+    where.status = status;
+  }
+
+  return where;
+};
+
+const listIssueReports = async (query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
 
-  const where = issueReportsRepository.buildWorkspaceWhere({
-    workspaceType: query.workspaceType,
-    resortId: query.resortId,
+  const where = buildIssueReportWhere({
+    actor: context.actor,
     status: query.status,
   });
 
@@ -31,14 +42,13 @@ const listIssueReports = async (query = {}) => {
   };
 };
 
-const createIssueReport = async (workId, payload = {}, query = {}) => {
-  return issueReportsRepository.transaction(async (tx) => {
-    const where = issueReportsRepository.buildWorkspaceWhere({
-      workspaceType: query.workspaceType,
-      resortId: query.resortId,
-    });
+const createIssueReport = async (workId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
 
-    const work = await issueReportsRepository.findWorkById({
+  return issueReportsRepository.transaction(async (tx) => {
+    const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
+
+    const work = await issueReportsRepository.findAccessibleWork({
       workId,
       where,
       client: tx,
@@ -67,12 +77,11 @@ const createIssueReport = async (workId, payload = {}, query = {}) => {
   });
 };
 
-const updateIssueReportStatus = async (issueId, payload = {}, query = {}) => {
+const updateIssueReportStatus = async (issueId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   return issueReportsRepository.transaction(async (tx) => {
-    const where = issueReportsRepository.buildWorkspaceWhere({
-      workspaceType: query.workspaceType,
-      resortId: query.resortId,
-    });
+    const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
 
     const issue = await issueReportsRepository.findIssueById({
       issueId,
