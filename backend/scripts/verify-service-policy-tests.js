@@ -187,6 +187,67 @@ const runOperationalWriteSuccessTest = async () => {
   );
 };
 
+const runScopedStatusUpdateTest = async () => {
+  const calls = [];
+  const repository = {
+    transaction: async (callback) => callback({ testClient: true }),
+    findLaundryWorkByIdForUpdate: async ({ workId, where, client }) => {
+      calls.push({ fn: 'findLaundryWorkByIdForUpdate', workId, where, client });
+      return {
+        id: Number(workId),
+        resortId: 10,
+        currentStatus: 'BAG_RECEIVED',
+      };
+    },
+    updateLaundryWorkStatus: async ({ workId, toStatus, client }) => {
+      calls.push({ fn: 'updateLaundryWorkStatus', workId, toStatus, client });
+      return {
+        id: Number(workId),
+        currentStatus: toStatus,
+      };
+    },
+    createWorkStatusLog: async ({ data, client }) => {
+      calls.push({ fn: 'createWorkStatusLog', data, client });
+      return { id: 501, ...data };
+    },
+  };
+
+  await withMockedModules(
+    {
+      '../repositories/laundryWorks.repository': repository,
+      '../repositories/laundryWorksBusiness.repository': {},
+    },
+    async () => {
+      clearModule('../src/services/laundryWorks.service');
+      const { updateLaundryWorkStatus } = require('../src/services/laundryWorks.service');
+
+      const updated = await updateLaundryWorkStatus(
+        9,
+        {
+          toStatus: 'FACTORY_RECEIVED',
+          note: 'Factory received',
+        },
+        { actor: resortStaffActor },
+      );
+
+      assert.equal(updated.id, 9);
+      assert.equal(updated.currentStatus, 'FACTORY_RECEIVED');
+
+      const lookupCall = calls.find((call) => call.fn === 'findLaundryWorkByIdForUpdate');
+      assert.deepEqual(lookupCall.where, { resortId: 10 });
+      assert.deepEqual(lookupCall.client, { testClient: true });
+
+      const updateCall = calls.find((call) => call.fn === 'updateLaundryWorkStatus');
+      assert.equal(updateCall.toStatus, 'FACTORY_RECEIVED');
+
+      const logCall = calls.find((call) => call.fn === 'createWorkStatusLog');
+      assert.equal(logCall.data.fromStatus, 'BAG_RECEIVED');
+      assert.equal(logCall.data.toStatus, 'FACTORY_RECEIVED');
+      assert.equal(logCall.data.note, 'Factory received');
+    },
+  );
+};
+
 const runMasterDataManagementPermissionTest = async () => {
   const createdRecords = [];
   const repository = {
@@ -224,6 +285,7 @@ const run = async () => {
   await runActorScopedReadServiceTest();
   await runOperationalWritePermissionTest();
   await runOperationalWriteSuccessTest();
+  await runScopedStatusUpdateTest();
   await runMasterDataManagementPermissionTest();
 
   console.log('BE-07 representative service policy tests passed.');
