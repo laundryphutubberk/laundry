@@ -43,7 +43,7 @@ BE-05 is done when all items below are complete:
 | LaundryWork | Required Business Layer | Aggregate root for receive-wash-return workflow | Complete | Owns work lifecycle, status transitions, resort scope, and operational state. |
 | LaundryBag | Required Business Layer | Intake unit for received laundry | Complete | Owns bag lifecycle, bag uniqueness within work, and receive/open/count readiness. |
 | LaundryCountLine | Required Business Layer | Real item count captured after opening bags | Complete | Owns counted quantity, item type, color group, issue quantity, and movement trigger. |
-| LinenMovement | Required Business Layer | Linen inventory movement history | Required | Owns inventory-affecting movement semantics and adjustment constraints. |
+| LinenMovement | Required Business Layer | Linen inventory movement history | Complete | Owns inventory-affecting movement semantics and adjustment constraints. |
 | LinenInventorySummary | Derived | Current inventory projection | No direct layer | Must be derived from movement/work history, not edited directly. |
 | IssueReport | Required Business Layer | Damage, missing, mismatch, and operational issue records | Required | Owns issue lifecycle, quantity impact, and reporting/resolution rules. |
 | WorkStatusLog | Internal Only | Audit/projection source for workflow history | Not required | Created by business domains; should not own business decisions. |
@@ -93,15 +93,21 @@ Photo/image handling is intentionally excluded from BE-05 because it is not part
   - `quantity` and `issueQuantity` must be non-negative.
   - `issueQuantity` must not exceed `quantity`.
   - First count line moves Work from `BAG_OPENED` to `ITEM_COUNTED` and creates a status log.
+- Linen Movement Business Layer
+  - Movement quantity must be valid for the movement type.
+  - Non-adjustment movements must be positive.
+  - Adjustment movements cannot be zero.
+  - Work-linked movements require a movement-ready Work status.
+  - Movement `resortId` must match the linked Work resort.
+  - Laundry Item Type must exist and be active before movement creation.
 
 ## Remaining Required Business Layers
 
 1. Resort Business Layer
-2. Linen Movement Business Layer
-3. Issue Report Business Layer
-4. Laundry Machine Load Rule Business Layer
-5. Wash Load Plan Business Layer
-6. Runtime verification expansion for all BE-05 required domains
+2. Issue Report Business Layer
+3. Laundry Machine Load Rule Business Layer
+4. Wash Load Plan Business Layer
+5. Runtime verification expansion for all BE-05 required domains
 
 ## Freeze Condition
 
