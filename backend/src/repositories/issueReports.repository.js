@@ -77,14 +77,25 @@ const createIssueReport = async ({ data, client } = {}) => {
   });
 };
 
-const updateIssueReportStatus = async ({ issueId, data, client } = {}) => {
+const updateIssueReportStatus = async ({ issueId, expectedStatus, data, client } = {}) => {
   const db = getClient(client);
 
-  return db.issueReport.update({
+  const updateResult = await db.issueReport.updateMany({
+    where: {
+      id: Number(issueId),
+      status: expectedStatus,
+    },
+    data,
+  });
+
+  if (updateResult.count === 0) {
+    return null;
+  }
+
+  return db.issueReport.findFirst({
     where: {
       id: Number(issueId),
     },
-    data,
     include: {
       work: true,
       itemType: true,
