@@ -73,11 +73,12 @@ const createLaundryWork = async ({ data, client } = {}) => {
   });
 };
 
-const findLaundryWorkByIdForUpdate = async ({ workId, client } = {}) => {
+const findLaundryWorkByIdForUpdate = async ({ workId, where, client } = {}) => {
   const db = getClient(client);
 
-  return db.laundryWork.findUnique({
+  return db.laundryWork.findFirst({
     where: {
+      ...where,
       id: Number(workId),
     },
   });
