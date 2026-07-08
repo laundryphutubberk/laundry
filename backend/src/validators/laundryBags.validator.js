@@ -1,7 +1,6 @@
 const { z } = require('zod');
 
 const bagStatusSchema = z.enum(['RECEIVED', 'OPENED', 'COUNTED', 'CLOSED']);
-const workspaceTypeSchema = z.enum(['LAUNDRY', 'RESORT']);
 
 const optionalPositiveIntString = z
   .string()
@@ -9,17 +8,12 @@ const optionalPositiveIntString = z
   .optional();
 
 const listLaundryBagsQuerySchema = z.object({
-  workspaceType: workspaceTypeSchema.optional(),
-  resortId: optionalPositiveIntString,
   status: bagStatusSchema.optional(),
   skip: optionalPositiveIntString,
   take: optionalPositiveIntString,
 });
 
-const getLaundryBagQuerySchema = z.object({
-  workspaceType: workspaceTypeSchema.optional(),
-  resortId: optionalPositiveIntString,
-});
+const getLaundryBagQuerySchema = z.object({}).strict();
 
 const createLaundryBagBodySchema = z.object({
   bagNo: z.string().trim().min(1),
