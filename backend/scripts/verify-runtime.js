@@ -11,6 +11,12 @@ const laundryWorksRoutes = require('../src/routes/laundryWorks.routes');
 const laundryWorksService = require('../src/services/laundryWorks.service');
 const laundryWorksValidator = require('../src/validators/laundryWorks.validator');
 
+const laundryBagsRoutes = require('../src/routes/laundryBags.routes');
+const laundryBagsService = require('../src/services/laundryBags.service');
+const laundryBagsValidator = require('../src/validators/laundryBags.validator');
+const laundryBagsBusiness = require('../src/domain/laundryBags.business');
+const laundryBagsRepository = require('../src/repositories/laundryBags.repository');
+
 const schemaPath = path.resolve(__dirname, '../prisma/schema.prisma');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 
@@ -24,7 +30,9 @@ const schemaChecks = [
   ['generator client', schema.includes('generator client')],
   ['datasource provider', schema.includes('provider = "postgresql"')],
   ['LaundryWork model', schema.includes('model LaundryWork')],
+  ['LaundryBag model', schema.includes('model LaundryBag')],
   ['WorkStatus enum', schema.includes('enum WorkStatus')],
+  ['BagStatus enum', schema.includes('enum BagStatus')],
 ];
 
 const be03Checks = [
@@ -42,7 +50,20 @@ const be03Checks = [
   ['BE-03 execution package is active', executionPackage.includes('Status: ACTIVE')],
 ];
 
-const failedChecks = [...schemaChecks, ...be03Checks].filter(([, passed]) => !passed);
+const be05Checks = [
+  ['laundry bags router loaded', typeof laundryBagsRoutes === 'function'],
+  ['listLaundryBags service exported', typeof laundryBagsService.listLaundryBags === 'function'],
+  ['getLaundryBagById service exported', typeof laundryBagsService.getLaundryBagById === 'function'],
+  ['createLaundryBag service exported', typeof laundryBagsService.createLaundryBag === 'function'],
+  ['updateLaundryBagStatus service exported', typeof laundryBagsService.updateLaundryBagStatus === 'function'],
+  ['laundry bag validator parseRequest exported', typeof laundryBagsValidator.parseRequest === 'function'],
+  ['laundry bag business receive rule exported', typeof laundryBagsBusiness.assertWorkCanReceiveBag === 'function'],
+  ['laundry bag business duplicate rule exported', typeof laundryBagsBusiness.assertUniqueBagNo === 'function'],
+  ['laundry bag business status update rule exported', typeof laundryBagsBusiness.buildBagStatusUpdateData === 'function'],
+  ['laundry bag repository bagNo lookup exported', typeof laundryBagsRepository.findLaundryBagByBagNo === 'function'],
+];
+
+const failedChecks = [...schemaChecks, ...be03Checks, ...be05Checks].filter(([, passed]) => !passed);
 
 if (failedChecks.length > 0) {
   const labels = failedChecks.map(([label]) => label).join(', ');
@@ -51,3 +72,4 @@ if (failedChecks.length > 0) {
 
 console.log('Backend runtime verification loaded successfully.');
 console.log('BE-03 REST API layer verification loaded successfully.');
+console.log('BE-05 Laundry Bag business layer verification loaded successfully.');
