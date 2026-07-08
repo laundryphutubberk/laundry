@@ -8,7 +8,8 @@
     "verify:runtime": "node scripts/verify-runtime.js",
     "verify:policy": "node scripts/verify-policy-tests.js",
     "verify:service-policy": "node scripts/verify-service-policy-tests.js",
-    "verify:be07": "npm run verify:policy && npm run verify:service-policy && npm run verify:runtime"
+    "verify:http-policy": "node scripts/verify-http-policy-tests.js",
+    "verify:be07": "npm run verify:policy && npm run verify:service-policy && npm run verify:http-policy && npm run verify:runtime"
   },
   "keywords": [],
   "author": "",
