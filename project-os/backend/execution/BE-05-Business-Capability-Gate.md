@@ -42,7 +42,7 @@ BE-05 is done when all items below are complete:
 | LaundryItemType | Lookup | Linen type reference and per-piece weight | Not required | Used by count/load rules but does not own workflow state. |
 | LaundryWork | Required Business Layer | Aggregate root for receive-wash-return workflow | Complete | Owns work lifecycle, status transitions, resort scope, and operational state. |
 | LaundryBag | Required Business Layer | Intake unit for received laundry | Complete | Owns bag lifecycle, bag uniqueness within work, and receive/open/count readiness. |
-| LaundryCountLine | Required Business Layer | Real item count captured after opening bags | Required | Owns counted quantity, item type, color group, issue quantity, and movement trigger. |
+| LaundryCountLine | Required Business Layer | Real item count captured after opening bags | Complete | Owns counted quantity, item type, color group, issue quantity, and movement trigger. |
 | LinenMovement | Required Business Layer | Linen inventory movement history | Required | Owns inventory-affecting movement semantics and adjustment constraints. |
 | LinenInventorySummary | Derived | Current inventory projection | No direct layer | Must be derived from movement/work history, not edited directly. |
 | IssueReport | Required Business Layer | Damage, missing, mismatch, and operational issue records | Required | Owns issue lifecycle, quantity impact, and reporting/resolution rules. |
@@ -85,16 +85,23 @@ Photo/image handling is intentionally excluded from BE-05 because it is not part
   - `bagNo` must be unique within a Laundry Work.
   - First bag received moves Work from `DRAFT` to `BAG_RECEIVED`.
   - Bag status transition is constrained by business rules.
+- Laundry Count Line Business Layer
+  - Work must be in a count-capable status before count lines are recorded.
+  - Bag must belong to the Work when a bag is referenced.
+  - Bag must be opened or already counted before receiving count lines.
+  - Laundry Item Type must exist and be active.
+  - `quantity` and `issueQuantity` must be non-negative.
+  - `issueQuantity` must not exceed `quantity`.
+  - First count line moves Work from `BAG_OPENED` to `ITEM_COUNTED` and creates a status log.
 
 ## Remaining Required Business Layers
 
 1. Resort Business Layer
-2. Laundry Count Line Business Layer
-3. Linen Movement Business Layer
-4. Issue Report Business Layer
-5. Laundry Machine Load Rule Business Layer
-6. Wash Load Plan Business Layer
-7. Runtime verification expansion for all BE-05 required domains
+2. Linen Movement Business Layer
+3. Issue Report Business Layer
+4. Laundry Machine Load Rule Business Layer
+5. Wash Load Plan Business Layer
+6. Runtime verification expansion for all BE-05 required domains
 
 ## Freeze Condition
 
