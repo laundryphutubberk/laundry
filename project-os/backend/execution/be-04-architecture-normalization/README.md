@@ -1,6 +1,6 @@
 # BE-04 Architecture Normalization
 
-Status: APPROVED_FOR_DOCS_ONLY
+Status: READY_FOR_FREEZE_REVIEW
 Scope: Backend Execution Package
 Owner: Backend Architecture
 Reviewer: Backend Engineering
@@ -10,10 +10,11 @@ Estimated Complexity: L
 ## Approval State
 
 Discovery: PASS
-Implementation: HOLD
-Current approved work: BE-04.00 Documentation Cleanup Only
+Implementation Gate: APPROVED
+Implementation: COMPLETE_FOR_CURRENT_MODULES
+Freeze: PROPOSED
 
-BE-04 implementation must wait for BE-02 Repository Boundary and BE-03 Controller/API Boundary unless the Chief Architect explicitly approves overlap.
+BE-04 implementation was approved after BE-01 Runtime Foundation, BE-02 Repository Foundation, and BE-03 Documentation & Contract were frozen.
 
 ## Purpose
 
@@ -25,378 +26,299 @@ Routes -> Controller -> Service -> Repository -> Prisma
 
 Side-layer ownership:
 
-- Controller: Validator and Response Mapper
-- Service: Policy, Guard, Domain Error, Transaction decision
-- Repository: Prisma query shape and Repository Mapper
+- Controller: Validator and Response Mapper / HTTP response ownership
+- Service: Application flow, domain decisions, transaction decision
+- Repository: Prisma query shape and data access
 
 ## Source of Truth
 
-BE-04 must follow:
+BE-04 follows:
 
-1. project-os/02-business/Laundry-Blueprint.md
-2. project-os/01-constitution/PROJECT-CONSTITUTION.md
-3. project-os/06-domain-model/schema.prisma
-4. project-os/03-engineering/Engineering Blueprint.md
-5. project-os/08-standards/DEVELOPMENT-STANDARDS.md
-6. project-os/backend/execution/README.md
-7. this execution package
+1. project-os/11-boot/FAST-BOOT-SUMMARY.md
+2. project-os/backend/BACKEND-MASTER-ROADMAP.md
+3. project-os/backend/execution/README.md
+4. project-os/02-business/Laundry-Blueprint.md
+5. project-os/01-constitution/PROJECT-CONSTITUTION.md
+6. project-os/06-domain-model/schema.prisma
+7. project-os/03-engineering/Engineering Blueprint.md
+8. project-os/08-standards/DEVELOPMENT-STANDARDS.md
+9. this execution package
 
 ## Scope
 
 BE-04 owns architecture normalization only. It does not add new product features.
 
-Current approved documentation-only scope may:
+Approved implementation scope:
 
-- correct stale path references from previous project templates
-- record discovered current backend architecture
-- record technical debt and architecture gaps
-- propose future BE-04 implementation order
+- Module Normalization
+- Controller Boundary
+- Repository Boundary Alignment
+- Layer Dependency Normalization
+- Module Ownership
+- Shared Layer Review
+- Architecture Cleanup
+- Architecture documentation
 
-Future implementation may:
+Stop conditions:
 
-- normalize module folder structure
-- add mandatory module index.js
-- separate controller, service, repository, mapper, validator, policy, guard, and errors files
-- move Prisma access out of controller/service into repository
-- move response shaping into response mapper
-- move Prisma-to-domain shaping into repository mapper
-- document exceptions where full normalization must wait for BE-05, BE-06, BE-07, or BE-08
+- Business Blueprint change required
+- schema.prisma change required
+- API Contract change required
+- Response Shape change required
+- Workspace Boundary change required
+- Runtime Behavior change required
+- ADR required
 
-## Initial Laundry Module Order
+None of the stop conditions were triggered during this implementation.
 
-Discovered current laundry backend modules:
+## Current Backend Modules
+
+Discovered and normalized current laundry backend modules:
 
 1. Laundry Works
 2. Laundry Bags
 
-Future module order must be re-evaluated after BE-02 and BE-03 freeze.
+No new business module was introduced.
 
-## Prerequisites
+## Implemented Layer Structure
 
-- BE-OS Execution System README is standard.
-- FAST-BOOT-SUMMARY is available.
-- BACKEND-MASTER-ROADMAP is available.
-- BE-01 Runtime Foundation is stable enough for BE-04 discovery.
-- BE-02 Repository Foundation should define repository boundary before BE-04 implementation.
-- BE-03 REST API Layer should freeze route/controller/API contract boundary before BE-04 implementation.
-- Current module behavior must be preserved unless a package explicitly authorizes a behavior change.
+Current normalized flow:
 
-## Dependencies
+backend/index.js -> backend/src/app.js -> backend/src/routes/index.js -> backend/src/routes/*.routes.js -> backend/src/controllers/*.controller.js -> backend/src/services/*.service.js -> backend/src/repositories/*.repository.js -> backend/src/core/prisma.js
 
-Upstream:
+## Module Structure
 
-- BE-01 Runtime Foundation
-- BE-02 Repository Foundation
-- BE-03 REST API Layer
-- BE-OS clean backend standards
+### laundryWorks
 
-Downstream:
-
-- BE-05 Business Layer
-- BE-06 Validation
-- BE-07 Policy and Domain Rules
-- BE-08 Transaction and Consistency
-- BE-09 Observability
-
-## Allowed Files
-
-Current BE-04.00 approved documentation files:
-
-- project-os/backend/execution/be-04-architecture-normalization/README.md
-- project-os/backend/execution/README.md
-- project-os/backend/BACKEND-MASTER-ROADMAP.md
-- project-os/11-boot/FAST-BOOT-SUMMARY.md
-
-Only documentation updates are allowed under BE-04.00.
-
-Future BE-04 implementation candidate paths are not approved yet. They must be re-confirmed after BE-02 and BE-03. Candidate laundry paths may include:
-
-- backend/src/modules/**
-- backend/src/routes/module.routes.js
-
-If the project keeps the current backend/src/routes, backend/src/services, and backend/src/validators structure after BE-02/BE-03, this list must be adjusted before implementation.
-
-## Forbidden Files
-
-BE-04.00 must not modify runtime code:
-
-- backend/src/**
-- backend/index.js
-- backend/prisma/schema.prisma
-- backend/prisma/migrations/**
-- frontend/**
-- .env files
-- package manager files
-
-BE-04 implementation must not modify unrelated app/domain infrastructure unless explicitly approved.
-
-BE-04 must not introduce new business workflows. If business logic gaps are discovered, document them for BE-05.
-
-## Parallel Tasks
-
-Parallel execution is allowed only when tasks do not share mutable ownership of the same module files or API contracts.
-
-Implementation HOLD rule:
-
-BE-04 implementation waits for BE-02 repository boundary and BE-03 controller/API boundary unless Chief Architect explicitly approves overlap.
-
-## Milestones
-
-Current approved milestone:
-
-- BE-04.00 Documentation cleanup and discovery report
-
-Future implementation milestones, not approved yet:
-
-- BE-04.01 Normalize Laundry Works module architecture
-- BE-04.02 Normalize Laundry Bags module architecture
-- BE-04.03 Extract shared validation helper if approved by BE-06 boundary
-- BE-04.04 Introduce repository boundary after BE-02 freeze
-- BE-04.05 Introduce controller boundary after BE-03 freeze
-- BE-04.06 Add response/repository mappers only where needed
-- BE-04.07 Architecture normalization review and freeze
-
-## Definition of Done
-
-BE-04.00 is complete when:
-
-- stale fieldops-be path references are removed
-- stale fieldops-fe path references are removed
-- stale docs/project-os execution path references are corrected to project-os
-- Laundry-specific backend root is documented as backend/
-- Architecture Discovery Report is recorded
-- runtime implementation remains untouched
-- schema and frontend remain untouched
-- BE-04 implementation remains HOLD
-
-Future BE-04 implementation is complete when:
-
-- target modules follow Routes -> Controller -> Service -> Repository -> Prisma
-- controllers contain HTTP-only logic
-- services do not import Prisma directly
-- repositories are the only module layer importing Prisma
-- response mappers own API DTO shape where present
-- repository mappers own Prisma-to-domain shape where present
-- module index.js exists where required
-- known exceptions are documented
-- no new product features are introduced
-
-## Review Checklist
-
-BE-04.00 reviewers must confirm:
-
-- documentation-only changes
-- no runtime backend code changes
-- no schema changes
-- no frontend changes
-- no controller/repository/module migration was performed
-- discovery report reflects current repository state
-- implementation remains HOLD
-
-Future implementation reviewers must confirm:
-
-- no controller imports Prisma
-- no service imports Prisma directly
-- repository methods accept explicit scope such as resortId where applicable
-- route middleware remains in the route layer
-- business behavior is preserved
-- deferred validation/policy/transaction work is recorded for later phases
-- changed files stay within approved allowed files
-
-## BE-04 Architecture Discovery Report
-
-Discovery status:
-
-- BE-04 Architecture Normalization Discovery: PASS
-- Implementation: HOLD
-- Approved work now: BE-04.00 Documentation Cleanup Only
-
-### Backend Root
-
-Confirmed current backend root: backend/
-
-Runtime entry: backend/index.js
-Runtime app bootstrap: backend/src/app.js
-Route root: backend/src/routes/index.js
-Current API mount: /api
-
-### Current Layer Structure
-
-Current flow:
-
-backend/index.js -> backend/src/app.js -> backend/src/routes/index.js -> backend/src/routes/*.routes.js -> backend/src/services/*.service.js -> backend/src/core/prisma.js
-
-### Dependency Direction
-
-Current dependency direction:
-
-Route -> Service -> Prisma
-
-Target future BE-04 direction:
-
-Route -> Controller -> Service -> Repository -> Prisma
-
-### Discovered Modules
-
-laundryWorks:
+Route:
 
 - backend/src/routes/laundryWorks.routes.js
+
+Controller:
+
+- backend/src/controllers/laundryWorks.controller.js
+
+Service:
+
 - backend/src/services/laundryWorks.service.js
+
+Repository:
+
+- backend/src/repositories/laundryWorks.repository.js
+
+Validator:
+
 - backend/src/validators/laundryWorks.validator.js
 
-laundryBags:
+### laundryBags
+
+Route:
 
 - backend/src/routes/laundryBags.routes.js
+
+Controller:
+
+- backend/src/controllers/laundryBags.controller.js
+
+Service:
+
 - backend/src/services/laundryBags.service.js
+
+Repository:
+
+- backend/src/repositories/laundryBags.repository.js
+
+Validator:
+
 - backend/src/validators/laundryBags.validator.js
 
-### Shared Runtime and Utilities
+## Layer Ownership
 
-- backend/src/config/env.js
-- backend/src/core/prisma.js
-- backend/src/core/runtimeShutdown.js
-- backend/src/core/health.js
-- backend/src/core/databaseHealth.js
-- backend/src/core/httpResponse.js
-- backend/src/core/requestContext.js
+### Route Layer
 
-### Shared Middleware
+Routes declare endpoints only and delegate HTTP execution to controllers.
 
-- backend/src/middlewares/requestId.middleware.js
-- backend/src/middlewares/requestContext.middleware.js
-- backend/src/middlewares/notFound.middleware.js
-- backend/src/middlewares/error.middleware.js
+Normalized route ownership:
 
-### Technical Debt List
-
-1. Routes currently contain controller behavior.
-2. Services currently contain data access behavior.
-3. Services import Prisma directly.
-4. Repository boundary does not exist yet.
-5. Controller boundary does not exist yet.
-6. Response mapper boundary does not exist yet.
-7. Repository mapper boundary does not exist yet.
-8. Module-level index.js boundary does not exist yet.
-9. Workspace scope helper logic is duplicated across services.
-10. parseRequest helper is duplicated across validators.
-11. Domain errors are plain Error objects with ad hoc statusCode.
-12. Transaction decisions currently live inside service files.
-13. BE-04 implementation would overlap BE-02 and BE-03 if started too early.
-
-### Architecture Gap List
-
-1. BE-04 canonical target requires Controller and Repository layers, but current backend only has Routes and Services.
-2. BE-04 future module paths must be re-confirmed because current backend is organized as routes, services, and validators.
-3. BE-04 must wait for BE-02 to define repository ownership before moving Prisma access.
-4. BE-04 must wait for BE-03 to freeze controller/API boundary before moving route handlers.
-5. Existing routes and services are functional and should not be moved during documentation cleanup.
-
-### Dependency Diagram
-
-index.js -> app.js -> routes/index.js -> laundryWorks.routes.js -> laundryWorks.service.js -> core/prisma.js
-index.js -> app.js -> routes/index.js -> laundryBags.routes.js -> laundryBags.service.js -> core/prisma.js
-
-### Layer Diagram
-
-Runtime Layer:
-
-- backend/index.js
-- backend/src/app.js
-
-Route Layer:
-
-- backend/src/routes/index.js
 - backend/src/routes/laundryWorks.routes.js
 - backend/src/routes/laundryBags.routes.js
 
-Validation Layer:
+### Controller Layer
 
-- backend/src/validators/laundryWorks.validator.js
-- backend/src/validators/laundryBags.validator.js
+Controllers own HTTP layer behavior:
 
-Service Layer:
+- parse request params/query/body through validators
+- call services
+- send response through shared response helper
+- forward errors to middleware
+
+Controllers must not import Prisma.
+
+Implemented controllers:
+
+- backend/src/controllers/laundryWorks.controller.js
+- backend/src/controllers/laundryBags.controller.js
+
+### Service Layer
+
+Services own application flow and domain-level decisions.
+
+Services must not import Prisma directly.
+
+Current services:
 
 - backend/src/services/laundryWorks.service.js
 - backend/src/services/laundryBags.service.js
 
-Core / Infrastructure Layer:
+Both services use repositories for data access.
 
-- backend/src/core/prisma.js
+### Repository Layer
+
+Repositories own data access and Prisma query shape.
+
+Current repositories:
+
+- backend/src/repositories/laundryWorks.repository.js
+- backend/src/repositories/laundryBags.repository.js
+
+Prisma is used only through repository/core infrastructure for these modules.
+
+### Shared Layer
+
+Shared layer remains technical only:
+
+- backend/src/shared/pagination.js
+- backend/src/shared/workspaceScope.js
 - backend/src/core/httpResponse.js
 - backend/src/core/requestContext.js
+- backend/src/core/prisma.js
 - backend/src/core/health.js
 - backend/src/core/databaseHealth.js
 - backend/src/core/runtimeShutdown.js
 - backend/src/config/env.js
 
-### Module Ownership Map
+No business flow was moved into shared layer.
 
-laundryWorks owns laundry work route/service/validator behavior and is a future candidate owner of laundry work controller/repository/mapper after approval.
+## Dependency Diagram
 
-laundryBags owns laundry bag route/service/validator behavior and is a future candidate owner of laundry bag controller/repository/mapper after approval.
+Runtime:
 
-shared core owns runtime support, Prisma bootstrap, response envelope, health, request context, and shutdown.
+backend/index.js -> backend/src/app.js -> backend/src/routes/index.js
 
-shared middleware owns request id, request context binding, not found, and error handling.
+Laundry Works:
 
-### Circular Dependency Discovery
+routes/laundryWorks.routes.js -> controllers/laundryWorks.controller.js -> services/laundryWorks.service.js -> repositories/laundryWorks.repository.js -> core/prisma.js
 
-No circular dependency was confirmed during documentation discovery.
+Laundry Bags:
 
-Current observed direction is mostly one-way:
+routes/laundryBags.routes.js -> controllers/laundryBags.controller.js -> services/laundryBags.service.js -> repositories/laundryBags.repository.js -> core/prisma.js
 
-runtime -> app -> routes -> services -> core/prisma
+Shared helpers:
 
-A deeper static import graph should be produced before implementation if more modules are added.
+services -> shared/pagination.js
+repositories -> shared/workspaceScope.js
+controllers -> validators and core/httpResponse.js
 
-### Proposal for BE-04 Implementation
+## Technical Debt Resolution Report
 
-Recommended safe sequence:
+Resolved in current BE-04 implementation:
 
-1. Complete BE-02.01 / BE-02.02 repository boundary first.
-2. Complete BE-03.01 / BE-03.02 API/controller contract freeze first.
-3. Re-open BE-04 implementation approval.
-4. Normalize one module at a time.
-5. Start with laundryWorks, then laundryBags.
-6. Preserve current API behavior and response contracts.
-7. Record validation, policy, and transaction gaps for BE-06, BE-07, and BE-08 instead of solving them inside BE-04.
+1. Route files no longer own controller behavior for current modules.
+2. Controller boundary exists for Laundry Works.
+3. Controller boundary exists for Laundry Bags.
+4. Service files for current modules do not import Prisma directly.
+5. Repository layer owns Prisma data access for current modules.
+6. Current route dependency now flows Route -> Controller -> Service -> Repository -> Prisma.
+7. Response shape remains centralized through core/httpResponse.js.
+8. Workspace scope remains centralized in shared/workspaceScope.js and repository usage.
 
-## Merge Contract
+Deferred technical debt:
 
-Every future implementation task must return:
+1. Module-level index.js was not introduced because the current backend does not yet use backend/src/modules/** as its active runtime structure.
+2. Response mapper files were not introduced because current response shape is unchanged and still simple.
+3. Repository mapper files were not introduced because current Prisma return shape is intentionally preserved.
+4. Domain-specific error classes remain deferred to BE-07 Policy and Domain Rules or a later error normalization phase.
+5. Generic validator helper extraction remains deferred to BE-06 Validation to avoid cross-phase coupling.
+6. Transaction model changes remain deferred to BE-08 Transaction and Consistency.
 
-- Commit List
-- Files Changed
-- Verification Result
-- Review Result
-- Known Exceptions
-- Ready For Merge
+## Architecture Gap List
 
-BE-04.00 documentation cleanup return contract:
+Remaining gaps after BE-04 current-module implementation:
 
-- Files Changed
-- Documentation Verification Result
-- Known Exceptions
-- Implementation Hold Confirmation
+1. backend/src/modules/** structure is not active; current runtime uses routes/controllers/services/repositories folders.
+2. No module index.js was created because module folder migration would be a larger runtime structure decision.
+3. Validators still duplicate parseRequest helper; defer to BE-06.
+4. Domain errors are still plain Error objects; defer to BE-07.
+5. Deeper static import graph should be generated if more modules are added later.
+
+## Verification Gate
+
+Checklist result:
+
+- Route does not hold business logic: PASS
+- Controller does not hold business logic: PASS
+- Service does not hold data access: PASS for current modules
+- Repository owns data access: PASS for current modules
+- Prisma used only by repository/core infrastructure: PASS for current modules
+- Dependency direction is correct: PASS
+- No circular dependency confirmed in discovered current modules: PASS
+- Runtime behavior changed: NO
+- Response shape changed: NO
+- Business flow changed: NO
+- Workspace boundary changed: NO
+- schema.prisma changed: NO
+- frontend changed: NO
+- API contract changed: NO
+- ADR required: NO
+
+## Verification Notes
+
+Runtime behavior was preserved by moving existing HTTP handler logic from route files into controller files without changing service calls, response helper usage, endpoint paths, HTTP status codes, or response envelope.
+
+Existing routes remain mounted through backend/src/routes/index.js.
+
+No schema, frontend, authentication, authorization, transaction model, or API behavior changes were made.
+
+## Commit List
+
+BE-04 documentation preparation:
+
+- 8376141dd34ddf6b1a55870a0081912d3baccb19 BE-04.00 Documentation cleanup for architecture discovery
+
+BE-04 implementation:
+
+- e688388b39ca655fe049238d4f023b493b51ce0e BE-04.01 Add Laundry Works controller boundary
+- 183174c6b10406ed7ecc3b76b157f7c50df23705 BE-04.01 Wire Laundry Works routes to controller
+- ebb0cb123e9617b3fe70dbddd828fa678d7347df BE-04.02 Add Laundry Bags controller boundary
+- dbb9c29812ff140650c05fba8aa73b7ba2aa544e BE-04.02 Wire Laundry Bags routes to controller
+
+BE-04 implementation documentation:
+
+- This document update records the Architecture Normalization Report, Layer Dependency Report, Technical Debt Resolution Report, Verification Report, and Freeze Proposal.
 
 ## Freeze Criteria
 
-BE-04 may be frozen when:
+BE-04 may be frozen for current backend modules when reviewers accept that:
 
-- BE-04.01 through BE-04.07 are complete or explicitly deferred
-- BE-04.08 review is approved
-- all known architecture deviations are recorded
-- BE-05 can start without re-deciding module structure
+- current modules follow Route -> Controller -> Service -> Repository -> Prisma
+- no runtime behavior changed
+- no response shape changed
+- no business flow changed
+- no workspace boundary changed
+- no forbidden files were touched
+- remaining gaps are intentionally deferred to BE-06, BE-07, BE-08, or future module-structure work
 
-BE-04.00 does not freeze BE-04 implementation.
+## Freeze Proposal
 
-## Next Phase
+Proposal:
 
-BE-04 implementation remains HOLD.
+BE-04 Architecture Normalization should enter FROZEN for the currently existing backend modules: Laundry Works and Laundry Bags.
 
 Recommended next backend execution order:
 
-1. BE-02 Repository Foundation
-2. BE-03 REST API Layer / Contract Freeze
-3. BE-04 Architecture Normalization Implementation
-4. BE-05 Business Layer
+1. BE-05 Business Layer
+2. BE-06 Validation
+3. BE-07 Policy and Domain Rules
+4. BE-08 Transaction and Consistency
+
+BE-04 should be reopened only if new backend modules are added or if the project explicitly decides to migrate from the current folder layout into backend/src/modules/**.
