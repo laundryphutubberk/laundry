@@ -19,6 +19,10 @@ const laundryBagsValidator = require('../src/validators/laundryBags.validator');
 const laundryBagsBusiness = require('../src/domain/laundryBags.business');
 const laundryBagsRepository = require('../src/repositories/laundryBags.repository');
 
+const laundryCountLinesService = require('../src/services/laundryCountLines.service');
+const laundryCountLinesBusiness = require('../src/domain/laundryCountLines.business');
+const laundryCountLinesRepository = require('../src/repositories/laundryCountLines.repository');
+
 const schemaPath = path.resolve(__dirname, '../prisma/schema.prisma');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 
@@ -33,6 +37,7 @@ const schemaChecks = [
   ['datasource provider', schema.includes('provider = "postgresql"')],
   ['LaundryWork model', schema.includes('model LaundryWork')],
   ['LaundryBag model', schema.includes('model LaundryBag')],
+  ['LaundryCountLine model', schema.includes('model LaundryCountLine')],
   ['WorkStatus enum', schema.includes('enum WorkStatus')],
   ['BagStatus enum', schema.includes('enum BagStatus')],
 ];
@@ -68,6 +73,12 @@ const be05Checks = [
   ['laundry bag business duplicate rule exported', typeof laundryBagsBusiness.assertUniqueBagNo === 'function'],
   ['laundry bag business status update rule exported', typeof laundryBagsBusiness.buildBagStatusUpdateData === 'function'],
   ['laundry bag repository bagNo lookup exported', typeof laundryBagsRepository.findLaundryBagByBagNo === 'function'],
+  ['listLaundryCountLines service exported', typeof laundryCountLinesService.listLaundryCountLines === 'function'],
+  ['createLaundryCountLine service exported', typeof laundryCountLinesService.createLaundryCountLine === 'function'],
+  ['laundry count line work readiness rule exported', typeof laundryCountLinesBusiness.assertWorkCanAcceptCountLine === 'function'],
+  ['laundry count line quantity rule exported', typeof laundryCountLinesBusiness.assertCountQuantities === 'function'],
+  ['laundry count line data builder exported', typeof laundryCountLinesBusiness.buildCreateCountLineData === 'function'],
+  ['laundry count line repository item type lookup exported', typeof laundryCountLinesRepository.findItemTypeById === 'function'],
 ];
 
 const failedChecks = [...schemaChecks, ...be03Checks, ...be05Checks].filter(([, passed]) => !passed);
@@ -79,4 +90,4 @@ if (failedChecks.length > 0) {
 
 console.log('Backend runtime verification loaded successfully.');
 console.log('BE-03 REST API layer verification loaded successfully.');
-console.log('BE-05 Laundry Work and Laundry Bag business layer verification loaded successfully.');
+console.log('BE-05 Laundry Work, Laundry Bag, and Count Line business layer verification loaded successfully.');
