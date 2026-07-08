@@ -1,6 +1,7 @@
 const laundryWorksBusiness = require('../domain/laundryWorks.business');
 const laundryWorksRepository = require('../repositories/laundryWorks.repository');
 const laundryWorksBusinessRepository = require('../repositories/laundryWorksBusiness.repository');
+const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
@@ -57,7 +58,9 @@ const getLaundryWorkById = async (workId, query = {}, context = {}) => {
   return work;
 };
 
-const createLaundryWork = async (payload = {}) => {
+const createLaundryWork = async (payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   if (!payload.resortId) {
     const error = new Error('resortId is required');
     error.statusCode = 400;
@@ -87,7 +90,9 @@ const createLaundryWork = async (payload = {}) => {
   });
 };
 
-const updateLaundryWorkStatus = async (workId, payload = {}) => {
+const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
   if (!payload.toStatus) {
     const error = new Error('toStatus is required');
     error.statusCode = 400;
@@ -95,8 +100,11 @@ const updateLaundryWorkStatus = async (workId, payload = {}) => {
   }
 
   return laundryWorksRepository.transaction(async (tx) => {
+    const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
+
     const currentWork = await laundryWorksRepository.findLaundryWorkByIdForUpdate({
       workId,
+      where,
       client: tx,
     });
 
