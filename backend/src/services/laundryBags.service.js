@@ -3,8 +3,8 @@ const laundryBagsRepository = require('../repositories/laundryBags.repository');
 const { buildResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
-const buildLaundryBagWhere = ({ workspaceType, resortId, status } = {}) => {
-  const where = buildResortScopedWhere({ workspaceType, resortId });
+const buildLaundryBagWhere = ({ actor, workspaceType, resortId, status } = {}) => {
+  const where = buildResortScopedWhere({ actor, workspaceType, resortId });
 
   if (status) {
     where.status = status;
@@ -13,8 +13,9 @@ const buildLaundryBagWhere = ({ workspaceType, resortId, status } = {}) => {
   return where;
 };
 
-const assertWorkAccessible = async (client, workId, query = {}) => {
+const assertWorkAccessible = async (client, workId, query = {}, context = {}) => {
   const where = buildLaundryBagWhere({
+    actor: context.actor,
     workspaceType: query.workspaceType,
     resortId: query.resortId,
   });
@@ -34,13 +35,14 @@ const assertWorkAccessible = async (client, workId, query = {}) => {
   return work;
 };
 
-const listLaundryBags = async (workId, query = {}) => {
+const listLaundryBags = async (workId, query = {}, context = {}) => {
   const { skip, take } = normalizePagination(query);
 
-  await assertWorkAccessible(undefined, workId, query);
+  await assertWorkAccessible(undefined, workId, query, context);
 
   const where = {
     ...buildLaundryBagWhere({
+      actor: context.actor,
       workspaceType: query.workspaceType,
       resortId: query.resortId,
       status: query.status,
@@ -64,9 +66,10 @@ const listLaundryBags = async (workId, query = {}) => {
   };
 };
 
-const getLaundryBagById = async (workId, bagId, query = {}) => {
+const getLaundryBagById = async (workId, bagId, query = {}, context = {}) => {
   const where = {
     ...buildLaundryBagWhere({
+      actor: context.actor,
       workspaceType: query.workspaceType,
       resortId: query.resortId,
     }),
@@ -85,9 +88,9 @@ const getLaundryBagById = async (workId, bagId, query = {}) => {
   return bag;
 };
 
-const createLaundryBag = async (workId, payload = {}) => {
+const createLaundryBag = async (workId, payload = {}, context = {}) => {
   return laundryBagsRepository.transaction(async (tx) => {
-    const work = await assertWorkAccessible(tx, workId);
+    const work = await assertWorkAccessible(tx, workId, {}, context);
     laundryBagsBusiness.assertWorkCanReceiveBag(work);
 
     const existingBag = await laundryBagsRepository.findLaundryBagByBagNo({
@@ -130,9 +133,9 @@ const createLaundryBag = async (workId, payload = {}) => {
   });
 };
 
-const updateLaundryBagStatus = async (workId, bagId, payload = {}) => {
+const updateLaundryBagStatus = async (workId, bagId, payload = {}, context = {}) => {
   return laundryBagsRepository.transaction(async (tx) => {
-    await assertWorkAccessible(tx, workId);
+    await assertWorkAccessible(tx, workId, {}, context);
 
     const currentBag = await laundryBagsRepository.findLaundryBagById({
       where: {
