@@ -195,6 +195,15 @@ const actorScopedServiceSources = [
   ['wash load plans service', serviceSources.washLoadPlans],
 ];
 
+const staffWriteServiceSources = [
+  ['laundry works service', serviceSources.laundryWorks],
+  ['laundry bags service', serviceSources.laundryBags],
+  ['laundry count lines service', serviceSources.laundryCountLines],
+  ['linen movements service', serviceSources.linenMovements],
+  ['issue reports service', serviceSources.issueReports],
+  ['wash load plans service', serviceSources.washLoadPlans],
+];
+
 const authorizationScopedServiceSources = [
   ['load rules service', serviceSources.loadRules],
   ['resorts service', serviceSources.resorts],
@@ -213,7 +222,6 @@ const be07Checks = [
   ['optional actor middleware exported', typeof optionalActorMiddlewareModule.optionalActorMiddleware === 'function'],
   ['error middleware exported', typeof errorMiddlewareModule.errorMiddleware === 'function'],
   ['nested bag route mounted before work route', nestedBagRouteIndex >= 0 && workRouteIndex >= 0 && nestedBagRouteIndex < workRouteIndex],
-  ['work service write methods call staff authorization policy', serviceSources.laundryWorks.includes('assertLaundryStaffActor')],
   ['work repository update lookup accepts scoped where', repositorySources.laundryWorks.includes('findLaundryWorkByIdForUpdate = async ({ workId, where, client }')],
   ...repositoriesWithoutWorkspacePolicy.map(([label, repository]) => [
     `${label} does not export buildWorkspaceWhere`,
@@ -222,6 +230,10 @@ const be07Checks = [
   ...actorScopedServiceSources.map(([label, source]) => [
     `${label} calls strict actor workspace policy`,
     source.includes('buildRequiredActorResortScopedWhere'),
+  ]),
+  ...staffWriteServiceSources.map(([label, source]) => [
+    `${label} write flow calls staff authorization policy`,
+    source.includes('assertLaundryStaffActor'),
   ]),
   ...authorizationScopedServiceSources.map(([label, source]) => [
     `${label} calls authorization policy`,
