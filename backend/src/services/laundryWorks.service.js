@@ -1,4 +1,6 @@
+const laundryWorksBusiness = require('../domain/laundryWorks.business');
 const laundryWorksRepository = require('../repositories/laundryWorks.repository');
+const laundryWorksBusinessRepository = require('../repositories/laundryWorksBusiness.repository');
 const { normalizePagination } = require('../shared/pagination');
 
 const listLaundryWorks = async (query = {}) => {
@@ -53,17 +55,26 @@ const createLaundryWork = async (payload = {}) => {
     throw error;
   }
 
-  const workNo = payload.workNo || `LW-${Date.now()}`;
+  return laundryWorksRepository.transaction(async (tx) => {
+    laundryWorksBusiness.assertInitialWorkStatus(payload.currentStatus);
 
-  return laundryWorksRepository.createLaundryWork({
-    data: {
-      workNo,
-      resortId: Number(payload.resortId),
-      bagCount: payload.bagCount ? Number(payload.bagCount) : 0,
-      receivedDate: payload.receivedDate ? new Date(payload.receivedDate) : null,
-      note: payload.note || null,
-      currentStatus: payload.currentStatus || 'DRAFT',
-    },
+    const resort = await laundryWorksBusinessRepository.findResortById({
+      resortId: payload.resortId,
+      client: tx,
+    });
+    laundryWorksBusiness.assertResortCanReceiveWork(resort);
+
+    const data = laundryWorksBusiness.buildCreateWorkData(payload);
+    const existingWork = await laundryWorksBusinessRepository.findLaundryWorkByWorkNo({
+      workNo: data.workNo,
+      client: tx,
+    });
+    laundryWorksBusiness.assertUniqueWorkNo(existingWork);
+
+    return laundryWorksRepository.createLaundryWork({
+      data,
+      client: tx,
+    });
   });
 };
 
@@ -86,6 +97,8 @@ const updateLaundryWorkStatus = async (workId, payload = {}) => {
       throw error;
     }
 
+    laundryWorksBusiness.assertWorkStatusTransition(currentWork.currentStatus, payload.toStatus);
+
     const updatedWork = await laundryWorksRepository.updateLaundryWorkStatus({
       workId,
       toStatus: payload.toStatus,
@@ -93,14 +106,11 @@ const updateLaundryWorkStatus = async (workId, payload = {}) => {
     });
 
     await laundryWorksRepository.createWorkStatusLog({
-      data: {
-        workId: Number(workId),
+      data: laundryWorksBusiness.buildStatusLogData({
+        workId,
         fromStatus: currentWork.currentStatus,
-        toStatus: payload.toStatus,
-        changedById: payload.changedById ? Number(payload.changedById) : null,
-        changedByName: payload.changedByName || null,
-        note: payload.note || null,
-      },
+        payload,
+      }),
       client: tx,
     });
 
