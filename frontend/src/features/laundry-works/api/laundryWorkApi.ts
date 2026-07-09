@@ -214,6 +214,14 @@ export type CreateLaundryBagInput = {
   meta: LaundryWorkRequestMeta
 }
 
+export type ListLaundryCountLinesInput = {
+  workId?: string | number
+  bagId?: string | number
+  skip?: number
+  take?: number
+  meta: LaundryWorkRequestMeta
+}
+
 export type CreateLaundryCountLineInput = {
   workId?: string | number
   bagId?: string | number
@@ -221,6 +229,21 @@ export type CreateLaundryCountLineInput = {
   colorGroup?: string
   quantity: number
   note?: string
+  meta: LaundryWorkRequestMeta
+}
+
+export type UpdateLaundryCountLineInput = {
+  lineId?: string | number
+  bagId?: string | number | null
+  itemTypeName?: string
+  colorGroup?: string | null
+  quantity?: number
+  note?: string | null
+  meta: LaundryWorkRequestMeta
+}
+
+export type DeleteLaundryCountLineInput = {
+  lineId?: string | number
   meta: LaundryWorkRequestMeta
 }
 
@@ -486,6 +509,20 @@ export const laundryWorkApi = {
     return mapResult(result, normalizeBag)
   },
 
+  async listLaundryCountLines({ workId, bagId, skip, take, meta }: ListLaundryCountLinesInput): Promise<ApiResult<LaundryCountLineDTO[]>> {
+    if (!workId) {
+      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
+    }
+
+    const params = new URLSearchParams()
+    if (bagId !== undefined) params.set('bagId', String(bagId))
+    if (skip !== undefined) params.set('skip', String(skip))
+    if (take !== undefined) params.set('take', String(take))
+
+    const result = await requestBackend<any[]>(`/laundry/works/${workId}/count-lines${params.toString() ? `?${params.toString()}` : ''}`, meta)
+    return mapResult(result, (items) => (items || []).map(normalizeCountLine))
+  },
+
   async createLaundryCountLine({ workId, meta, ...input }: CreateLaundryCountLineInput): Promise<ApiResult<LaundryCountLineDTO>> {
     if (!workId) {
       return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
@@ -504,6 +541,28 @@ export const laundryWorkApi = {
       body: JSON.stringify(input),
     })
     return mapResult(result, normalizeCountLine)
+  },
+
+  async updateLaundryCountLine({ lineId, meta, ...input }: UpdateLaundryCountLineInput): Promise<ApiResult<LaundryCountLineDTO>> {
+    if (!lineId) {
+      return createClientFailure(meta.requestId, 'MISSING_COUNT_LINE_ID', 'Missing Laundry Count Line id.', 400)
+    }
+
+    const result = await requestBackend<any>(`/laundry/count-lines/${lineId}`, meta, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    })
+    return mapResult(result, normalizeCountLine)
+  },
+
+  async deleteLaundryCountLine({ lineId, meta }: DeleteLaundryCountLineInput): Promise<ApiResult<{ deleted: true }>> {
+    if (!lineId) {
+      return createClientFailure(meta.requestId, 'MISSING_COUNT_LINE_ID', 'Missing Laundry Count Line id.', 400)
+    }
+
+    return requestBackend<{ deleted: true }>(`/laundry/count-lines/${lineId}`, meta, {
+      method: 'DELETE',
+    })
   },
 
   async updateLaundryWorkStatus({
