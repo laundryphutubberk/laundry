@@ -15,14 +15,22 @@ const pageClassName = 'min-h-screen bg-slate-100/70'
 const mainClassName = 'mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-5 pb-28 md:px-6 lg:px-8 xl:px-10'
 const detailGridClassName = 'grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[390px_minmax(0,1fr)]'
 
+const toPositiveQuantity = (value: CountTableRow['quantity']) => {
+  const quantity = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(quantity) && quantity > 0 ? quantity : undefined
+}
+
 function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId }: LaundryWorkRuntimeHostRenderProps) {
   const handleUpdateCountLine = async (row: CountTableRow) => {
     if (!row.id) return
 
+    const quantity = toPositiveQuantity(row.quantity)
+    if (!quantity) return
+
     await actions.countLine.updateCountLine(row.id, {
-      itemTypeName: typeof row.type === 'string' ? row.type : undefined,
-      colorGroup: typeof row.color === 'string' ? row.color : undefined,
-      quantity: typeof row.quantity === 'number' ? row.quantity : Number(row.quantity || 0),
+      itemTypeName: typeof row.type === 'string' && row.type.trim() ? row.type.trim() : undefined,
+      colorGroup: typeof row.color === 'string' && row.color.trim() ? row.color.trim() : undefined,
+      quantity,
     })
   }
 
