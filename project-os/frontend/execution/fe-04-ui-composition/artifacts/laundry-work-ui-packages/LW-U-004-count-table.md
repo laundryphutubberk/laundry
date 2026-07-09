@@ -3,11 +3,11 @@
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
 Track: UI Package
-Runtime Source: `FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
+Runtime Source: `project-os/frontend/execution/fe-03-runtime-contract/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
 
-Implement the Laundry Work count table component from projection rows and column metadata.
+Implement the Laundry Work count table component from `CountTableProjection`.
 
 ## Target File
 
@@ -15,31 +15,25 @@ Implement the Laundry Work count table component from projection rows and column
 
 ## Runtime Contract Mapping
 
-Uses projection output from detail data:
+Uses `countTable` from `LaundryWorkDetailProjection`:
 
-```text
-LaundryWorkDetailDTO
-- countLines
-
-LaundryWorkViewModel.detail
-- countSummary
+```ts
+type CountTableProjection = {
+  columns: Array<{ key: string; label: string; align?: 'left' | 'right' | 'center' }>
+  rows: Array<Record<string, string | number | null | undefined>>
+  emptyText: string
+}
 ```
-
-Projection must convert raw count lines into UI rows and columns before this component receives them.
 
 ## Inputs
 
 ```text
-rows[]
-  - id
-  - display fields by column key
-columns[]
-  - key
-  - label
-  - align
+countTable
+  - columns[]
+  - rows[]
+  - emptyText
 loading optional
 error optional
-emptyText optional
 title optional
 ```
 
@@ -65,5 +59,5 @@ title optional
 - Mobile fallback is usable without horizontal dependency.
 - Empty count state is explicit.
 - Loading/error states render safely.
-- Row values and column labels come from projection only.
-- FE-05 can pass count-line view models directly without UI refactor.
+- Row values and column labels come from `CountTableProjection` only.
+- FE-05 can pass count table projection directly without UI refactor.
