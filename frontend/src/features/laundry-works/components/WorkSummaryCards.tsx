@@ -47,10 +47,10 @@ export function WorkSummaryCards({
     return (
       <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4" aria-busy="true">
         {[0, 1, 2, 3].map((item) => (
-          <article key={item} className="min-h-[130px] rounded-[26px] border bg-white p-6 shadow-sm">
+          <article key={item} className="min-h-[148px] rounded-[28px] border bg-white p-7 shadow-sm">
             <div className="h-4 w-28 animate-pulse rounded bg-slate-100" />
-            <div className="mt-5 h-11 w-20 animate-pulse rounded bg-slate-100" />
-            <div className="mt-4 h-3 w-36 animate-pulse rounded bg-slate-100" />
+            <div className="mt-6 h-12 w-24 animate-pulse rounded bg-slate-100" />
+            <div className="mt-5 h-3 w-36 animate-pulse rounded bg-slate-100" />
           </article>
         ))}
       </section>
@@ -59,7 +59,7 @@ export function WorkSummaryCards({
 
   if (error) {
     return (
-      <section className="rounded-[26px] border border-red-100 bg-red-50 p-5 text-sm text-red-800 shadow-sm">
+      <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-sm text-red-800 shadow-sm">
         {error}
       </section>
     )
@@ -75,14 +75,14 @@ export function WorkSummaryCards({
         const valueTone = valueClassName[toneKey] || valueClassName.default
         const value = item.value ?? '-'
         return (
-          <article key={item.id || item.key || index} className={`min-h-[130px] rounded-[26px] border p-6 shadow-sm ${tone}`}>
-            <p className="text-sm font-semibold text-slate-500">{item.label}</p>
-            <div className="mt-4 flex items-end justify-between gap-4">
-              <p className={`break-words text-[40px] font-black leading-none tracking-tight ${valueTone}`}>{value}</p>
-              {item.unit ? <span className="pb-1.5 text-sm font-semibold text-slate-500">{item.unit}</span> : null}
+          <article key={item.id || item.key || index} className={`flex min-h-[148px] flex-col justify-between rounded-[28px] border p-7 shadow-sm ${tone}`}>
+            <p className="text-sm font-black text-slate-500">{item.label}</p>
+            <div className="mt-5 flex items-end justify-between gap-4">
+              <p className={`break-words text-[46px] font-black leading-none tracking-tight ${valueTone}`}>{value}</p>
+              {item.unit ? <span className="pb-2 text-sm font-black text-slate-500">{item.unit}</span> : null}
             </div>
             {item.description || item.helperText ? (
-              <p className="mt-4 text-xs leading-relaxed text-slate-500">{item.description || item.helperText}</p>
+              <p className="mt-5 text-xs font-semibold leading-relaxed text-slate-500">{item.description || item.helperText}</p>
             ) : null}
             {!items.length && index === 0 ? <span className="sr-only">{emptyText}</span> : null}
           </article>
