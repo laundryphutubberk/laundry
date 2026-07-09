@@ -3,11 +3,11 @@
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
 Track: UI Composition Package
-Runtime Source: `project-os/frontend/execution/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
+Runtime Source: `project-os/frontend/execution/fe-03-runtime-contract/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
 
-Compose the Laundry Work Detail screen from projection, policy, and controller outputs.
+Compose the Laundry Work Detail screen from FE-03 projection, policy, and controller outputs.
 
 ## Target Files
 
@@ -18,44 +18,73 @@ frontend/src/features/laundry-works/dev/laundryWorkDetail.preview.tsx
 
 ## Runtime Contract Mapping
 
-FE-03 defines that UI must consume controller output only:
+FE-03 declares the UI projection boundary:
 
 ```text
-Runtime State
+API boundary
 ↓
-Workflow Projection
+Runtime server snapshot
 ↓
-Policy Results
+Runtime state builder
 ↓
-LaundryWorkProjection
+WorkflowStep builder
 ↓
-Controller Output
+Policy snapshot
 ↓
-UI Composition
+Projection builder
+↓
+Controller hook
+↓
+UI package
 ```
 
-This package maps that output into the screen composition below.
+FE-04 consumes only:
+
+```text
+WorkflowStep[]
+LaundryWorkDetailProjection
+ActionBarProjection
+projection slot map
+```
 
 ## Screen Composition
 
 ```text
 LaundryWorkDetailPage
 ↓
-WorkHeader
+WorkHeader                 from workHeader slot
 ↓
-WorkSummaryCards
+WorkSummaryCards           from summaryCards slot
 ↓
 WorkTimeline + Main Content
   ↓
-  CountTable
+  WorkTimeline             from workflowTimeline slot
   ↓
-  IssuePanel
+  MainTaskPanel            from mainTaskPanel slot
   ↓
-  ImagePanel
+  CountTable               from countTable slot
   ↓
-  HistoryPanel
+  IssuePanel               from issuePanel slot
+  ↓
+  ImagePanel               from imagePanel slot
+  ↓
+  HistoryPanel             from historyPanel slot
 ↓
-BottomActionBar
+BottomActionBar            from actionBar slot
+```
+
+## Component Packages
+
+```text
+LW-U-001 WorkHeader
+LW-U-002 WorkTimeline
+LW-U-003 WorkSummaryCards
+LW-U-004 CountTable
+LW-U-005 IssuePanel
+LW-U-006 ImagePanel
+LW-U-007 HistoryPanel
+LW-U-008 BottomActionBar
+LW-U-009 MainTaskPanel
 ```
 
 ## Inputs
@@ -63,30 +92,26 @@ BottomActionBar
 Inputs must be supplied by projection / policy / controller props:
 
 ```text
-projection.work
-projection.status
-projection.workspace
-projection.meta
-projection.summaryCards
-projection.timeline
-projection.nextHint
-projection.countColumns
-projection.countRows
-projection.issues
-projection.images
-projection.history
-actions.work
-actions.issue
-actions.image
-state.loading
-state.error
-state.actionStatus
+LaundryWorkDetailProjection.loading
+LaundryWorkDetailProjection.empty
+LaundryWorkDetailProjection.error
+LaundryWorkDetailProjection.requestId
+LaundryWorkDetailProjection.workHeader
+LaundryWorkDetailProjection.workflowTimeline
+LaundryWorkDetailProjection.summaryCards
+LaundryWorkDetailProjection.mainTaskPanel
+LaundryWorkDetailProjection.countTable
+LaundryWorkDetailProjection.issuePanel
+LaundryWorkDetailProjection.imagePanel
+LaundryWorkDetailProjection.historyPanel
+LaundryWorkDetailProjection.actionBar
 ```
 
 ## Outputs
 
 - Screen-level UI composition.
-- Child component props passed from projection/action/state model.
+- Component props mapped from projection/action/state model.
+- Empty/loading/error display routing.
 - No direct API/store/runtime access.
 
 ## Rules
@@ -99,6 +124,7 @@ state.actionStatus
 - No workflow transition calculation.
 - No policy decision inside screen JSX.
 - No resort/workspace filtering inside UI.
+- No business metric calculation inside UI.
 - Composition may choose layout order only.
 
 ## Responsive Rules
@@ -134,8 +160,8 @@ Sticky BottomActionBar
 
 ## Acceptance Criteria
 
-- Laundry Work Detail renders from projection/controller props only.
-- Child packages LW-U-001 through LW-U-008 are composed in the required order.
+- Laundry Work Detail renders from `LaundryWorkDetailProjection` and `ActionBarProjection` only.
+- Child packages LW-U-001 through LW-U-009 are composed in the required order.
 - Empty/loading/error state can be passed through safely.
 - Screen remains responsive on desktop, tablet, and mobile.
 - FE-05 can connect controller output without changing presentation component boundaries.
