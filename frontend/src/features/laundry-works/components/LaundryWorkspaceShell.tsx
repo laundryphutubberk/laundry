@@ -32,8 +32,8 @@ function LaundryBrandMark() {
 
 export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) {
   return (
-    <div className="min-h-screen bg-slate-100/70 text-[16px] lg:pl-[300px]">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[300px] overflow-y-auto bg-gradient-to-b from-blue-950 via-blue-950 to-slate-950 text-white shadow-2xl shadow-blue-950/20 lg:block">
+    <div className="min-h-screen bg-slate-100/70 text-[16px] lg:pl-[280px]">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] overflow-y-auto bg-gradient-to-b from-blue-950 via-blue-950 to-slate-950 text-white shadow-2xl shadow-blue-950/20 lg:block">
         <div className="flex h-28 items-center gap-3 border-b border-white/10 px-5">
           <LaundryBrandMark />
           <div className="min-w-0">
