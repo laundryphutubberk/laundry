@@ -44,11 +44,11 @@ export function CountTable({
 
   if (loading) {
     return (
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-busy="true">
-        <div className="border-b border-slate-100 p-5">
+      <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm" aria-busy="true">
+        <div className="border-b border-slate-100 p-6">
           <div className="h-5 w-40 animate-pulse rounded bg-slate-100" />
         </div>
-        <div className="space-y-3 p-5">
+        <div className="space-y-3 p-6">
           {[0, 1, 2].map((item) => (
             <div key={item} className="h-10 animate-pulse rounded bg-slate-100" />
           ))}
@@ -59,7 +59,7 @@ export function CountTable({
 
   if (error) {
     return (
-      <section className="rounded-2xl border border-red-100 bg-red-50 p-5 text-red-800 shadow-sm">
+      <section className="rounded-[22px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
         <h2 className="text-lg font-bold">{title}</h2>
         <p className="mt-2 text-sm">{error}</p>
       </section>
@@ -68,7 +68,7 @@ export function CountTable({
 
   if (!rows.length) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-bold text-slate-950">{title}</h2>
         <p className="mt-3 rounded-xl border border-dashed p-4 text-sm text-slate-500">{emptyText}</p>
       </section>
@@ -76,10 +76,10 @@ export function CountTable({
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-5">
+    <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-6">
         <h2 className="text-lg font-bold text-slate-950">{title}</h2>
-        <button type="button" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-blue-900 hover:bg-slate-50">
+        <button type="button" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-slate-50">
           ดูรายละเอียด
         </button>
       </div>
@@ -89,7 +89,7 @@ export function CountTable({
           <thead className="bg-slate-50 text-xs text-slate-500">
             <tr>
               {tableColumns.map((column) => (
-                <th key={column.key} className={`px-5 py-3 font-semibold ${alignClassName[column.align || 'left']}`}>
+                <th key={column.key} className={`px-6 py-4 font-semibold ${alignClassName[column.align || 'left']}`}>
                   {column.label}
                 </th>
               ))}
@@ -99,7 +99,7 @@ export function CountTable({
             {rows.map((row, index) => (
               <tr key={row.id || index} className="text-slate-700 hover:bg-slate-50/80">
                 {tableColumns.map((column) => (
-                  <td key={column.key} className={`px-5 py-4 ${alignClassName[column.align || 'left']}`}>
+                  <td key={column.key} className={`px-6 py-4.5 ${alignClassName[column.align || 'left']}`}>
                     {row[column.key] ?? '-'}
                   </td>
                 ))}
