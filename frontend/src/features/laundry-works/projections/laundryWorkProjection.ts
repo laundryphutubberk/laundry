@@ -1,8 +1,159 @@
-/**
- * Laundry Work projection placeholder.
- *
- * Owns UI-safe derived read models for Laundry Work.
- * FE-01 skeleton only.
- */
+import type { ApiFailure, LaundryWorkDetailDTO } from '../api/laundryWorkApi'
+import type { LaundryWorkPolicyActionModel } from '../policies/laundryWork.policy'
 
-export {}
+export type LaundryWorkDetailProjectionInput = {
+  detail?: LaundryWorkDetailDTO | null
+  actionModel?: LaundryWorkPolicyActionModel
+  loading?: boolean
+  error?: ApiFailure['error'] | null
+  requestId?: string
+}
+
+const statusLabels: Record<string, string> = {
+  DRAFT: 'ร่างงาน',
+  BAG_RECEIVED: 'รับถุงแล้ว',
+  FACTORY_RECEIVED: 'โรงซักรับแล้ว',
+  BAG_OPENED: 'เปิดถุงแล้ว',
+  ITEM_COUNTED: 'นับชิ้นแล้ว',
+  TYPE_SORTED: 'แยกประเภทแล้ว',
+  COLOR_SORTED: 'แยกสีแล้ว',
+  DATA_RECORDED: 'บันทึกข้อมูลแล้ว',
+  RETURNED: 'ส่งกลับแล้ว',
+  CLOSED: 'ปิดงานแล้ว',
+  CANCELLED: 'ยกเลิก',
+}
+
+const workflowSteps = [
+  { key: 'receive_bags', label: 'รับถุง', backendStatus: 'BAG_RECEIVED' },
+  { key: 'factory_receive', label: 'โรงซักรับถุง', backendStatus: 'FACTORY_RECEIVED' },
+  { key: 'open_bag', label: 'เปิดถุง', backendStatus: 'BAG_OPENED' },
+  { key: 'count_items', label: 'นับชิ้น', backendStatus: 'ITEM_COUNTED' },
+  { key: 'sort_type', label: 'แยกประเภท', backendStatus: 'TYPE_SORTED' },
+  { key: 'sort_color', label: 'แยกสี', backendStatus: 'COLOR_SORTED' },
+  { key: 'record_data', label: 'บันทึกข้อมูล', backendStatus: 'DATA_RECORDED' },
+  { key: 'return_work', label: 'ส่งกลับ', backendStatus: 'RETURNED' },
+  { key: 'close_work', label: 'ปิดงาน', backendStatus: 'CLOSED' },
+]
+
+const formatDate = (value?: string | null) => {
+  if (!value) return undefined
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+const buildTimeline = (currentStatus?: string) => {
+  const currentIndex = workflowSteps.findIndex((step) => step.backendStatus === currentStatus)
+
+  return workflowSteps.map((step, index) => ({
+    id: step.key,
+    key: step.key,
+    label: step.label,
+    state: currentStatus === 'CANCELLED'
+      ? 'cancelled'
+      : currentIndex === -1
+        ? 'pending'
+        : index < currentIndex
+          ? 'completed'
+          : index === currentIndex
+            ? 'current'
+            : 'pending',
+    description: statusLabels[step.backendStatus] || step.backendStatus,
+  }))
+}
+
+export function createLaundryWorkDetailProjection({
+  detail,
+  actionModel,
+  loading = false,
+  error = null,
+  requestId,
+}: LaundryWorkDetailProjectionInput) {
+  const work = detail?.work
+  const statusLabel = statusLabels[work?.currentStatus || ''] || work?.currentStatus || 'ไม่ระบุสถานะ'
+  const issueCount = detail?.issues?.length ?? work?.issueCount ?? 0
+
+  return {
+    loading,
+    error: error?.message || null,
+    empty: !loading && !error && !work,
+    requestId: requestId || error?.requestId,
+    projection: {
+      work: work
+        ? {
+            id: work.id,
+            workNo: work.workNo,
+            title: work.workNo,
+            description: work.note || 'รายละเอียดงานซัก',
+            resortName: work.resortName,
+            currentStatus: work.currentStatus,
+            receivedAt: formatDate(work.receivedDate),
+            updatedAt: formatDate(work.updatedAt),
+          }
+        : null,
+      status: {
+        label: statusLabel,
+      },
+      workspace: {
+        resortName: work?.resortName,
+        workspaceLabel: 'Laundry Work Detail',
+      },
+      meta: {
+        receivedAt: formatDate(work?.receivedDate),
+        updatedAt: formatDate(work?.updatedAt),
+      },
+      timeline: buildTimeline(work?.currentStatus),
+      nextHint: work ? `สถานะปัจจุบัน: ${statusLabel}` : undefined,
+      summaryCards: [
+        { key: 'bag-count', label: 'จำนวนถุง', value: work?.bagCount ?? '-', unit: 'ถุง' },
+        { key: 'count-lines', label: 'รายการที่นับ', value: detail?.countLines?.length ?? '-', unit: 'รายการ' },
+        { key: 'issue-count', label: 'ปัญหา', value: issueCount, unit: 'รายการ', tone: issueCount > 0 ? 'warning' : 'success' },
+        { key: 'status', label: 'สถานะ', value: statusLabel },
+      ],
+      countColumns: [
+        { key: 'type', label: 'ประเภทผ้า' },
+        { key: 'category', label: 'หมวดหมู่' },
+        { key: 'color', label: 'สี' },
+        { key: 'quantity', label: 'จำนวน', align: 'right' },
+        { key: 'weight', label: 'น้ำหนัก', align: 'right' },
+      ],
+      countRows: (detail?.countLines || []).map((line) => ({
+        id: line.id,
+        type: line.itemTypeName || '-',
+        category: line.category || '-',
+        color: line.colorGroup || '-',
+        quantity: line.quantity,
+        weight: line.weight ?? '-',
+      })),
+      issues: (detail?.issues || []).map((issue) => ({
+        id: issue.id,
+        issueType: issue.issueType,
+        title: issue.issueType,
+        description: issue.description || undefined,
+        quantity: issue.quantity,
+        itemTypeName: issue.itemTypeName,
+        status: issue.status,
+        reportedAt: formatDate(issue.reportedAt),
+        reportedBy: issue.reportedBy,
+      })),
+      images: [],
+      history: (detail?.statusLogs || []).map((event) => ({
+        id: event.id,
+        eventLabel: statusLabels[event.toStatus] || event.toStatus,
+        note: event.note || undefined,
+        timestamp: formatDate(event.changedAt),
+        actorName: event.changedByName,
+      })),
+    },
+    actions: {
+      work: actionModel?.work,
+      issue: actionModel?.issue,
+      image: actionModel?.image,
+    },
+    state: {
+      isBusy: loading,
+      isSavingDraft: false,
+      isContinuing: false,
+    },
+  }
+}
