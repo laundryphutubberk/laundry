@@ -63,23 +63,23 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 hidden h-[72px] items-center justify-end border-b border-slate-200 bg-white/90 px-6 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/80 lg:flex">
-          <div className="flex items-center gap-3 text-slate-700">
-            <button type="button" className="relative flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-lg shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
+        <header className="sticky top-0 z-30 hidden h-[72px] items-center justify-end border-b border-white/10 bg-gradient-to-r from-blue-950 via-blue-950 to-slate-950 px-6 shadow-lg shadow-blue-950/10 lg:flex">
+          <div className="flex items-center gap-3 text-blue-50">
+            <button type="button" className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-lg text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/15">
               ♫
               <span className="absolute -right-1 -top-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">12</span>
             </button>
-            <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-black shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50">
+            <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-base font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/15">
               ?
             </button>
-            <span className="mx-1 h-8 w-px bg-slate-200" aria-hidden="true" />
+            <span className="mx-1 h-8 w-px bg-white/15" aria-hidden="true" />
             <div className="flex items-center gap-3 pl-1">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 text-lg font-black text-white shadow-sm">ส</div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 text-lg font-black text-white shadow-sm">ส</div>
               <div className="text-right">
-                <p className="text-base font-black leading-tight text-slate-950">สมชาย</p>
-                <p className="mt-0.5 text-xs font-semibold text-slate-500">ผู้จัดการโรงซัก</p>
+                <p className="text-base font-black leading-tight text-white">สมชาย</p>
+                <p className="mt-0.5 text-xs font-semibold text-blue-100/75">ผู้จัดการโรงซัก</p>
               </div>
-              <span className="text-base text-slate-500">⌄</span>
+              <span className="text-base text-blue-100/75">⌄</span>
             </div>
           </div>
         </header>
