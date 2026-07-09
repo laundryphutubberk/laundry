@@ -3,6 +3,7 @@ import { CountTable } from '../components/CountTable'
 import { HistoryPanel } from '../components/HistoryPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { IssuePanel } from '../components/IssuePanel'
+import { MainTaskPanel } from '../components/MainTaskPanel'
 import { WorkHeader } from '../components/WorkHeader'
 import { WorkSummaryCards } from '../components/WorkSummaryCards'
 import { WorkTimeline } from '../components/WorkTimeline'
@@ -24,6 +25,7 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
               <WorkTimeline loading />
             </aside>
             <div className="flex min-w-0 flex-col gap-5">
+              <MainTaskPanel loading />
               <CountTable loading />
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
                 <IssuePanel loading />
@@ -80,6 +82,8 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
           </aside>
 
           <div className="flex min-w-0 flex-col gap-5">
+            <MainTaskPanel mainTaskPanel={projection.mainTaskPanel} />
+
             <CountTable
               rows={projection.countRows}
               columns={projection.countColumns}
