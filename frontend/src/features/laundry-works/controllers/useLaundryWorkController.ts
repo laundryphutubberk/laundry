@@ -152,22 +152,24 @@ export function useLaundryWorkController() {
     setError(null)
     setRequestId(meta.requestId)
 
-    const result = await laundryWorkApi.updateLaundryWorkStatus({
-      workId,
-      toStatus,
-      meta,
-    })
+    try {
+      const result = await laundryWorkApi.updateLaundryWorkStatus({
+        workId,
+        toStatus,
+        meta,
+      })
 
-    setRequestId(result.meta.requestId)
+      setRequestId(result.meta.requestId)
 
-    if (!result.ok) {
-      setError(result.error)
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+
+      await loadDetail()
+    } finally {
       setIsContinuing(false)
-      return
     }
-
-    await loadDetail()
-    setIsContinuing(false)
   }, [detail?.work.currentStatus, loadDetail, policyActionModel.work.continue.allowed, sessionContext, workId])
 
   const createBag = useCallback(
@@ -179,24 +181,26 @@ export function useLaundryWorkController() {
       setError(null)
       setRequestId(meta.requestId)
 
-      const result = await laundryWorkApi.createLaundryBag({
-        workId,
-        bagNo: input.bagNo,
-        note: input.note,
-        receivedAt: new Date().toISOString(),
-        meta,
-      })
+      try {
+        const result = await laundryWorkApi.createLaundryBag({
+          workId,
+          bagNo: input.bagNo,
+          note: input.note,
+          receivedAt: new Date().toISOString(),
+          meta,
+        })
 
-      setRequestId(result.meta.requestId)
+        setRequestId(result.meta.requestId)
 
-      if (!result.ok) {
-        setError(result.error)
+        if (!result.ok) {
+          setError(result.error)
+          return
+        }
+
+        await loadDetail()
+      } finally {
         setIsCreatingBag(false)
-        return
       }
-
-      await loadDetail()
-      setIsCreatingBag(false)
     },
     [loadDetail, policyActionModel.bag.createBag.allowed, sessionContext, workId],
   )
@@ -210,26 +214,28 @@ export function useLaundryWorkController() {
       setError(null)
       setRequestId(meta.requestId)
 
-      const result = await laundryWorkApi.createLaundryCountLine({
-        workId,
-        bagId: input.bagId,
-        itemTypeName: input.itemTypeName,
-        colorGroup: input.colorGroup,
-        quantity: input.quantity,
-        note: input.note,
-        meta,
-      })
+      try {
+        const result = await laundryWorkApi.createLaundryCountLine({
+          workId,
+          bagId: input.bagId,
+          itemTypeName: input.itemTypeName,
+          colorGroup: input.colorGroup,
+          quantity: input.quantity,
+          note: input.note,
+          meta,
+        })
 
-      setRequestId(result.meta.requestId)
+        setRequestId(result.meta.requestId)
 
-      if (!result.ok) {
-        setError(result.error)
+        if (!result.ok) {
+          setError(result.error)
+          return
+        }
+
+        await loadDetail()
+      } finally {
         setIsCreatingCountLine(false)
-        return
       }
-
-      await loadDetail()
-      setIsCreatingCountLine(false)
     },
     [loadDetail, policyActionModel.countLine.createCountLine.allowed, sessionContext, workId],
   )
@@ -246,22 +252,24 @@ export function useLaundryWorkController() {
       setError(null)
       setRequestId(meta.requestId)
 
-      const result = await laundryWorkApi.updateLaundryCountLine({
-        lineId,
-        ...input,
-        meta,
-      })
+      try {
+        const result = await laundryWorkApi.updateLaundryCountLine({
+          lineId,
+          ...input,
+          meta,
+        })
 
-      setRequestId(result.meta.requestId)
+        setRequestId(result.meta.requestId)
 
-      if (!result.ok) {
-        setError(result.error)
+        if (!result.ok) {
+          setError(result.error)
+          return
+        }
+
+        await loadDetail()
+      } finally {
         setIsUpdatingCountLine(false)
-        return
       }
-
-      await loadDetail()
-      setIsUpdatingCountLine(false)
     },
     [loadDetail, policyActionModel.countLine.createCountLine.allowed, sessionContext],
   )
@@ -275,21 +283,23 @@ export function useLaundryWorkController() {
       setError(null)
       setRequestId(meta.requestId)
 
-      const result = await laundryWorkApi.deleteLaundryCountLine({
-        lineId,
-        meta,
-      })
+      try {
+        const result = await laundryWorkApi.deleteLaundryCountLine({
+          lineId,
+          meta,
+        })
 
-      setRequestId(result.meta.requestId)
+        setRequestId(result.meta.requestId)
 
-      if (!result.ok) {
-        setError(result.error)
+        if (!result.ok) {
+          setError(result.error)
+          return
+        }
+
+        await loadDetail()
+      } finally {
         setIsDeletingCountLine(false)
-        return
       }
-
-      await loadDetail()
-      setIsDeletingCountLine(false)
     },
     [loadDetail, policyActionModel.countLine.createCountLine.allowed, sessionContext],
   )
