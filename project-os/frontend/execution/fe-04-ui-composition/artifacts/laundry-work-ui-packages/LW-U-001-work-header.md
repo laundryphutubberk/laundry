@@ -2,42 +2,94 @@
 
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
-Track: UI
+Track: UI Package
+Runtime Source: `FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
-Implement the Laundry Work header component.
+
+Implement the Laundry Work header component from projection output.
 
 ## Target File
+
 `frontend/src/features/laundry-works/components/WorkHeader.tsx`
 
-## Scope
-- Display work identity
-- Display current status label
-- Display resort/customer context when available
-- Display created/updated metadata when available
-- Provide a compact summary for the current work
+## Runtime Contract Mapping
 
-## Dependencies
-- `LaundryWorkDetail.blueprint.md`
-- `laundryWorkProjection.ts`
-- `laundryWork.policy.ts`
+Uses projection output derived from:
+
+```text
+LaundryWorkDetailVM
+- id
+- workNo
+- resortName
+- currentStatus
+- statusLabel
+- receivedDateLabel
+- returnedAtLabel optional
+- closedAtLabel optional
+- note optional
+
+LaundryWorkViewModel.workspace
+- workspaceType
+- resortScoped
+
+LaundryWorkViewModel.meta
+- lastUpdatedAt
+```
 
 ## Inputs
-- Laundry Work projection
-- Workspace context
-- Status display metadata
+
+```text
+work
+  - id
+  - workNo
+  - resortName/customerName
+  - status/currentStatus
+  - receivedAt/receivedDateLabel
+  - updatedAt/lastUpdatedAt
+  - note/description
+status
+  - label
+  - tone
+workspace
+  - workspaceLabel
+  - resortName
+meta
+  - receivedAt
+  - updatedAt
+  - ownerName
+actions optional
+  - label
+  - variant
+  - disabled
+  - onClick
+loading optional
+error optional
+```
 
 ## Outputs
-- Presentational header component only
+
+- Presentational screen header.
+- Work identity area.
+- Status badge display.
+- Metadata cards.
+- Header toolbar buttons when provided.
 
 ## Rules
-- No API calls
-- No workflow calculation
-- No direct status transition logic
-- No workspace filtering logic
+
+- No API calls.
+- No store access.
+- No workflow calculation.
+- No status transition logic.
+- No workspace filtering logic.
+- No policy checks inside component.
+- Header actions only call provided handlers.
 
 ## Acceptance Criteria
-- Renders safely with partial projection data
-- Responsive on desktop and mobile
-- Does not own business logic
-- Uses feature-owned types or projection output only
+
+- Renders safely with partial projection data.
+- Shows work number/status/resort/date/owner when provided.
+- Loading and error states render safely.
+- Responsive on desktop/tablet/mobile.
+- Component remains presentation-only.
+- FE-05 can pass controller/projection props without changing component boundary.
