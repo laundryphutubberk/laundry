@@ -21,7 +21,7 @@ export function RegisterPage() {
         email,
         password,
         displayName: displayName || undefined,
-        role: 'LAUNDRY_STAFF',
+        role: 'LAUNDRY_MANAGER',
         workspaceType: 'LAUNDRY',
       })
       navigate('/workspace/laundry/works', { replace: true })
@@ -37,7 +37,7 @@ export function RegisterPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-md rounded-[32px] border border-white/80 bg-white p-8 shadow-xl shadow-slate-200/70">
         <p className="text-sm font-black uppercase tracking-wide text-blue-700">Laundry Management System</p>
         <h1 className="mt-2 text-3xl font-black text-slate-950">ลงทะเบียน</h1>
-        <p className="mt-2 text-sm font-medium text-slate-500">สร้างบัญชี Laundry Workspace สำหรับเริ่มใช้งานระบบ</p>
+        <p className="mt-2 text-sm font-medium text-slate-500">สร้างบัญชีผู้จัดการ Laundry Workspace สำหรับเริ่มใช้งานระบบ</p>
 
         <label className="mt-8 block">
           <span className="text-sm font-bold text-slate-700">ชื่อที่แสดง</span>
