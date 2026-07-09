@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 
 import { LaundryWorkspaceLayout } from '../layouts/LaundryWorkspaceLayout'
+import { LaundryWorkCreatePage } from '../features/laundry-works/pages/LaundryWorkCreatePage'
 import { LaundryWorkListPage } from '../features/laundry-works/pages/LaundryWorkListPage'
 import { LaundryWorkDetailPage } from '../features/laundry-works/pages/LaundryWorkDetailPage'
 
@@ -16,6 +17,10 @@ export const laundryWorkRoutes = [
       {
         path: 'works',
         element: <LaundryWorkListPage />,
+      },
+      {
+        path: 'works/new',
+        element: <LaundryWorkCreatePage />,
       },
       {
         path: 'works/:workId',
