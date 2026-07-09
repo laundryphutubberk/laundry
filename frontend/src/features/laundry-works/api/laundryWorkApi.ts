@@ -6,7 +6,7 @@ export type LaundryWorkRequestMeta = {
   action: string
   actorId?: number | string
   actorRole?: string
-  workspaceType: WorkspaceType
+  workspaceType?: WorkspaceType
   resortId?: number
   token?: string
   createdAt: string
@@ -285,7 +285,7 @@ async function requestBackend<T>(path: string, meta: LaundryWorkRequestMeta, ini
     headers.set('X-Request-Id', meta.requestId)
     headers.set('X-Feature', meta.feature)
     headers.set('X-Action', meta.action)
-    headers.set('X-Workspace-Type', meta.workspaceType)
+    if (meta.workspaceType) headers.set('X-Workspace-Type', meta.workspaceType)
     if (meta.resortId) headers.set('X-Resort-Id', String(meta.resortId))
 
     const response = await fetch(`${API_BASE_URL}${path}`, {
