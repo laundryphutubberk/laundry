@@ -3,11 +3,11 @@
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
 Track: UI Package
-Runtime Source: `FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
+Runtime Source: `project-os/frontend/execution/fe-03-runtime-contract/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
 
-Implement the Laundry Work history panel component from projected status log / activity history.
+Implement the Laundry Work history panel component from `HistoryPanelProjection`.
 
 ## Target File
 
@@ -15,32 +15,31 @@ Implement the Laundry Work history panel component from projected status log / a
 
 ## Runtime Contract Mapping
 
-Uses projection output from:
+Uses `historyPanel` from `LaundryWorkDetailProjection`:
 
-```text
-LaundryWorkDetailDTO
-- statusLogs
-
-LaundryWorkViewModel.detail
-- timeline
-- loading
-- error
+```ts
+type HistoryPanelProjection = {
+  events: Array<{
+    id: string | number
+    label: string
+    timestampLabel?: string
+    actorName?: string
+    note?: string
+  }>
+  emptyText: string
+}
 ```
 
-Projection must convert raw logs/status history into display-safe events before this component receives them.
+Projection must convert raw status logs/events into display-safe events before this component receives them.
 
 ## Inputs
 
 ```text
-events[]
-  - id
-  - label/title/eventLabel
-  - description/note
-  - timestamp/createdAt/time
-  - actorName
+historyPanel
+  - events[]
+  - emptyText
 loading optional
 error optional
-emptyText optional
 ```
 
 ## Outputs
@@ -66,4 +65,4 @@ emptyText optional
 - Loading/error states render safely.
 - Mobile layout remains readable.
 - Component is presentation-only.
-- FE-05 can pass projected status logs without component redesign.
+- FE-05 can pass `HistoryPanelProjection` without component redesign.
