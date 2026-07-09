@@ -6,13 +6,13 @@ import { IssuePanel } from '../components/IssuePanel'
 import { WorkHeader } from '../components/WorkHeader'
 import { WorkSummaryCards } from '../components/WorkSummaryCards'
 import { WorkTimeline } from '../components/WorkTimeline'
-import { LaundryWorkRuntimeHost } from '../runtime/LaundryWorkRuntimeHost'
+import { LaundryWorkRuntimeHost, type LaundryWorkRuntimeHostRenderProps } from '../runtime/LaundryWorkRuntimeHost'
 
 const pageClassName = 'min-h-screen bg-slate-100/70'
 const mainClassName = 'mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-5 pb-28 md:px-6 lg:px-8 xl:px-10'
 const detailGridClassName = 'grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[390px_minmax(0,1fr)]'
 
-function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId }: any) {
+function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId }: LaundryWorkRuntimeHostRenderProps) {
   if (loading) {
     return (
       <div className={pageClassName}>
@@ -80,7 +80,12 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
           </aside>
 
           <div className="flex min-w-0 flex-col gap-5">
-            <CountTable rows={projection.countRows} columns={projection.countColumns} />
+            <CountTable
+              rows={projection.countRows}
+              columns={projection.countColumns}
+              summaryItems={projection.countSummaryItems}
+              remark={projection.countRemark}
+            />
 
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
               <IssuePanel issues={projection.issues} actions={actions.issue} />
