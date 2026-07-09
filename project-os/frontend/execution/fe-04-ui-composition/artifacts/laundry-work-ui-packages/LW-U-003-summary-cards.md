@@ -3,11 +3,11 @@
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
 Track: UI Package
-Runtime Source: `FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
+Runtime Source: `project-os/frontend/execution/fe-03-runtime-contract/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
 
-Implement Laundry Work summary cards from UI-ready projection metrics.
+Implement Laundry Work summary cards from `SummaryCardProjection[]`.
 
 ## Target File
 
@@ -15,29 +15,29 @@ Implement Laundry Work summary cards from UI-ready projection metrics.
 
 ## Runtime Contract Mapping
 
-Uses projection output from:
+Uses `summaryCards` from `LaundryWorkDetailProjection`:
 
-```text
-LaundryWorkViewModel.detail
-- bagsSummary
-- countSummary
-- issueSummary
-- loading
-- error
+```ts
+type SummaryCardProjection = {
+  key: 'bag-count' | 'count-lines' | 'issue-count' | 'status' | string
+  label: string
+  value: string | number
+  unit?: string
+  tone?: 'default' | 'warning' | 'danger' | 'success'
+  helperText?: string
+}
 ```
-
-Projection is responsible for creating display labels, units, formatted values, and tones.
 
 ## Inputs
 
 ```text
-items[]
-  - id/key
+summaryCards[]
+  - key
   - label
   - value
   - unit
-  - description/helperText
   - tone
+  - helperText
 loading optional
 error optional
 emptyText optional
@@ -64,5 +64,5 @@ emptyText optional
 - Cards render consistently across desktop/tablet/mobile.
 - Missing values degrade gracefully.
 - Loading and error states render safely.
-- Values come from projection only.
-- FE-05 can map `bagsSummary`, `countSummary`, and `issueSummary` into this package without changing component boundaries.
+- Values come from `SummaryCardProjection[]` only.
+- FE-05 can pass `summaryCards` without changing component boundary.
