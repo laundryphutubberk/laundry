@@ -65,7 +65,7 @@ const assertCountQuantities = ({ quantity, issueQuantity }) => {
   }
 };
 
-const buildCreateCountLineData = ({ work, payload }) => {
+const buildCreateCountLineData = ({ work, payload, itemType }) => {
   const quantity = Number(payload.quantity || 0);
   const issueQuantity = Number(payload.issueQuantity || 0);
 
@@ -75,12 +75,24 @@ const buildCreateCountLineData = ({ work, payload }) => {
     workId: work.id,
     bagId: payload.bagId ? Number(payload.bagId) : null,
     resortId: work.resortId,
-    itemTypeId: Number(payload.itemTypeId),
+    itemTypeId: Number(itemType?.id || payload.itemTypeId),
     colorGroup: payload.colorGroup || null,
     quantity,
     issueQuantity,
     note: payload.note || null,
   };
+};
+
+const buildUpdateCountLineData = ({ payload, itemType }) => {
+  const data = {};
+
+  if (payload.bagId !== undefined) data.bagId = payload.bagId === null ? null : Number(payload.bagId);
+  if (itemType) data.itemTypeId = Number(itemType.id);
+  if (payload.colorGroup !== undefined) data.colorGroup = payload.colorGroup || null;
+  if (payload.quantity !== undefined) data.quantity = Number(payload.quantity);
+  if (payload.note !== undefined) data.note = payload.note || null;
+
+  return data;
 };
 
 const shouldMoveWorkToItemCounted = (currentStatus) => currentStatus === 'BAG_OPENED';
@@ -92,5 +104,6 @@ module.exports = {
   assertItemTypeCanBeCounted,
   assertCountQuantities,
   buildCreateCountLineData,
+  buildUpdateCountLineData,
   shouldMoveWorkToItemCounted,
 };
