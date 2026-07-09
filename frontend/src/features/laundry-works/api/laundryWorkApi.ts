@@ -181,6 +181,16 @@ export type ListLaundryWorksInput = {
   meta: LaundryWorkRequestMeta
 }
 
+export type CreateLaundryWorkInput = {
+  resortId: number
+  workNo?: string
+  bagCount?: number
+  receivedDate?: string
+  note?: string
+  currentStatus?: string
+  meta: LaundryWorkRequestMeta
+}
+
 export type UpdateLaundryWorkStatusInput = {
   workId?: string | number
   toStatus: string
@@ -393,6 +403,18 @@ export const laundryWorkApi = {
       items: (items || []).map(normalizeWork),
       pagination: result.meta.pagination,
     }))
+  },
+
+  async createLaundryWork({ meta, ...input }: CreateLaundryWorkInput): Promise<ApiResult<LaundryWorkDTO>> {
+    if (!input.resortId) {
+      return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'resortId is required.', 400)
+    }
+
+    const result = await requestBackend<any>('/laundry/works', meta, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+    return mapResult(result, normalizeWork)
   },
 
   async getLaundryWorkDetail({ workId, meta }: GetLaundryWorkDetailInput): Promise<ApiResult<LaundryWorkDetailDTO>> {
