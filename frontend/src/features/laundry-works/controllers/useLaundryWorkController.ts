@@ -61,6 +61,7 @@ export function useLaundryWorkController() {
   const [error, setError] = useState<ApiFailure['error'] | null>(null)
   const [requestId, setRequestId] = useState<string | undefined>()
   const [isContinuing, setIsContinuing] = useState(false)
+  const [isCreatingBag, setIsCreatingBag] = useState(false)
 
   const sessionContext = useMemo(() => getWorkspaceContext(), [])
 
@@ -166,6 +167,37 @@ export function useLaundryWorkController() {
     setIsContinuing(false)
   }, [detail?.work.currentStatus, loadDetail, policyActionModel.work.continue.allowed, sessionContext, workId])
 
+  const createBag = useCallback(
+    async (input: { bagNo: string; note?: string }) => {
+      if (!policyActionModel.bag.createBag.allowed) return
+
+      const meta = createRequestMeta('createLaundryBag', sessionContext)
+      setIsCreatingBag(true)
+      setError(null)
+      setRequestId(meta.requestId)
+
+      const result = await laundryWorkApi.createLaundryBag({
+        workId,
+        bagNo: input.bagNo,
+        note: input.note,
+        receivedAt: new Date().toISOString(),
+        meta,
+      })
+
+      setRequestId(result.meta.requestId)
+
+      if (!result.ok) {
+        setError(result.error)
+        setIsCreatingBag(false)
+        return
+      }
+
+      await loadDetail()
+      setIsCreatingBag(false)
+    },
+    [loadDetail, policyActionModel.bag.createBag.allowed, sessionContext, workId],
+  )
+
   return {
     ...viewModel,
     actions: {
@@ -175,6 +207,13 @@ export function useLaundryWorkController() {
         continue: toButtonAction(policyActionModel.work.continue, continueWork),
         canSaveDraft: policyActionModel.work.saveDraft.allowed,
         canContinue: policyActionModel.work.continue.allowed,
+      },
+      bag: {
+        createBag: {
+          ...toButtonAction(policyActionModel.bag.createBag),
+          onCreate: createBag,
+        },
+        canCreateBag: policyActionModel.bag.createBag.allowed,
       },
       issue: {
         createIssue: toButtonAction(policyActionModel.issue.createIssue),
@@ -187,8 +226,9 @@ export function useLaundryWorkController() {
     },
     state: {
       ...viewModel.state,
-      isBusy: loading || isContinuing,
+      isBusy: loading || isContinuing || isCreatingBag,
       isContinuing,
+      isCreatingBag,
     },
   }
 }
