@@ -2,381 +2,296 @@
 
 Status: BASELINE
 Owner: FE-04 UI Composition
+Depends On: FE-02 Architecture, FE-03 Runtime
 Handoff Target: FE-05 State
 
 ## Purpose
 
 Define the UI Composition Standard for the entire Laundry Management System.
 
-This document describes how frontend screens must be composed so that every page is task-first, workspace-safe, adaptive, reusable, and ready for state integration in FE-05.
+This document defines frontend architecture for composing screens and UI boundaries only. It does not implement React components, runtime logic, business logic, or existing application changes.
 
 ## Scope
 
-This standard covers composition rules only.
+FE-04 defines standards for:
 
-It defines:
+1. Application Layout
+2. Screen Composition
+3. Component Composition
+4. Standard UI Components
+5. Responsive Rules
+6. Workspace Rules
+7. Screen Blueprint Standard
+8. Naming Standard
+9. Handoff to FE-05
 
-- Screen Layout
-- Workspace Layout
-- Detail Page
-- Dashboard
-- Timeline
-- Summary Cards
-- Data Table
-- Action Panel
-- Empty State
-- Loading State
-- Error State
-- Modal
-- Drawer
-- Responsive Rule
-- Component Boundary
-- Naming Standard
-
-## Non-Scope
+## Rules
 
 FE-04 must not:
 
-- Write real UI implementation.
-- Modify runtime code.
-- Add business logic.
+- Write React Components.
+- Add Runtime Logic.
+- Add Business Logic.
+- Modify Existing Implementation.
 - Change API contracts.
 - Change schema.prisma.
-- Create state management logic.
-- Create backend behavior.
+
+FE-04 may only produce architecture documentation.
 
 ---
 
-## 1. Core Composition Principles
+## 1. Application Layout
 
-### 1.1 Task-First UI
+Application Layout defines the outer composition used by all screens.
 
-Every screen must begin with what the user needs to do or decide.
+Layer order follows FE-02 Architecture:
 
-Navigation, reports, and secondary information must not visually overpower the current task.
+```text
+App Shell
+→ Workspace Shell
+→ Route Layer
+→ Page Layer
+→ Feature Module Layer
+→ Shared UI Layer
+→ State / Service Layer
+→ API Contract Boundary
+```
 
-### 1.2 Workspace-Safe UI
+### 1.1 App Shell
 
-Every screen belongs to a workspace context.
+App Shell owns application-wide framing.
+
+Responsibilities:
+
+- Mount global providers.
+- Mount router.
+- Provide global error boundary location.
+- Provide global layout boot area.
+
+Rules:
+
+- Must not contain laundry business workflow logic.
+- Must not decide workspace-specific data visibility.
+- Must not render domain-specific operational content directly.
+
+### 1.2 Workspace Layout
+
+Workspace Layout owns the visible shell for a workspace.
+
+Workspaces:
 
 ```text
 Laundry Workspace
 Resort Workspace
+Shared Screens
 ```
 
-Laundry Workspace may show laundry-wide operational data when the authenticated role allows it.
+Responsibilities:
 
-Resort Workspace must only show data scoped by the authenticated user's `resortId`.
+- Separate workspace surfaces.
+- Provide workspace navigation area.
+- Provide workspace header area.
+- Provide content area.
+- Preserve workspace isolation.
 
-### 1.3 One Component, Multiple Layouts
+Rules:
 
-Desktop, tablet, and mobile must use the same component logic.
+- Laundry Workspace may show laundry-wide data only when policy allows.
+- Resort Workspace must always be scoped by `resortId`.
+- Shared Screens must not leak workspace-specific data.
 
-Layout may adapt by screen size, but component families must not split into Desktop/Mobile duplicates.
+### 1.3 Navigation
 
-### 1.4 Composition Before Implementation
+Navigation helps users move between tasks but must not replace task-first UI.
 
-FE-04 defines structure and boundaries.
+Navigation may include:
 
-Implementation belongs to later frontend execution tasks.
+- Sidebar.
+- Drawer navigation.
+- Bottom navigation.
+- Breadcrumbs.
+- Secondary tabs.
 
----
+Rules:
 
-## 2. Component Boundary Model
+- Navigation must reflect workspace context.
+- Navigation must not expose forbidden workspace routes.
+- Current task visibility must remain more important than navigation depth.
 
-All UI must follow this composition hierarchy:
+### 1.4 Header
 
-```text
-Page
-↓
-Sections
-↓
-Cards
-↓
-Panels
-↓
-Tables
-↓
-Widgets
-```
+Header provides current context.
 
-### 2.1 Page
+Header may show:
 
-A Page owns route-level composition.
+- Workspace name.
+- Current screen title.
+- Current entity identifier.
+- Current user/role summary.
+- Notifications when allowed.
+- Primary contextual actions when appropriate.
 
-A Page may:
+Rules:
 
-- Arrange Sections.
-- Receive route parameters.
-- Connect workspace shell context.
-- Decide task-first ordering.
+- Header must not become the main workflow area.
+- Header must not contain deep business logic.
 
-A Page must not:
+### 1.5 Footer
 
-- Own deep business rules.
-- Perform API mutation logic directly.
-- Contain reusable visual primitives that belong in shared UI.
+Footer is optional.
 
-### 2.2 Section
+Allowed use:
 
-A Section groups a major screen area.
+- Secondary legal/system links.
+- Version information.
+- Low-priority support links.
 
-Examples:
+Rules:
 
-- WorkHeaderSection
-- WorkTimelineSection
-- CountSummarySection
-- IssueSection
-- ResortInventorySection
+- Footer must not contain critical task actions.
+- Footer may be hidden on task-heavy mobile screens.
 
-A Section may:
+### 1.6 Content Area
 
-- Arrange Cards, Panels, Tables, and Widgets.
-- Express page-level meaning.
+Content Area owns the active page composition.
 
-A Section must not:
-
-- Become a full page.
-- Own unrelated feature behavior.
-
-### 2.3 Card
-
-A Card presents compact information or a grouped summary.
-
-Examples:
-
-- SummaryCard
-- IssueCard
-- InventoryCard
-- PhotoCard
-
-A Card must be readable, scannable, and action-light.
-
-### 2.4 Panel
-
-A Panel is an operational workspace for a task or interaction group.
-
-Examples:
-
-- CountPanel
-- SortPanel
-- ActionPanel
-- FilterPanel
-
-A Panel may contain inputs and actions when implementation begins, but FE-04 only defines structure.
-
-### 2.5 Table
-
-A Table presents structured rows for comparison, review, or operational scanning.
-
-Tables must not be used when cards or lists are clearer on mobile.
-
-### 2.6 Widget
-
-A Widget is a small, reusable unit used inside Cards, Panels, Tables, or Sections.
-
-Examples:
-
-- StatusBadge
-- MetricWidget
-- StepIndicator
-- IssueBadge
-
-Widgets must stay business-light and reusable.
-
----
-
-## 3. Screen Layout Standard
-
-Every screen should follow this order unless the domain document explicitly approves otherwise:
+Default composition:
 
 ```text
 Screen Header
 ↓
-Current Task / Primary Decision Area
+Primary Task / Decision Area
 ↓
 Operational Summary
 ↓
-Detail Content
+Main Detail Content
 ↓
 Secondary Context
 ↓
-Actions
+Action Area
 ```
 
-### Required Screen Header Content
+Rules:
 
-A Screen Header should answer:
-
-- What screen is this?
-- Which workspace is this?
-- What object or task is active?
-- What is the current status?
-
-### Forbidden Screen Layout
-
-- Do not start with menu-only content.
-- Do not hide the current task below reports.
-- Do not mix unrelated domains on one screen.
-- Do not create screen layouts that require duplicated mobile components.
+- Current task must appear before secondary reports.
+- Content must adapt by device size.
+- Content Area must not bypass Page/Section boundaries.
 
 ---
 
-## 4. Workspace Layout Standard
+## 2. Screen Composition
 
-### 4.1 Laundry Workspace
+Screen Composition defines page types and their required structure.
 
-Composition order:
+### 2.1 Dashboard
 
-```text
-Current Tasks
-↓
-Work Queue / Operational Summary
-↓
-Issue and Exception Alerts
-↓
-Reports / Secondary Navigation
-```
+Dashboard shows tasks and decisions first.
 
-Primary UI focus:
-
-- งานค้าง
-- งานรอเปิดถุง
-- งานที่นับแล้ว
-- งานพร้อมส่งกลับ
-- งานมีปัญหา
-
-### 4.2 Resort Workspace
-
-Composition order:
+Composition:
 
 ```text
-Own Linen Status
+Dashboard Header
 ↓
-Laundry-in-progress Visibility
-↓
-Issue Summary
-↓
-History / Reports
-```
-
-Primary UI focus:
-
-- ผ้าทั้งหมด
-- อยู่ที่รีสอร์ต
-- อยู่โรงซัก
-- มีปัญหา
-- ประวัติส่งซัก
-
-### Workspace Boundary Rule
-
-Workspace layout is a data access boundary, not just a visual shell.
-
-Resort Workspace must never render unscoped cross-resort information.
-
----
-
-## 5. Detail Page Standard
-
-Detail pages are the main place for operational work.
-
-Example: Work Detail.
-
-Composition order:
-
-```text
-Detail Header
-↓
-Progress / Timeline
-↓
-Current Step Panel
-↓
-Summary Cards
-↓
-Data Review Table
-↓
-Activity / Attachments / Issues
-↓
-Action Panel
-```
-
-### Detail Header
-
-Must show:
-
-- Entity identifier
-- Current status
-- Related customer/resort
-- Key date/time
-- Responsible user when available
-
-### Current Step Priority
-
-The current step must be visually clearer than completed or future steps.
-
-### Forbidden Detail Page Pattern
-
-- Do not make a detail page a static information page only.
-- Do not hide next actions.
-- Do not put issue information only inside notes.
-
----
-
-## 6. Dashboard Standard
-
-Dashboards must show task and decision information first.
-
-Dashboard composition order:
-
-```text
 Task Summary
 ↓
 Urgent / Exception Cards
 ↓
-Operational Metrics
+Operational KPI Cards
 ↓
-Work Queues or Recent Activity
+Queues / Recent Activity
 ↓
 Reports Preview
 ```
 
-### Laundry Dashboard
+Rules:
 
-Must prioritize:
+- Dashboard must not be a static menu grid.
+- Dashboard must not show reports before current tasks.
+- Dashboard must respect workspace policy and projection boundaries.
 
-- Active works
-- Pending steps
-- Ready-to-return works
-- Issue works
-- Today summary
+### 2.2 List Page
 
-### Resort Dashboard
+List Page shows searchable, filterable collections.
 
-Must prioritize:
+Composition:
 
-- Linen inventory status
-- Linen currently at laundry
-- Issue quantity
-- Recent work history
-- Reports relevant to the resort only
+```text
+List Header
+↓
+Toolbar
+↓
+Filter Bar / Search Bar
+↓
+Data Table or Responsive Card List
+↓
+Pagination / Load More
+↓
+Empty / Loading / Error State
+```
 
-### Dashboard Forbidden Pattern
+Rules:
 
-- Do not build dashboards as static menu grids.
-- Do not show reports before current tasks.
-- Do not bypass workspace isolation.
+- List Page must not own mutation business logic.
+- List Page must not assume backend fields outside contracts.
+- Mobile may use card-list instead of wide table.
 
----
+### 2.3 Detail Page
 
-## 7. Timeline Standard
+Detail Page is used for entity review and operational work.
 
-Timeline is used to show operational progress and history.
+Composition:
 
-### Progress Timeline
+```text
+Detail Header
+↓
+Timeline Workflow / Status Context
+↓
+Current Step or Primary Panel
+↓
+Summary Cards
+↓
+Detail Sections
+↓
+Activity / Issues / Attachments
+↓
+Action Panel or Bottom Action Bar
+```
 
-Used for workflow state.
+Rules:
 
-Example steps:
+- Detail Page must show current status and next action clearly.
+- Detail Page must not hide issues only inside notes.
+- Detail Page must not become a static read-only page when operational action is required.
+
+### 2.4 Wizard
+
+Wizard is used for guided multi-step creation or setup.
+
+Composition:
+
+```text
+Wizard Header
+↓
+Step Indicator
+↓
+Current Step Form Section
+↓
+Validation / Helper Context
+↓
+Action Bar
+```
+
+Rules:
+
+- Wizard must have clear step identity.
+- Wizard must allow safe back/cancel behavior when appropriate.
+- Wizard must not hide long operational workflows inside modal dialogs.
+
+### 2.5 Timeline Workflow
+
+Timeline Workflow shows process state.
+
+Example workflow:
 
 ```text
 รับถุง
@@ -406,29 +321,164 @@ blocked
 cancelled
 ```
 
-### Activity Timeline
-
-Used for audit-like history.
-
-Must show:
-
-- Time
-- Event
-- Actor when available
-- Short note when useful
-
-### Timeline Rules
+Rules:
 
 - Current step must be visually dominant.
 - Completed steps must be scannable.
 - Pending steps must be clear but secondary.
-- Timeline must not own transition business rules.
+- Timeline must not own status transition business rules.
+
+### 2.6 Workspace Home
+
+Workspace Home is the first operational surface after entering a workspace.
+
+Laundry Workspace Home composition:
+
+```text
+Current Tasks
+↓
+Work Queue Summary
+↓
+Issue / Exception Summary
+↓
+Reports Entry
+```
+
+Resort Workspace Home composition:
+
+```text
+Own Linen Status
+↓
+Laundry-in-progress Visibility
+↓
+Issue Summary
+↓
+History / Reports Entry
+```
+
+Rules:
+
+- Workspace Home must be task-first.
+- Workspace Home must respect workspace scope.
 
 ---
 
-## 8. Summary Cards Standard
+## 3. Component Composition
 
-Summary Cards present high-value metrics.
+All UI must follow this composition hierarchy:
+
+```text
+Page
+↓
+Sections
+↓
+Cards
+↓
+Panels
+↓
+Tables
+↓
+Widgets
+```
+
+### 3.1 Page
+
+Route-level screen composition.
+
+May:
+
+- Arrange Sections.
+- Receive route parameters.
+- Connect workspace shell context.
+- Decide task-first ordering.
+
+Must not:
+
+- Own deep business rules.
+- Perform API mutation logic directly.
+- Become a shared visual primitive.
+
+### 3.2 Sections
+
+Major content regions inside a Page.
+
+May:
+
+- Arrange Cards, Panels, Tables, and Widgets.
+- Express page-level meaning.
+
+Must not:
+
+- Become full pages.
+- Own unrelated feature behavior.
+
+### 3.3 Cards
+
+Compact display units for grouped information.
+
+Rules:
+
+- One Card should answer one question or group one small concept.
+- Cards should be scannable.
+- Cards should be action-light.
+
+### 3.4 Panels
+
+Operational or contextual interaction areas.
+
+Rules:
+
+- Panels may host forms, controls, or focused actions in later implementation.
+- Panels must not own runtime logic in FE-04.
+
+### 3.5 Tables
+
+Structured row-based display.
+
+Rules:
+
+- Tables are for comparison, review, and scanning.
+- Tables must have responsive alternatives.
+
+### 3.6 Widgets
+
+Small reusable UI units inside higher-level components.
+
+Rules:
+
+- Widgets must stay business-light.
+- Widgets must not import feature stores.
+
+---
+
+## 4. Standard UI Components
+
+This section defines standard component roles only.
+
+### 4.1 Timeline
+
+Purpose:
+
+- Show workflow progress or activity history.
+
+Types:
+
+- Progress Timeline.
+- Activity Timeline.
+
+Required states:
+
+- completed
+- current
+- pending
+- blocked
+- cancelled
+
+### 4.2 Summary Card
+
+Purpose:
+
+- Show one operational summary value.
 
 Examples:
 
@@ -436,62 +486,34 @@ Examples:
 - น้ำหนักรวม
 - นับแล้วทั้งหมด
 - ชิ้นที่มีปัญหา
-- ผ้าอยู่โรงซัก
-- ผ้าพร้อมส่งกลับ
+
+### 4.3 Status Badge
+
+Purpose:
+
+- Show compact status label.
 
 Rules:
 
-- One card should answer one question.
-- Labels must be short.
-- Values must be visually dominant.
-- Units must be visible.
-- Cards must not contain complex forms.
+- Status Badge must be readable without color-only meaning.
+- Status names must come from approved runtime/status vocabulary.
 
----
+### 4.4 KPI Card
 
-## 9. Data Table Standard
+Purpose:
 
-Data Tables are for structured review.
+- Show dashboard-level metric.
 
-Use tables for:
+Rules:
 
-- Counted item rows
-- Work lists
-- Issue lists
-- Report summaries
+- KPI Card must include label, value, unit when needed, and optional trend/context.
+- KPI Card must not hide task-critical warnings.
 
-A table should include:
+### 4.5 Action Panel
 
-- Clear column labels
-- Empty state
-- Loading state
-- Error state
-- Row-level action placement when needed
+Purpose:
 
-Responsive behavior:
-
-- Desktop: table layout allowed.
-- Tablet: compact table or card-list allowed.
-- Mobile: card-list or stacked rows preferred.
-
-Forbidden:
-
-- Do not force wide tables on mobile.
-- Do not put primary task actions only in table rows when mobile users need them frequently.
-
----
-
-## 10. Action Panel Standard
-
-Action Panel owns visible next actions.
-
-Typical placement:
-
-```text
-Desktop: bottom or right-side action area
-Tablet: sticky lower action area when needed
-Mobile: sticky bottom action bar when task-critical
-```
+- Group primary and secondary actions.
 
 Action priority:
 
@@ -504,16 +526,21 @@ Navigation Action
 
 Rules:
 
-- Primary action must be clear.
-- Destructive action must not be visually confused with primary action.
-- Action Panel must not own business logic.
-- Save draft and next-step actions should be visually distinct.
+- Primary action must be visually clear.
+- Destructive action must not be confused with primary action.
 
----
+### 4.6 Bottom Action Bar
 
-## 11. Empty State Standard
+Purpose:
 
-Empty State must explain what is missing and what the user can do next.
+- Provide persistent task-critical actions on tablet/mobile or task-heavy screens.
+
+Rules:
+
+- Must not cover required content permanently.
+- Must include clear primary action.
+
+### 4.7 Empty State
 
 Required structure:
 
@@ -524,40 +551,24 @@ Optional next action
 Optional secondary hint
 ```
 
-Examples:
+Rules:
 
-- No active laundry work.
-- No issue reports.
-- No counted items yet.
-- No resort inventory history yet.
+- Must not show blank space only.
+- Must not expose technical backend messages as primary copy.
 
-Forbidden:
+### 4.8 Loading State
 
-- Do not show only blank space.
-- Do not show technical backend messages as empty state.
+Purpose:
 
----
+- Communicate pending data or action.
 
-## 12. Loading State Standard
+Rules:
 
-Loading State must preserve layout stability where possible.
+- Prefer skeleton for cards/tables.
+- Use spinner only for small inline actions.
+- Avoid blocking the whole workspace unnecessarily.
 
-Use:
-
-- Skeleton for cards and tables.
-- Spinner only for small inline actions.
-- Clear loading text when the wait affects task completion.
-
-Forbidden:
-
-- Do not block the whole workspace unnecessarily.
-- Do not replace the entire screen when only one section is loading.
-
----
-
-## 13. Error State Standard
-
-Error State must be actionable and human-readable.
+### 4.9 Error State
 
 Required structure:
 
@@ -569,34 +580,27 @@ Retry or safe navigation action
 
 Rules:
 
-- Technical details may be logged, but should not dominate UI copy.
+- Must be human-readable.
 - Workspace isolation errors must fail closed.
-- Data mutation errors must not pretend success.
+- Mutation errors must not pretend success.
 
----
+### 4.10 Confirmation Dialog
 
-## 14. Modal Standard
+Purpose:
 
-Use Modal for focused decisions that interrupt the current flow.
+- Confirm important or destructive decisions.
 
-Allowed use:
+Rules:
 
-- Confirm destructive actions.
-- Review important changes.
-- Short focused forms.
-- Issue detail preview when context must remain on the current page.
+- Must clearly state consequence.
+- Must provide cancel path.
+- Must not host long workflows.
 
-Forbidden:
+### 4.11 Drawer
 
-- Do not use modal for full workflows.
-- Do not hide multi-step work inside modals.
-- Do not use modal when Drawer or Detail Page is more appropriate.
+Purpose:
 
----
-
-## 15. Drawer Standard
-
-Use Drawer for contextual side content without leaving the current task.
+- Show contextual side content without leaving current task.
 
 Allowed use:
 
@@ -604,58 +608,284 @@ Allowed use:
 - Detail preview
 - Mobile navigation
 - Secondary context
-- Short supporting panels
 
 Rules:
 
-- Drawer must not become a full hidden page.
-- Drawer content must have a clear close path.
-- Mobile drawer must be touch-friendly.
+- Drawer must not become a hidden full page.
+- Drawer must have clear close path.
+
+### 4.12 Form Section
+
+Purpose:
+
+- Group related inputs.
+
+Rules:
+
+- Form Section must have a clear title when the form is long.
+- Validation display belongs near the relevant field or section.
+- FE-04 does not define validation logic.
+
+### 4.13 Data Table
+
+Purpose:
+
+- Present structured operational rows.
+
+Rules:
+
+- Must support Empty, Loading, and Error State.
+- Must provide responsive behavior.
+
+### 4.14 Filter Bar
+
+Purpose:
+
+- Scope visible list/report data.
+
+Rules:
+
+- Filter Bar must not bypass workspace policy.
+- Filter state belongs to FE-05 or later state work.
+
+### 4.15 Search Bar
+
+Purpose:
+
+- Search within allowed data scope.
+
+Rules:
+
+- Search must not imply cross-workspace access.
+- Search behavior is not implemented in FE-04.
+
+### 4.16 Toolbar
+
+Purpose:
+
+- Group list/page utilities and secondary actions.
+
+Rules:
+
+- Toolbar must not replace Action Panel for primary task actions.
 
 ---
 
-## 16. Responsive Rule
+## 5. Responsive Rules
 
-Breakpoints follow the UI Adaptive Guide:
+### 5.1 Desktop
+
+Baseline:
 
 ```text
-Desktop >= 1280px
-Tablet 768px - 1279px
-Mobile < 768px
+>= 1280px
 ```
 
-### Desktop
+Rules:
 
 - Persistent sidebar allowed.
 - Multi-column layout allowed.
 - Dashboard can show multiple panels.
 - Task area must remain primary.
 
-### Tablet
+### 5.2 Tablet
+
+Baseline:
+
+```text
+768px - 1279px
+```
+
+Rules:
 
 - Collapsible sidebar preferred.
 - Two-column layout only when it helps active work.
 - Touch targets must remain large.
+- Bottom Action Bar may be used for task-critical actions.
 
-### Mobile
+### 5.3 Mobile
+
+Baseline:
+
+```text
+< 768px
+```
+
+Rules:
 
 - Drawer or bottom navigation.
 - Single-column layout.
 - Current task before secondary context.
 - Large touch targets.
 - Prefer scan, tap, and selection over typing.
+- Avoid wide table dependency.
 
-### Responsive Forbidden Pattern
+### 5.4 Large Display
 
-- Do not create separate component families for desktop and mobile.
-- Do not hide primary actions on mobile.
-- Do not force desktop table behavior on mobile.
+Baseline:
+
+```text
+Wide desktop / operations display / control room display
+```
+
+Rules:
+
+- May use expanded dashboard grids.
+- May show more operational queues at once.
+- Must not introduce a different business logic path.
+- Must not expose data outside workspace policy.
 
 ---
 
-## 17. Naming Standard
+## 6. Workspace Rules
 
-All UI files must use clear suffix naming by responsibility.
+### 6.1 Laundry Workspace
+
+Primary users:
+
+- Laundry Owner
+- Laundry Manager
+- Laundry Staff
+
+Allowed UI focus:
+
+- Work operations.
+- Work queues.
+- Issue queues.
+- Ready-to-return work.
+- Laundry-wide reports when allowed.
+
+Rules:
+
+- May access multiple resorts only when policy allows.
+- Must clearly show current operational tasks.
+
+### 6.2 Resort Workspace
+
+Primary users:
+
+- Resort Owner
+- Resort Staff
+
+Allowed UI focus:
+
+- Own linen status.
+- Own laundry work history.
+- Own issue visibility.
+- Own reports.
+
+Rules:
+
+- Must scope every surface by authenticated `resortId`.
+- Must not reveal other resort information.
+- Must not expose laundry-internal-only operational details unless approved by policy.
+
+### 6.3 Shared Screens
+
+Examples:
+
+- Login
+- Access denied
+- Not found
+- Global error screen
+
+Rules:
+
+- Shared Screens must be business-light.
+- Shared Screens must not render protected workspace data before access is resolved.
+
+---
+
+## 7. Screen Blueprint Standard
+
+Every screen blueprint file must use this naming format:
+
+```text
+*.blueprint.md
+```
+
+Blueprint files are architecture documents for future implementation.
+
+They must not contain React implementation.
+
+### 7.1 Required Template
+
+```markdown
+# <Screen Name> Blueprint
+
+Status: DRAFT | BASELINE
+Owner: <Domain / FE Track>
+Workspace: Laundry | Resort | Shared
+
+## Purpose
+
+<What this screen is for.>
+
+## User Goal
+
+<What the user needs to do or decide.>
+
+## Runtime Dependencies
+
+<Runtime state, route params, auth/session/workspace context.>
+
+## Projection Dependencies
+
+<Read models / view models / derived UI data needed.>
+
+## Policy Dependencies
+
+<Workspace, role, resortId, and access constraints.>
+
+## Layout
+
+<Screen-level layout order.>
+
+## Component Tree
+
+```text
+<Page>
+  <Section>
+    <Card />
+    <Panel />
+    <Table />
+    <Widget />
+```
+
+## Responsive Notes
+
+<Desktop, Tablet, Mobile, Large Display notes.>
+
+## Action Bar
+
+<Primary, secondary, destructive, navigation actions.>
+
+## Empty State
+
+<When no data is available.>
+
+## Loading State
+
+<When data is loading.>
+
+## Error State
+
+<When loading/action fails.>
+```
+
+### 7.2 Blueprint Rules
+
+- Must cite workspace type.
+- Must identify policy dependencies.
+- Must separate runtime dependencies from projection dependencies.
+- Must define component tree before implementation.
+- Must include Empty, Loading, and Error State.
+
+---
+
+## 8. Naming Standard
+
+UI files must use clear suffix naming by responsibility.
 
 ```text
 *Page.tsx
@@ -663,16 +893,18 @@ All UI files must use clear suffix naming by responsibility.
 *Card.tsx
 *Panel.tsx
 *Table.tsx
+*Widget.tsx
 *Timeline.tsx
+*Dialog.tsx
+*Drawer.tsx
+*Toolbar.tsx
 ```
 
-### Naming Meaning
-
-#### *Page.tsx
+### 8.1 *Page.tsx
 
 Route-level screen composition.
 
-Example:
+Examples:
 
 ```text
 WorkDetailPage.tsx
@@ -680,11 +912,11 @@ LaundryDashboardPage.tsx
 ResortDashboardPage.tsx
 ```
 
-#### *Section.tsx
+### 8.2 *Section.tsx
 
-Major content region inside a page.
+Major content region.
 
-Example:
+Examples:
 
 ```text
 WorkTimelineSection.tsx
@@ -692,11 +924,11 @@ IssueSummarySection.tsx
 ResortInventorySection.tsx
 ```
 
-#### *Card.tsx
+### 8.3 *Card.tsx
 
 Compact display unit.
 
-Example:
+Examples:
 
 ```text
 SummaryCard.tsx
@@ -704,11 +936,11 @@ IssueCard.tsx
 InventoryCard.tsx
 ```
 
-#### *Panel.tsx
+### 8.4 *Panel.tsx
 
-Operational or contextual interaction area.
+Operational or contextual area.
 
-Example:
+Examples:
 
 ```text
 CountPanel.tsx
@@ -717,11 +949,11 @@ ActionPanel.tsx
 FilterPanel.tsx
 ```
 
-#### *Table.tsx
+### 8.5 *Table.tsx
 
 Structured row-based display.
 
-Example:
+Examples:
 
 ```text
 CountLineTable.tsx
@@ -729,55 +961,105 @@ WorkQueueTable.tsx
 IssueTable.tsx
 ```
 
-#### *Timeline.tsx
+### 8.6 *Widget.tsx
+
+Small reusable display/control unit.
+
+Examples:
+
+```text
+MetricWidget.tsx
+StepIndicatorWidget.tsx
+IssueBadgeWidget.tsx
+```
+
+### 8.7 *Timeline.tsx
 
 Progress or activity timeline.
 
-Example:
+Examples:
 
 ```text
 WorkProgressTimeline.tsx
 WorkActivityTimeline.tsx
 ```
 
+### 8.8 *Dialog.tsx
+
+Focused confirmation or small decision surface.
+
+Examples:
+
+```text
+ConfirmReturnDialog.tsx
+CancelWorkDialog.tsx
+```
+
+### 8.9 *Drawer.tsx
+
+Contextual side surface.
+
+Examples:
+
+```text
+FilterDrawer.tsx
+IssueDetailDrawer.tsx
+```
+
+### 8.10 *Toolbar.tsx
+
+Utility/action group for page or list context.
+
+Examples:
+
+```text
+WorkListToolbar.tsx
+ReportToolbar.tsx
+```
+
 ---
 
-## 18. Handoff to FE-05
+## 9. Handoff to FE-05
 
-FE-05 may use this document to define state shape and view models for:
+FE-05 may continue with state and projection design for:
 
-- Current task state
-- Dashboard summary state
-- Timeline state
-- Summary card state
-- Data table state
-- Empty/loading/error state
-- Modal/drawer visibility state
-- Action panel state
+- Workspace state.
+- Route and runtime dependency state.
+- Dashboard projection state.
+- List page query/filter/search state.
+- Detail page current entity state.
+- Timeline state.
+- Summary/KPI card view models.
+- Data table view models.
+- Action Panel and Bottom Action Bar state.
+- Empty, Loading, and Error State modeling.
+- Dialog and Drawer visibility state.
+- Policy-aware view model shaping.
 
-FE-05 must preserve the component boundaries and must not push business logic into Page or Shared UI components.
+FE-05 must preserve:
+
+- FE-02 layer boundaries.
+- FE-03 runtime transition boundaries.
+- Workspace isolation.
+- Page → Sections → Cards → Panels → Tables → Widgets hierarchy.
+- Naming standard defined in FE-04.
+
+FE-05 must not push business logic into Page, Shared UI, or visual-only components.
 
 ---
 
-## 19. Done Checklist
+## 10. Done Checklist
 
-- [x] Screen Layout standard defined.
-- [x] Workspace Layout standard defined.
-- [x] Detail Page standard defined.
-- [x] Dashboard standard defined.
-- [x] Timeline standard defined.
-- [x] Summary Cards standard defined.
-- [x] Data Table standard defined.
-- [x] Action Panel standard defined.
-- [x] Empty State standard defined.
-- [x] Loading State standard defined.
-- [x] Error State standard defined.
-- [x] Modal standard defined.
-- [x] Drawer standard defined.
-- [x] Responsive Rule defined.
-- [x] Component Boundary defined.
+- [x] Application Layout standard defined.
+- [x] Screen Composition standard defined.
+- [x] Component Composition standard defined.
+- [x] Standard UI Components defined.
+- [x] Responsive Rules defined.
+- [x] Workspace Rules defined.
+- [x] Screen Blueprint Standard defined.
 - [x] Naming Standard defined.
-- [x] No real UI implementation included.
-- [x] No runtime changes included.
-- [x] No business logic added.
-- [x] Ready for FE-05 handoff.
+- [x] Handoff to FE-05 defined.
+- [x] No React Components written.
+- [x] No Runtime Logic added.
+- [x] No Business Logic added.
+- [x] No Existing Implementation changed.
