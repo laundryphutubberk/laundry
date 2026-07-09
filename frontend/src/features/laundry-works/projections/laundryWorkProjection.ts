@@ -114,8 +114,8 @@ export function createLaundryWorkDetailProjection({
         { key: 'type', label: 'ประเภทผ้า' },
         { key: 'category', label: 'หมวดหมู่' },
         { key: 'color', label: 'สี' },
-        { key: 'quantity', label: 'จำนวน', align: 'right' },
-        { key: 'weight', label: 'น้ำหนัก', align: 'right' },
+        { key: 'quantity', label: 'จำนวน', align: 'right' as const },
+        { key: 'weight', label: 'น้ำหนัก', align: 'right' as const },
       ],
       countRows: (detail?.countLines || []).map((line) => ({
         id: line.id,
