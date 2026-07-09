@@ -4,10 +4,11 @@ Status: READY
 
 ## Tracks
 
-- [ ] MVP Release Readiness
+- [x] MVP Release Readiness
 - [ ] Environment Readiness
 - [ ] Rollback Expectation
-- [ ] Delivery Evidence
+- [x] Delivery Evidence
+- [x] Laundry Work Delivery Gate
 
 ## Review
 
@@ -15,4 +16,13 @@ Status: READY
 
 ## Handoff
 
+- [x] Laundry Work Delivery Gate Ready
 - [ ] Handoff Ready
+
+## Latest Progress
+
+Laundry Work delivery readiness gate has been defined.
+
+Output artifact:
+
+- `project-os/frontend/execution/fe-08-delivery/LAUNDRY-WORK-DELIVERY-GATE.md`
