@@ -42,18 +42,18 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
           </div>
         </div>
 
-        <nav className="space-y-1 px-4 py-6">
+        <nav className="space-y-0.5 px-4 py-5">
           {navItems.map((item) => (
             <button
               key={item.label}
               type="button"
               className={
                 item.active
-                  ? 'flex w-full items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-left text-lg font-black text-white shadow-sm ring-1 ring-white/10'
-                  : 'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-lg font-bold text-blue-100/85 hover:bg-white/10 hover:text-white'
+                  ? 'flex w-full items-center gap-2.5 rounded-2xl bg-white/10 px-4 py-2.5 text-left text-lg font-black text-white shadow-sm ring-1 ring-white/10'
+                  : 'flex w-full items-center gap-2.5 rounded-2xl px-4 py-2.5 text-left text-lg font-bold text-blue-100/85 hover:bg-white/10 hover:text-white'
               }
             >
-              <span className={item.active ? 'flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400 text-xl text-white' : 'flex h-10 w-10 items-center justify-center rounded-xl text-xl text-blue-100'}>
+              <span className={item.active ? 'flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400 text-lg text-white' : 'flex h-9 w-9 items-center justify-center rounded-xl text-lg text-blue-100'}>
                 {item.icon}
               </span>
               <span>{item.label}</span>
