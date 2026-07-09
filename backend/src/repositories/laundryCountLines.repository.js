@@ -2,6 +2,11 @@ const { prisma } = require('../core/prisma');
 
 const getClient = (client) => client || prisma;
 
+const buildCountLineInclude = () => ({
+  itemType: true,
+  bag: true,
+});
+
 const findAccessibleWork = async ({ workId, where, client } = {}) => {
   const db = getClient(client);
 
@@ -37,6 +42,42 @@ const findItemTypeById = async ({ itemTypeId, client } = {}) => {
   });
 };
 
+const findOrCreateItemTypeByName = async ({ itemTypeName, client } = {}) => {
+  const db = getClient(client);
+  const name = String(itemTypeName || '').trim();
+
+  if (!name) {
+    return null;
+  }
+
+  const existing = await db.laundryItemType.findFirst({
+    where: {
+      name,
+      category: null,
+    },
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  return db.laundryItemType.create({
+    data: {
+      name,
+      category: null,
+      active: true,
+    },
+  });
+};
+
+const resolveItemType = async ({ itemTypeId, itemTypeName, client } = {}) => {
+  if (itemTypeId) {
+    return findItemTypeById({ itemTypeId, client });
+  }
+
+  return findOrCreateItemTypeByName({ itemTypeName, client });
+};
+
 const listLaundryCountLines = async ({ where, skip, take, client } = {}) => {
   const db = getClient(client);
 
@@ -48,10 +89,7 @@ const listLaundryCountLines = async ({ where, skip, take, client } = {}) => {
       },
       skip,
       take,
-      include: {
-        itemType: true,
-        bag: true,
-      },
+      include: buildCountLineInclude(),
     }),
     db.laundryCountLine.count({ where }),
   ]);
@@ -62,16 +100,49 @@ const listLaundryCountLines = async ({ where, skip, take, client } = {}) => {
   };
 };
 
+const findLaundryCountLineById = async ({ lineId, where, client } = {}) => {
+  const db = getClient(client);
+
+  return db.laundryCountLine.findFirst({
+    where: {
+      ...where,
+      id: Number(lineId),
+    },
+    include: buildCountLineInclude(),
+  });
+};
+
 const createLaundryCountLine = async ({ data, client } = {}) => {
   const db = getClient(client);
 
   return db.laundryCountLine.create({
     data,
-    include: {
-      itemType: true,
-      bag: true,
+    include: buildCountLineInclude(),
+  });
+};
+
+const updateLaundryCountLine = async ({ lineId, data, client } = {}) => {
+  const db = getClient(client);
+
+  return db.laundryCountLine.update({
+    where: {
+      id: Number(lineId),
+    },
+    data,
+    include: buildCountLineInclude(),
+  });
+};
+
+const deleteLaundryCountLine = async ({ lineId, client } = {}) => {
+  const db = getClient(client);
+
+  await db.laundryCountLine.delete({
+    where: {
+      id: Number(lineId),
     },
   });
+
+  return { deleted: true };
 };
 
 const updateWorkAfterCountLine = async ({ workId, expectedStatus, client } = {}) => {
@@ -100,8 +171,13 @@ module.exports = {
   findAccessibleWork,
   findBagById,
   findItemTypeById,
+  findOrCreateItemTypeByName,
+  resolveItemType,
   listLaundryCountLines,
+  findLaundryCountLineById,
   createLaundryCountLine,
+  updateLaundryCountLine,
+  deleteLaundryCountLine,
   updateWorkAfterCountLine,
   createWorkStatusLog,
   transaction,
