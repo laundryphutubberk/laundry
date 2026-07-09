@@ -3,11 +3,11 @@
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
 Track: UI Package
-Runtime Source: `FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
+Runtime Source: `project-os/frontend/execution/fe-03-runtime-contract/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
 
-Implement the Laundry Work image panel component from image projection and policy-derived action model.
+Implement the Laundry Work image panel component from `ImagePanelProjection` and policy/controller action descriptors.
 
 ## Target File
 
@@ -15,37 +15,36 @@ Implement the Laundry Work image panel component from image projection and polic
 
 ## Runtime Contract Mapping
 
-Uses projection/policy/controller output. The runtime contract does not make images inventory truth; images are supporting evidence only.
+Uses `imagePanel` from `LaundryWorkDetailProjection`:
 
-```text
-LaundryWorkDetailDTO
-- work
-- bags
-- countLines
-- issues
-- statusLogs
-
-Projection may provide supporting images when available from the approved data source.
-Policy/controller provides upload/view action availability.
+```ts
+type ImagePanelProjection = {
+  images: Array<{
+    id: string | number
+    url?: string
+    thumbnailUrl?: string
+    alt: string
+    caption?: string
+  }>
+  canUploadImage: boolean
+  emptyText: string
+}
 ```
+
+The runtime contract does not make images inventory truth. Images are supporting evidence only. Upload/view actions map to controller/policy only.
 
 ## Inputs
 
 ```text
-images[]
-  - id
-  - url/thumbnailUrl
-  - alt
-  - name/caption
-  - uploadedAt
-  - uploadedBy
+imagePanel
+  - images[]
+  - canUploadImage
+  - emptyText
 actions optional
-  - uploadImage
-  - viewAll
-  - canUploadImage legacy-compatible
+  - uploadImage handler/descriptor from controller
+  - viewAll handler/descriptor from controller
 loading optional
 error optional
-emptyText optional
 ```
 
 ## Outputs
@@ -72,4 +71,4 @@ emptyText optional
 - Loading/error states render safely.
 - Action visibility comes from policy/controller output.
 - Component remains presentation-only.
-- FE-05 can wire image projection/actions without UI boundary change.
+- FE-05 can pass `ImagePanelProjection` without UI boundary change.
