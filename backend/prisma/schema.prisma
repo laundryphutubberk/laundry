@@ -134,6 +134,7 @@ model Resort {
   movements    LinenMovement[]
   inventory    LinenInventorySummary[]
   issues       IssueReport[]
+  workImages   LaundryWorkImage[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -182,6 +183,7 @@ model LaundryWork {
   countLines    LaundryCountLine[]
   movements     LinenMovement[]
   issues        IssueReport[]
+  images        LaundryWorkImage[]
   statusLogs    WorkStatusLog[]
   washLoadPlans WashLoadPlan[]
 
@@ -342,6 +344,41 @@ model IssueReport {
   @@index([reportedAt])
 }
 
+model LaundryWorkImage {
+  id           Int         @id @default(autoincrement())
+
+  workId       Int
+  work         LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  resortId     Int
+  resort       Resort      @relation(fields: [resortId], references: [id])
+
+  url          String
+  publicId     String?
+  provider     String      @default("LOCAL")
+  mimeType     String?
+  originalName String?
+  sizeBytes    Int?
+
+  caption      String?
+  displayOrder Int         @default(0)
+  isCover      Boolean     @default(false)
+
+  uploadedById Int?
+  uploadedAt   DateTime    @default(now())
+
+  deletedAt    DateTime?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([workId])
+  @@index([resortId])
+  @@index([isCover])
+  @@index([deletedAt])
+  @@index([displayOrder])
+}
+
 model WorkStatusLog {
   id            Int        @id @default(autoincrement())
 
@@ -369,7 +406,7 @@ model LaundryMachine {
   active       Boolean  @default(true)
 
   loadRules    LaundryMachineLoadRule[]
-  washLoadPlans WashLoadPlan[]
+  washLoadPlans LaundryMachineLoadRule[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
