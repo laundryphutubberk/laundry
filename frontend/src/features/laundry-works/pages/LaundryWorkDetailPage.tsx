@@ -1,7 +1,7 @@
 import { BagPanel } from '../components/BagPanel'
 import { BottomActionBar } from '../components/BottomActionBar'
 import { CountEntryPanel } from '../components/CountEntryPanel'
-import { CountTable } from '../components/CountTable'
+import { CountTable, type CountTableRow } from '../components/CountTable'
 import { HistoryPanel } from '../components/HistoryPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { IssuePanel } from '../components/IssuePanel'
@@ -16,6 +16,21 @@ const mainClassName = 'mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py
 const detailGridClassName = 'grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[390px_minmax(0,1fr)]'
 
 function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId }: LaundryWorkRuntimeHostRenderProps) {
+  const handleUpdateCountLine = async (row: CountTableRow) => {
+    if (!row.id) return
+
+    await actions.countLine.updateCountLine(row.id, {
+      itemTypeName: typeof row.type === 'string' ? row.type : undefined,
+      colorGroup: typeof row.color === 'string' ? row.color : undefined,
+      quantity: typeof row.quantity === 'number' ? row.quantity : Number(row.quantity || 0),
+    })
+  }
+
+  const handleDeleteCountLine = async (row: CountTableRow) => {
+    if (!row.id) return
+    await actions.countLine.deleteCountLine(row.id)
+  }
+
   if (loading) {
     return (
       <div className={pageClassName}>
@@ -97,6 +112,14 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
               columns={projection.countColumns}
               summaryItems={projection.countSummaryItems}
               remark={projection.countRemark}
+              rowActions={{
+                canUpdate: actions.countLine.canUpdateCountLine,
+                canDelete: actions.countLine.canDeleteCountLine,
+                updating: state.isUpdatingCountLine,
+                deleting: state.isDeletingCountLine,
+                onUpdate: handleUpdateCountLine,
+                onDelete: handleDeleteCountLine,
+              }}
             />
 
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
