@@ -20,6 +20,7 @@ const listLaundryCountLines = async (workId, query = {}, context = {}) => {
   const where = {
     ...buildLaundryCountLineWhere({ actor: context.actor }),
     workId: Number(workId),
+    ...(query.bagId ? { bagId: Number(query.bagId) } : {}),
   };
 
   const result = await laundryCountLinesRepository.listLaundryCountLines({
@@ -60,14 +61,15 @@ const createLaundryCountLine = async (workId, payload = {}, context = {}) => {
       laundryCountLinesBusiness.assertBagCanAcceptCountLine(bag);
     }
 
-    const itemType = await laundryCountLinesRepository.findItemTypeById({
+    const itemType = await laundryCountLinesRepository.resolveItemType({
       itemTypeId: payload.itemTypeId,
+      itemTypeName: payload.itemTypeName,
       client: tx,
     });
     laundryCountLinesBusiness.assertItemTypeCanBeCounted(itemType);
 
     const createdCountLine = await laundryCountLinesRepository.createLaundryCountLine({
-      data: laundryCountLinesBusiness.buildCreateCountLineData({ work, payload }),
+      data: laundryCountLinesBusiness.buildCreateCountLineData({ work, payload, itemType }),
       client: tx,
     });
 
@@ -113,7 +115,102 @@ const createLaundryCountLine = async (workId, payload = {}, context = {}) => {
   return countLine;
 };
 
+const updateLaundryCountLine = async (lineId, payload = {}, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
+  const countLine = await laundryCountLinesRepository.transaction(async (tx) => {
+    const where = buildLaundryCountLineWhere({ actor: context.actor });
+    const existingCountLine = await laundryCountLinesRepository.findLaundryCountLineById({
+      lineId,
+      where,
+      client: tx,
+    });
+
+    if (!existingCountLine) {
+      const error = new Error('Laundry Count Line not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const work = await laundryCountLinesRepository.findAccessibleWork({
+      workId: existingCountLine.workId,
+      where,
+      client: tx,
+    });
+    laundryCountLinesBusiness.assertWorkCanAcceptCountLine(work);
+
+    const bag = await laundryCountLinesRepository.findBagById({
+      bagId: payload.bagId,
+      client: tx,
+    });
+    if (payload.bagId) {
+      laundryCountLinesBusiness.assertBagBelongsToWork({ bag, workId: existingCountLine.workId });
+      laundryCountLinesBusiness.assertBagCanAcceptCountLine(bag);
+    }
+
+    const itemType = payload.itemTypeId || payload.itemTypeName
+      ? await laundryCountLinesRepository.resolveItemType({
+          itemTypeId: payload.itemTypeId,
+          itemTypeName: payload.itemTypeName,
+          client: tx,
+        })
+      : null;
+    if (itemType) laundryCountLinesBusiness.assertItemTypeCanBeCounted(itemType);
+
+    const updatedCountLine = await laundryCountLinesRepository.updateLaundryCountLine({
+      lineId,
+      data: laundryCountLinesBusiness.buildUpdateCountLineData({ payload, itemType }),
+      client: tx,
+    });
+
+    return updatedCountLine;
+  });
+
+  logger.business('laundry.count_line.updated', {
+    ...buildActorLogContext(context.actor),
+    workId: countLine.workId,
+    bagId: countLine.bagId,
+    countLineId: countLine.id,
+    resortId: countLine.resortId,
+  });
+
+  return countLine;
+};
+
+const deleteLaundryCountLine = async (lineId, context = {}) => {
+  assertLaundryStaffActor(context.actor);
+
+  const result = await laundryCountLinesRepository.transaction(async (tx) => {
+    const where = buildLaundryCountLineWhere({ actor: context.actor });
+    const existingCountLine = await laundryCountLinesRepository.findLaundryCountLineById({
+      lineId,
+      where,
+      client: tx,
+    });
+
+    if (!existingCountLine) {
+      const error = new Error('Laundry Count Line not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return laundryCountLinesRepository.deleteLaundryCountLine({
+      lineId,
+      client: tx,
+    });
+  });
+
+  logger.business('laundry.count_line.deleted', {
+    ...buildActorLogContext(context.actor),
+    countLineId: lineId,
+  });
+
+  return result;
+};
+
 module.exports = {
   listLaundryCountLines,
   createLaundryCountLine,
+  updateLaundryCountLine,
+  deleteLaundryCountLine,
 };
