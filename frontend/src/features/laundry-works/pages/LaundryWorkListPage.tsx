@@ -61,6 +61,7 @@ export function LaundryWorkListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiFailure['error'] | null>(null)
   const [requestId, setRequestId] = useState<string | undefined>()
+  const canCreate = sessionContext.workspaceType === 'LAUNDRY'
 
   useEffect(() => {
     let active = true
@@ -101,8 +102,15 @@ export function LaundryWorkListPage() {
               <h1 className="text-3xl font-black text-slate-950">Laundry Work</h1>
               <p className="mt-1 text-sm font-medium text-slate-500">รายการงานซักทั้งหมดใน workspace ที่ actor มีสิทธิ์เห็น</p>
             </div>
-            <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">
-              {sessionContext.workspaceType || 'No workspace'}{sessionContext.resortId ? ` · Resort ${sessionContext.resortId}` : ''}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">
+                {sessionContext.workspaceType || 'No workspace'}{sessionContext.resortId ? ` · Resort ${sessionContext.resortId}` : ''}
+              </div>
+              {canCreate ? (
+                <Link to="/workspace/laundry/works/new" className="rounded-2xl bg-blue-700 px-4 py-2 text-center text-sm font-black text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800">
+                  + สร้างงานซัก
+                </Link>
+              ) : null}
             </div>
           </div>
         </section>
@@ -125,6 +133,11 @@ export function LaundryWorkListPage() {
           <section className="rounded-[28px] border border-white/70 bg-white p-6 shadow-sm">
             <p className="text-base font-bold text-slate-950">ยังไม่มี Laundry Work</p>
             <p className="mt-2 text-sm text-slate-500">เมื่อ backend มีงานซักใน workspace นี้ รายการจะแสดงที่นี่</p>
+            {canCreate ? (
+              <Link to="/workspace/laundry/works/new" className="mt-5 inline-flex rounded-2xl bg-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800">
+                สร้างงานซักแรก
+              </Link>
+            ) : null}
           </section>
         ) : null}
 
