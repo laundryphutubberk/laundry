@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 export type CountTableColumn = {
   key: string
   label: string
@@ -60,6 +62,11 @@ const alignClassName: Record<string, string> = {
   center: 'text-center',
 }
 
+const toEditableValue = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined || value === '-') return ''
+  return String(value)
+}
+
 export function CountTable({
   rows = [],
   columns,
@@ -75,6 +82,34 @@ export function CountTable({
 }: CountTableProps) {
   const tableColumns = columns?.length ? columns : defaultColumns
   const hasRowActions = Boolean(rowActions?.canUpdate || rowActions?.canDelete)
+  const [editingRowId, setEditingRowId] = useState<string | number | null>(null)
+  const [editDraft, setEditDraft] = useState<CountTableRow>({})
+
+  const startEdit = (row: CountTableRow) => {
+    if (!row.id) return
+    setEditingRowId(row.id)
+    setEditDraft({
+      ...row,
+      type: toEditableValue(row.type),
+      color: toEditableValue(row.color),
+      quantity: toEditableValue(row.quantity),
+    })
+  }
+
+  const cancelEdit = () => {
+    setEditingRowId(null)
+    setEditDraft({})
+  }
+
+  const updateDraft = (key: string, value: string) => {
+    setEditDraft((current) => ({ ...current, [key]: value }))
+  }
+
+  const submitEdit = async () => {
+    if (!editingRowId || !rowActions?.onUpdate) return
+    await rowActions.onUpdate({ ...editDraft, id: editingRowId })
+    cancelEdit()
+  }
 
   if (loading) {
     return (
@@ -141,22 +176,133 @@ export function CountTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rows.map((row, index) => (
-              <tr key={row.id || index} className="text-slate-700 hover:bg-slate-50/80">
-                {tableColumns.map((column) => (
-                  <td key={column.key} className={`px-6 py-[18px] ${alignClassName[column.align || 'left']}`}>
-                    {row[column.key] ?? '-'}
-                  </td>
-                ))}
-                {hasRowActions ? (
-                  <td className="px-6 py-[18px] text-right">
-                    <div className="flex justify-end gap-2">
+            {rows.map((row, index) => {
+              const isEditing = Boolean(row.id && editingRowId === row.id)
+
+              return (
+                <tr key={row.id || index} className="text-slate-700 hover:bg-slate-50/80">
+                  {tableColumns.map((column) => (
+                    <td key={column.key} className={`px-6 py-[18px] ${alignClassName[column.align || 'left']}`}>
+                      {isEditing && ['type', 'color', 'quantity'].includes(column.key) ? (
+                        <input
+                          type={column.key === 'quantity' ? 'number' : 'text'}
+                          min={column.key === 'quantity' ? 1 : undefined}
+                          value={toEditableValue(editDraft[column.key])}
+                          onChange={(event) => updateDraft(column.key, event.target.value)}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200"
+                        />
+                      ) : (
+                        row[column.key] ?? '-'
+                      )}
+                    </td>
+                  ))}
+                  {hasRowActions ? (
+                    <td className="px-6 py-[18px] text-right">
+                      <div className="flex justify-end gap-2">
+                        {isEditing ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={submitEdit}
+                              disabled={rowActions?.updating}
+                              className="rounded-xl border border-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              บันทึก
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEdit}
+                              disabled={rowActions?.updating}
+                              className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              ยกเลิก
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {rowActions?.canUpdate ? (
+                              <button
+                                type="button"
+                                onClick={() => startEdit(row)}
+                                disabled={rowActions.updating}
+                                className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                แก้ไข
+                              </button>
+                            ) : null}
+                            {rowActions?.canDelete ? (
+                              <button
+                                type="button"
+                                onClick={() => rowActions.onDelete?.(row)}
+                                disabled={rowActions.deleting}
+                                className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                ลบ
+                              </button>
+                            ) : null}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  ) : null}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="grid gap-3 p-4 md:hidden">
+        {rows.map((row, index) => {
+          const isEditing = Boolean(row.id && editingRowId === row.id)
+
+          return (
+            <article key={row.id || index} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              {tableColumns.map((column) => (
+                <div key={column.key} className="flex justify-between gap-3 py-1.5 text-sm">
+                  <span className="text-slate-500">{column.label}</span>
+                  {isEditing && ['type', 'color', 'quantity'].includes(column.key) ? (
+                    <input
+                      type={column.key === 'quantity' ? 'number' : 'text'}
+                      min={column.key === 'quantity' ? 1 : undefined}
+                      value={toEditableValue(editDraft[column.key])}
+                      onChange={(event) => updateDraft(column.key, event.target.value)}
+                      className="w-40 rounded-xl border border-slate-200 px-3 py-2 text-right text-sm outline-none focus:ring-2 focus:ring-slate-200"
+                    />
+                  ) : (
+                    <span className="text-right font-semibold text-slate-800">{row[column.key] ?? '-'}</span>
+                  )}
+                </div>
+              ))}
+              {hasRowActions ? (
+                <div className="mt-3 flex justify-end gap-2 border-t border-slate-200 pt-3">
+                  {isEditing ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={submitEdit}
+                        disabled={rowActions?.updating}
+                        className="rounded-xl border border-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        บันทึก
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        disabled={rowActions?.updating}
+                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        ยกเลิก
+                      </button>
+                    </>
+                  ) : (
+                    <>
                       {rowActions?.canUpdate ? (
                         <button
                           type="button"
-                          onClick={() => rowActions.onUpdate?.(row)}
+                          onClick={() => startEdit(row)}
                           disabled={rowActions.updating}
-                          className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           แก้ไข
                         </button>
@@ -166,55 +312,18 @@ export function CountTable({
                           type="button"
                           onClick={() => rowActions.onDelete?.(row)}
                           disabled={rowActions.deleting}
-                          className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           ลบ
                         </button>
                       ) : null}
-                    </div>
-                  </td>
-                ) : null}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="grid gap-3 p-4 md:hidden">
-        {rows.map((row, index) => (
-          <article key={row.id || index} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            {tableColumns.map((column) => (
-              <div key={column.key} className="flex justify-between gap-3 py-1.5 text-sm">
-                <span className="text-slate-500">{column.label}</span>
-                <span className="text-right font-semibold text-slate-800">{row[column.key] ?? '-'}</span>
-              </div>
-            ))}
-            {hasRowActions ? (
-              <div className="mt-3 flex justify-end gap-2 border-t border-slate-200 pt-3">
-                {rowActions?.canUpdate ? (
-                  <button
-                    type="button"
-                    onClick={() => rowActions.onUpdate?.(row)}
-                    disabled={rowActions.updating}
-                    className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    แก้ไข
-                  </button>
-                ) : null}
-                {rowActions?.canDelete ? (
-                  <button
-                    type="button"
-                    onClick={() => rowActions.onDelete?.(row)}
-                    disabled={rowActions.deleting}
-                    className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    ลบ
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-          </article>
-        ))}
+                    </>
+                  )}
+                </div>
+              ) : null}
+            </article>
+          )
+        })}
       </div>
 
       {summaryItems.length || remark ? (
