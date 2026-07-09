@@ -18,10 +18,13 @@ Prevent Feature Development from drifting away from the established frontend arc
 - Feature ownership
 - Shared module usage
 - Architecture drift
+- Projection boundary
+- Policy boundary
+- Controller boundary
 
 ## Governance Scope
 
-FE-09 applies to all frontend Feature Cells, shared modules, routes, stores, API clients, components, utilities, and cross-feature dependencies.
+FE-09 applies to all frontend Feature Cells, shared modules, routes, stores, API clients, components, utilities, projections, policies, controllers, and cross-feature dependencies.
 
 Every new or modified frontend feature must pass FE-09 review before it is considered architecture-compliant.
 
@@ -36,6 +39,9 @@ Required rules:
 - Hooks use the `use` prefix.
 - Stores use a clear feature or domain suffix such as `Store`.
 - API modules use a clear feature or domain suffix such as `Api`.
+- Projection modules use a clear feature or domain suffix such as `Projection`.
+- Policy modules use a clear feature or domain suffix such as `Policy`.
+- Controller modules use a clear feature or domain suffix such as `Controller`.
 - Utility names describe one responsibility.
 - Shared names must remain domain-neutral.
 - Avoid generic names such as `helper`, `common`, `misc`, `data`, or `utils2` when responsibility is unclear.
@@ -61,6 +67,8 @@ Required rules:
 - Cross-feature access must use an explicit public entry point or approved contract.
 - Shared modules must not import feature-owned modules.
 - UI components must not import database, server, or backend-only code.
+- UI components must not import API clients directly.
+- UI components must not import stores directly when a controller or feature facade is the approved boundary.
 - View layers must not become the owner of business rules.
 - Circular dependencies are prohibited.
 - Deep relative imports that bypass a feature boundary are prohibited.
@@ -73,7 +81,9 @@ App / Routes
     ↓
 Feature Public API
     ↓
-Feature Components / State / Services
+Feature Controllers
+    ↓
+Feature Policies / Projections / State / Services
     ↓
 Approved Shared Modules
 ```
@@ -96,6 +106,9 @@ Required rules:
 - Feature-specific state belongs to the owning Feature Cell.
 - Feature-specific API access belongs to the owning Feature Cell.
 - Feature-specific validation and domain mapping belong to the owning Feature Cell.
+- Feature-specific projections belong to the owning Feature Cell.
+- Feature-specific policies belong to the owning Feature Cell.
+- Feature-specific controllers belong to the owning Feature Cell.
 - Routes must point to feature-owned public surfaces.
 - Shared ownership is not assumed merely because two features use similar code.
 - Ownership transfer requires an explicit architecture decision.
@@ -143,9 +156,14 @@ Drift indicators:
 - New folder patterns that conflict with the approved structure.
 - Direct imports across feature internals.
 - Business logic moved into UI components.
+- API calls placed directly inside UI components.
+- Store ownership or store access placed directly inside UI components when a controller or facade boundary is required.
 - State ownership duplicated across Feature Cells.
 - Shared modules importing feature code.
 - Route logic bypassing feature public APIs.
+- Projection rules bypassed or mixed into UI rendering.
+- Policy decisions bypassed or duplicated inside components.
+- Controller orchestration bypassed by direct API/store usage.
 - New global state without explicit approval.
 - Duplicate domain concepts or naming.
 - Desktop and mobile implementations split into separate business components.
@@ -160,7 +178,101 @@ Drift review must determine:
 
 Implementation must not redefine the architecture silently.
 
-## 6. Feature Cell Compliance Checklist
+## 6. Projection Boundary Governance
+
+Projection transforms source data into view-ready or workflow-ready read models.
+
+Projection boundary rules:
+
+- Projection must not perform API calls.
+- Projection must not mutate backend state.
+- Projection must not own user interaction flow.
+- Projection must not contain permission decisions.
+- Projection must not contain controller orchestration.
+- Projection may derive display-ready fields from approved feature data.
+- Projection may normalize backend response shape for frontend consumption.
+- Projection must remain deterministic from its inputs.
+- Projection must remain inside the owning Feature Cell unless approved as shared.
+
+Projection boundary violations include:
+
+- UI components directly rebuilding complex read models repeatedly.
+- Policy checks embedded inside projection logic.
+- API calls made from projection modules.
+- Projection modules importing controllers.
+- Projection modules mutating store or remote state.
+
+Required review questions:
+
+- Is this logic only transforming data for reading or display?
+- Does it avoid side effects?
+- Does it avoid permission decisions?
+- Does it belong to the current Feature Cell?
+
+## 7. Policy Boundary Governance
+
+Policy defines whether an action, route, state transition, or workspace access is allowed.
+
+Policy boundary rules:
+
+- Policy must not perform API calls.
+- Policy must not render UI.
+- Policy must not mutate backend state.
+- Policy must not own component state.
+- Policy must not directly orchestrate user interactions.
+- Policy may evaluate roles, workspace type, resortId scope, status, and business preconditions.
+- Policy decisions must be explicit and testable.
+- Workspace isolation decisions must be represented as policy or an approved access contract.
+- Policy must remain inside the owning Feature Cell unless approved as shared.
+
+Policy boundary violations include:
+
+- Permission checks duplicated inside many components.
+- Resort workspace access decided by menu visibility only.
+- Work status transition rules embedded directly in buttons or forms.
+- Policy importing UI components.
+- Policy mutating store or remote state.
+
+Required review questions:
+
+- Is this logic deciding whether something is allowed?
+- Is the decision reusable by route, component, and controller layers?
+- Does it preserve workspace isolation?
+- Does it avoid rendering and side effects?
+
+## 8. Controller Boundary Governance
+
+Controller coordinates user intent, policy checks, projections, state, and API/service calls for a Feature Cell.
+
+Controller boundary rules:
+
+- Controller may orchestrate API calls through approved feature services or API clients.
+- Controller may read or update feature-owned state through approved state interfaces.
+- Controller may call policy modules before executing restricted actions.
+- Controller may call projection modules to prepare view or workflow data.
+- Controller must not render UI.
+- Controller must not contain presentational formatting that belongs in UI or projection.
+- Controller must not bypass workspace isolation policy.
+- Controller must not import another feature's internal controller, policy, projection, store, or API directly.
+- Controller must expose a stable feature-facing interface when used by components.
+
+Controller boundary violations include:
+
+- UI components calling API clients directly instead of using the approved controller or feature facade.
+- UI components importing stores directly when controller mediation is required.
+- Controller importing another feature's internal files.
+- Controller duplicating policy decisions instead of using policy modules.
+- Controller embedding display projection logic instead of using projection modules.
+
+Required review questions:
+
+- Is this code coordinating a user action or workflow?
+- Does it call policy before restricted actions?
+- Does it preserve workspace boundaries?
+- Does it avoid rendering concerns?
+- Does it keep API/store access behind the approved feature boundary?
+
+## 9. Feature Cell Compliance Checklist
 
 Every Feature Cell must confirm:
 
@@ -169,14 +281,20 @@ Every Feature Cell must confirm:
 - Naming follows project conventions.
 - Imports respect dependency direction.
 - No other feature imports internal files directly.
+- No cross-feature internal import exists.
 - Shared dependencies are approved and domain-neutral.
 - Business logic remains outside presentational UI where required.
+- API access is not placed directly inside UI components.
+- Store access is not placed directly inside UI components when the controller/facade boundary is required.
+- Projection boundary is respected.
+- Policy boundary is respected.
+- Controller boundary is respected.
 - State is separated from view responsibilities.
 - Workspace isolation rules are preserved.
 - Adaptive UI rules are preserved.
 - No unapproved architecture exception exists.
 
-## 7. Governance Review Gate
+## 10. Governance Review Gate
 
 A feature is architecture-compliant only when:
 
@@ -185,6 +303,9 @@ A feature is architecture-compliant only when:
 - Ownership review passes.
 - Shared usage review passes.
 - Architecture drift review passes.
+- Projection boundary review passes.
+- Policy boundary review passes.
+- Controller boundary review passes.
 
 Review outcomes:
 
@@ -196,7 +317,31 @@ FE_BASELINE_BLOCKED
 
 `FE_BASELINE_BLOCKED` must be used when a change violates a critical boundary or silently alters the architecture.
 
-## 8. Exception Process
+## 11. Governance Review Decision
+
+A Governance Review must end with one of two decisions:
+
+```text
+APPROVE
+REQUEST_CHANGE
+```
+
+Use `APPROVE` only when all required governance checks pass or when all exceptions are explicitly accepted.
+
+Use `REQUEST_CHANGE` when any of the following are found:
+
+- Architecture drift.
+- Cross-feature internal import.
+- Business logic in UI.
+- API inside component.
+- Store inside component where controller/facade boundary is required.
+- Projection boundary violation.
+- Policy boundary violation.
+- Controller boundary violation.
+- Shared misuse.
+- Unapproved architecture exception.
+
+## 12. Exception Process
 
 An exception may be accepted only when:
 
@@ -209,7 +354,7 @@ An exception may be accepted only when:
 
 Convenience alone is not sufficient justification for an exception.
 
-## 9. Definition of Done
+## 13. Definition of Done
 
 FE-09 Governance is satisfied when:
 
@@ -219,6 +364,9 @@ FE-09 Governance is satisfied when:
 - Feature ownership is explicit.
 - Shared misuse is prevented or corrected.
 - Architecture drift is detected before acceptance.
+- Projection boundary is respected.
+- Policy boundary is respected.
+- Controller boundary is respected.
 - Exceptions are explicit and governed.
 
 Final governance state:
