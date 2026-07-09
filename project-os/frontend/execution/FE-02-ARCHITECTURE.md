@@ -325,7 +325,218 @@ If a feature needs another feature capability:
 2. define a public boundary in the owning feature
 3. create an ADR for intentional long-lived dependency
 
-## 12. FE-03 Runtime Handoff
+## 12. Feature Cell Work Map
+
+Feature Cells translate the route/layout/screen architecture into execution ownership units.
+
+Each cell owns its own Scanner Architecture package and must keep domain-facing work inside the cell unless a public boundary or ADR allows otherwise.
+
+### 12.1 Feature Cell Summary
+
+| Feature Cell | Primary Role | Workspace Scope | Primary Layouts |
+|---|---|---|---|
+| `workspace` | Workspace entry, workspace boundary, workspace-aware routing support | Laundry + Resort | `RootLayout`, `LaundryWorkspaceLayout`, `ResortWorkspaceLayout` |
+| `dashboard` | Task-oriented dashboard and summary entry screens | Laundry + Resort | `LaundryWorkspaceLayout`, `ResortWorkspaceLayout` |
+| `laundry-works` | Operational center for Laundry Work | Laundry | `LaundryWorkspaceLayout`, `WorkDetailLayout` |
+| `laundry-bags` | Bag intake and bag-level workflow | Laundry | `WorkDetailLayout` |
+| `issues` | Explicit issue reporting and issue visibility | Laundry + Resort | `LaundryWorkspaceLayout`, `ResortWorkspaceLayout`, `WorkDetailLayout` |
+| `inventory` | Calculated inventory visibility | Laundry + Resort | `LaundryWorkspaceLayout`, `ResortWorkspaceLayout` |
+
+### 12.2 `workspace` Cell
+
+Owner: `frontend/src/features/workspace/`
+
+Purpose:
+
+- Own workspace boundary behavior.
+- Own workspace-aware entry and navigation context.
+- Keep Laundry Workspace and Resort Workspace separated.
+
+Route ownership:
+
+| Route | Screen | Layout | Ownership |
+|---|---|---|---|
+| `/` | Workspace Entry | `RootLayout` | resolve workspace entry without feature business logic |
+| `/laundry` | Laundry Workspace Entry | `LaundryWorkspaceLayout` | workspace shell boundary only |
+| `/resort` | Resort Workspace Entry | `ResortWorkspaceLayout` | resort-scoped shell boundary only |
+
+Screen ownership:
+
+- Workspace Entry
+- Laundry Workspace Shell Entry
+- Resort Workspace Shell Entry
+
+Boundary:
+
+- Does not own dashboard widgets.
+- Does not own Laundry Work workflow.
+- Does not own inventory or issue business rules.
+
+### 12.3 `dashboard` Cell
+
+Owner: `frontend/src/features/dashboard/`
+
+Purpose:
+
+- Own task-oriented dashboard screens.
+- Surface current work, pending work, issue summaries, and inventory summaries through feature-safe inputs.
+
+Route ownership:
+
+| Route | Screen | Layout | Ownership |
+|---|---|---|---|
+| `/laundry` | Laundry Dashboard | `LaundryWorkspaceLayout` | laundry-wide task dashboard |
+| `/resort` | Resort Dashboard | `ResortWorkspaceLayout` | resort-scoped dashboard |
+| `/laundry/reports` | Laundry Reports | `LaundryWorkspaceLayout` | baseline report composition until a dedicated reports cell exists |
+
+Screen ownership:
+
+- Laundry Dashboard
+- Resort Dashboard
+- Laundry Reports baseline screen
+
+Boundary:
+
+- Reads prepared summaries through feature boundaries or shared contracts.
+- Does not mutate operational workflow state.
+- Does not import internal files from `laundry-works`, `issues`, or `inventory`.
+
+### 12.4 `laundry-works` Cell
+
+Owner: `frontend/src/features/laundry-works/`
+
+Purpose:
+
+- Own the main Laundry Work operation flow.
+- Own Work List, Create Laundry Work, and Work Detail screens.
+- Treat Work Detail as the main operational screen.
+
+Route ownership:
+
+| Route | Screen | Layout | Ownership |
+|---|---|---|---|
+| `/laundry/works` | Work List / Task Queue | `LaundryWorkspaceLayout` | laundry work queue and task entry |
+| `/laundry/works/new` | Create Laundry Work | `LaundryWorkspaceLayout` | create work screen ownership |
+| `/laundry/works/:workId` | Work Detail | `WorkDetailLayout` | main work operation screen |
+
+Screen ownership:
+
+- Work List / Task Queue
+- Create Laundry Work
+- Work Detail
+
+Boundary:
+
+- Owns Laundry Work workflow-facing pages, runtime, policies, projections, mappers, hooks, stores, and API boundary.
+- May expose public boundary inputs for `laundry-bags`, `issues`, and `dashboard` if needed.
+- Must not import internal files from `laundry-bags`, `issues`, or `inventory`.
+
+### 12.5 `laundry-bags` Cell
+
+Owner: `frontend/src/features/laundry-bags/`
+
+Purpose:
+
+- Own bag intake and bag-level workflow inside a Laundry Work context.
+- Keep bag behavior separate from overall Laundry Work orchestration.
+
+Route ownership:
+
+| Route | Screen | Layout | Ownership |
+|---|---|---|---|
+| `/laundry/works/:workId/bags` | Bag Workflow | `WorkDetailLayout` | bag intake and bag-level workflow |
+
+Screen ownership:
+
+- Bag Workflow
+- Bag list within work context
+- Bag open/count support surfaces when assigned by FE-04
+
+Boundary:
+
+- Operates inside a `workId` context.
+- Does not own the full Work Detail screen.
+- Does not own inventory calculation or issue resolution.
+- Uses public boundaries or contracts when interacting with `laundry-works`.
+
+### 12.6 `issues` Cell
+
+Owner: `frontend/src/features/issues/`
+
+Purpose:
+
+- Own explicit issue reporting and issue management.
+- Support damaged, missing, count mismatch, return mismatch, and other issue visibility.
+
+Route ownership:
+
+| Route | Screen | Layout | Ownership |
+|---|---|---|---|
+| `/laundry/issues` | Laundry Issue Management | `LaundryWorkspaceLayout` | laundry-wide issue management |
+| `/resort/issues` | Resort Issue Visibility | `ResortWorkspaceLayout` | resort-scoped issue visibility |
+| `/laundry/works/:workId` | Work Detail Issue Panel | `WorkDetailLayout` | feature-owned panel only, not page ownership |
+
+Screen ownership:
+
+- Laundry Issue Management
+- Resort Issue Visibility
+- Work Detail issue panel or section when composed by FE-04
+
+Boundary:
+
+- Owns issue runtime, policies, projections, mappers, hooks, stores, and API boundary.
+- Does not own Work Detail page shell.
+- Does not mutate Laundry Work status except through approved runtime/contract boundary.
+- Resort issue screens must remain resort-scoped.
+
+### 12.7 `inventory` Cell
+
+Owner: `frontend/src/features/inventory/`
+
+Purpose:
+
+- Own calculated inventory visibility.
+- Present inventory derived from work and movement history.
+
+Route ownership:
+
+| Route | Screen | Layout | Ownership |
+|---|---|---|---|
+| `/laundry/inventory` | Laundry Inventory Visibility | `LaundryWorkspaceLayout` | laundry-side inventory visibility |
+| `/resort/inventory` | Resort Inventory Visibility | `ResortWorkspaceLayout` | resort-scoped inventory visibility |
+
+Screen ownership:
+
+- Laundry Inventory Visibility
+- Resort Inventory Visibility
+- Inventory summary sections when composed by dashboard
+
+Boundary:
+
+- Inventory is visibility over calculated state.
+- Does not own manual operational work mutation.
+- Does not directly import internal movement/work logic from other features.
+- Dashboard may consume inventory summaries only through a public boundary or shared contract.
+
+### 12.8 Cell Import Boundary
+
+Default direction remains:
+
+```text
+app / routes / layouts
+  -> features
+  -> shared
+```
+
+Feature cell to feature cell internal imports are forbidden by default.
+
+Allowed collaboration patterns:
+
+1. Shared business-neutral utilities move to `shared/`.
+2. Owning feature defines a public boundary.
+3. Long-lived cross-cell dependency requires ADR.
+
+## 13. FE-03 Runtime Handoff
 
 FE-03 should define runtime behavior without changing this architecture boundary.
 
@@ -338,6 +549,7 @@ Handoff inputs for FE-03:
 - policy boundary per feature
 - projection and mapper responsibility
 - state ownership rules
+- Feature Cell Work Map
 
 FE-03 must preserve:
 
@@ -345,8 +557,9 @@ FE-03 must preserve:
 - workspace-aware runtime
 - no business logic inside UI components
 - no direct cross-feature imports
+- feature cell ownership boundaries
 
-## 13. FE-04 UI Composition Handoff
+## 14. FE-04 UI Composition Handoff
 
 FE-04 should design UI composition inside the boundaries defined here.
 
@@ -358,6 +571,7 @@ Handoff inputs for FE-04:
 - component responsibility boundary
 - task-oriented UI requirement
 - adaptive workspace requirement
+- Feature Cell Work Map
 
 FE-04 must preserve:
 
@@ -366,8 +580,9 @@ FE-04 must preserve:
 - adaptive layout instead of separate desktop/mobile component families
 - shared UI as business-neutral only
 - feature-owned UI composition inside feature packages
+- page ownership and feature cell ownership boundaries
 
-## 14. Non-goals
+## 15. Non-goals
 
 FE-02 does not:
 
@@ -379,7 +594,7 @@ FE-02 does not:
 - change schema
 - change existing feature skeleton
 
-## 15. Done State
+## 16. Done State
 
 FE-02 is ready for review when:
 
@@ -391,5 +606,6 @@ FE-02 is ready for review when:
 - component boundary is defined
 - page-to-feature mapping is defined
 - cross-feature import rules are defined
+- Feature Cell Work Map is defined
 - FE-03 handoff is defined
 - FE-04 handoff is defined
