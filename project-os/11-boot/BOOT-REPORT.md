@@ -1,5 +1,11 @@
 # BOOT REPORT
 
+> Important: This file is a Mission / Execution Artifact.
+>
+> It must not be used as a Project Boot input to infer the current task before Human Mission Assignment.
+>
+> Use this report only after the Human has assigned a Mission, or when reviewing gaps / verification evidence for the Mission recorded here.
+
 Project: Laundry Operations and Linen Asset Management Platform
 Version: v1.0 Boot Pass
 
