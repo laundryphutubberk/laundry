@@ -39,6 +39,11 @@ function formatDate(value?: string | null) {
   })
 }
 
+function bagDisplayName(bag: BagPanelBag, index: number) {
+  const simpleBagNo = bag.bagNo?.match(/BAG-(\d+)$/)?.[1]
+  return simpleBagNo ? `ถุงที่ ${Number(simpleBagNo)}` : `ถุงที่ ${index + 1}`
+}
+
 export function BagPanel({ bags = [], actions, loading = false, error = null, state }: BagPanelProps) {
   const [bagNo, setBagNo] = useState('')
   const [note, setNote] = useState('')
@@ -62,7 +67,7 @@ export function BagPanel({ bags = [], actions, loading = false, error = null, st
   if (loading) {
     return (
       <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-sm">
-        <p className="text-sm font-semibold text-slate-500">กำลังโหลดข้อมูลถุง...</p>
+        <p className="text-sm font-semibold text-slate-500">กำลังโหลดข้อมูลถุงรับเข้า...</p>
       </section>
     )
   }
@@ -71,27 +76,30 @@ export function BagPanel({ bags = [], actions, loading = false, error = null, st
     <section className="rounded-[28px] border border-white/70 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-lg font-black text-slate-950">ถุงผ้า</p>
-          <p className="mt-1 text-sm font-medium text-slate-500">จัดการถุงที่ผูกกับงานซักนี้</p>
+          <p className="text-lg font-black text-slate-950">ถุงรับเข้า</p>
+          <p className="mt-1 text-sm font-medium text-slate-500">ใช้ถุงเป็นหน่วยรับเข้า เพื่อตรวจจำนวนและช่วยนับผ้าให้ครบ</p>
         </div>
-        <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{bags.length} ถุง</span>
+        <span className="rounded-2xl bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">รับแล้ว {bags.length} ถุง</span>
       </div>
 
       <div className="mt-5 space-y-3">
         {bags.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm font-semibold text-slate-500">
-            ยังไม่มีถุงในงานนี้
+            ยังไม่มีถุงรับเข้าในงานนี้
           </div>
         ) : (
-          bags.map((bag) => (
+          bags.map((bag, index) => (
             <div key={bag.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-base font-black text-slate-950">{bag.bagNo}</p>
+                <div>
+                  <p className="text-base font-black text-slate-950">{bagDisplayName(bag, index)}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-400">รหัสระบบ: {bag.bagNo}</p>
+                </div>
                 <span className="rounded-xl bg-blue-100 px-3 py-1 text-xs font-black text-blue-700">{bag.status}</span>
               </div>
               <div className="mt-2 grid gap-1 text-sm font-medium text-slate-500 sm:grid-cols-2">
                 <p>รับเมื่อ: {formatDate(bag.receivedAt)}</p>
-                <p>{bag.note || 'ไม่มีหมายเหตุ'}</p>
+                <p>{bag.note || 'ไม่มีหมายเหตุถุง'}</p>
               </div>
             </div>
           ))
@@ -100,25 +108,26 @@ export function BagPanel({ bags = [], actions, loading = false, error = null, st
 
       {createAction ? (
         <form onSubmit={handleSubmit} className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-          <p className="text-sm font-black text-slate-700">เพิ่มถุงใหม่</p>
+          <p className="text-sm font-black text-slate-700">เพิ่มถุงรับเข้า</p>
+          <p className="mt-1 text-xs font-semibold text-slate-400">ใช้กรณีรับถุงเพิ่มจากจำนวนเดิม เช่น ถุงที่ 6 หรือถุงตกหล่น</p>
           <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto] md:items-end">
             <label className="block">
-              <span className="text-xs font-bold text-slate-500">เลขถุง</span>
+              <span className="text-xs font-bold text-slate-500">ชื่อถุง / ลำดับถุง</span>
               <input
                 value={bagNo}
                 onChange={(event) => setBagNo(event.target.value)}
                 className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                placeholder="เช่น BAG-001"
+                placeholder="เช่น ถุงที่ 6"
                 disabled={disabled}
               />
             </label>
             <label className="block">
-              <span className="text-xs font-bold text-slate-500">หมายเหตุ</span>
+              <span className="text-xs font-bold text-slate-500">หมายเหตุถุง</span>
               <input
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                placeholder="ไม่บังคับ"
+                placeholder="เช่น ถุงขาด / ถุงเปียก / ไม่บังคับ"
                 disabled={disabled}
               />
             </label>
