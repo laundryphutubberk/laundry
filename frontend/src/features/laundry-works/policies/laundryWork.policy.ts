@@ -1,4 +1,4 @@
-import type { LaundryWorkDetailDTO, WorkspaceType } from '../api/laundryWorkApi'
+import type { LaundryWorkBackendCapability, LaundryWorkDetailDTO, WorkspaceType } from '../api/laundryWorkApi'
 
 export type LaundryWorkWorkspaceScope = {
   workspaceType: WorkspaceType
@@ -12,6 +12,7 @@ export type LaundryWorkPolicyInput = {
   workspaceScope: LaundryWorkWorkspaceScope
   loading?: boolean
   error?: string | null
+  capability?: LaundryWorkBackendCapability
 }
 
 export type LaundryWorkPolicyAction = {
@@ -49,18 +50,38 @@ const deny = (label: string, reasonCode: string, message: string): LaundryWorkPo
   message,
 })
 
+function getNextBackendStatus(currentStatus?: string) {
+  const transitions: Record<string, string> = {
+    DRAFT: 'BAG_RECEIVED',
+    BAG_RECEIVED: 'FACTORY_RECEIVED',
+    FACTORY_RECEIVED: 'BAG_OPENED',
+    BAG_OPENED: 'ITEM_COUNTED',
+    ITEM_COUNTED: 'TYPE_SORTED',
+    TYPE_SORTED: 'COLOR_SORTED',
+    COLOR_SORTED: 'DATA_RECORDED',
+    DATA_RECORDED: 'RETURNED',
+    RETURNED: 'CLOSED',
+  }
+
+  return transitions[currentStatus || '']
+}
+
 export function getLaundryWorkActionModel({
   workId,
   detail,
   workspaceScope,
   loading = false,
   error = null,
+  capability,
 }: LaundryWorkPolicyInput): LaundryWorkPolicyActionModel {
   const missingWorkspace = !workspaceScope?.workspaceType
   const missingResortScope = workspaceScope?.workspaceType === 'RESORT' && !workspaceScope.resortId
   const missingWork = !workId || !detail?.work
   const busyOrErrored = loading || Boolean(error)
   const terminalWork = ['CLOSED', 'CANCELLED'].includes(detail?.work.currentStatus || '')
+  const backendStatusTransitionReady = Boolean(capability?.statusTransition)
+  const nextBackendStatus = getNextBackendStatus(detail?.work.currentStatus)
+  const canContinueByBackend = backendStatusTransitionReady && Boolean(nextBackendStatus)
 
   const boundaryDenyReason = missingWorkspace
     ? ['MISSING_WORKSPACE_SCOPE', 'Missing workspace scope.']
@@ -75,31 +96,49 @@ export function getLaundryWorkActionModel({
             : null
 
   const canMutate = !boundaryDenyReason
-  const continueRequiresBackendContract = deny(
-    'ดำเนินการขั้นตอนถัดไป',
-    'BACKEND_CONTRACT_REQUIRED',
-    'Continue action requires final backend command contract before it can be enabled.',
-  )
+  const continueAction = boundaryDenyReason
+    ? deny('ดำเนินการขั้นตอนถัดไป', boundaryDenyReason[0], boundaryDenyReason[1])
+    : canContinueByBackend
+      ? allow('ดำเนินการขั้นตอนถัดไป')
+      : deny(
+          'ดำเนินการขั้นตอนถัดไป',
+          'BACKEND_CONTRACT_REQUIRED',
+          'Continue action requires a supported backend status transition command for the current status.',
+        )
 
   return {
     work: {
       back: allow('ย้อนกลับ'),
-      saveDraft: canMutate
-        ? allow('บันทึกชั่วคราว')
-        : deny('บันทึกชั่วคราว', boundaryDenyReason?.[0] || 'ACTION_NOT_ALLOWED', boundaryDenyReason?.[1] || 'Action is not allowed.'),
-      continue: boundaryDenyReason
-        ? deny('ดำเนินการขั้นตอนถัดไป', boundaryDenyReason[0], boundaryDenyReason[1])
-        : continueRequiresBackendContract,
+      saveDraft: deny(
+        'บันทึกชั่วคราว',
+        'BACKEND_CONTRACT_REQUIRED',
+        'Save Draft is disabled until a backend draft contract exists.',
+      ),
+      continue: continueAction,
     },
     issue: {
-      createIssue: canMutate
-        ? allow('เพิ่มปัญหา')
-        : deny('เพิ่มปัญหา', boundaryDenyReason?.[0] || 'ACTION_NOT_ALLOWED', boundaryDenyReason?.[1] || 'Action is not allowed.'),
+      createIssue:
+        canMutate && capability?.issue.create
+          ? allow('เพิ่มปัญหา')
+          : deny(
+              'เพิ่มปัญหา',
+              capability?.issue.create ? boundaryDenyReason?.[0] || 'ACTION_NOT_ALLOWED' : 'BACKEND_CONTRACT_REQUIRED',
+              capability?.issue.create
+                ? boundaryDenyReason?.[1] || 'Action is not allowed.'
+                : 'Issue creation endpoint is not available in backend contract.',
+            ),
     },
     image: {
-      uploadImage: canMutate
-        ? allow('เพิ่มรูป')
-        : deny('เพิ่มรูป', boundaryDenyReason?.[0] || 'ACTION_NOT_ALLOWED', boundaryDenyReason?.[1] || 'Action is not allowed.'),
+      uploadImage:
+        canMutate && capability?.image.upload
+          ? allow('เพิ่มรูป')
+          : deny(
+              'เพิ่มรูป',
+              capability?.image.upload ? boundaryDenyReason?.[0] || 'ACTION_NOT_ALLOWED' : 'BACKEND_CONTRACT_REQUIRED',
+              capability?.image.upload
+                ? boundaryDenyReason?.[1] || 'Action is not allowed.'
+                : 'Image upload endpoint is not available in backend contract.',
+            ),
     },
   }
 }
