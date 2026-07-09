@@ -40,6 +40,12 @@ export const laundryWorkDetailMock = {
       { key: 'return_work', label: 'ส่งกลับ', state: 'pending' },
     ],
     nextHint: 'ขั้นตอนถัดไป: แยกสี',
+    mainTaskPanel: {
+      activeStepKey: 'sort_type',
+      title: 'แยกประเภทผ้า',
+      description: 'ตรวจรายการที่นับแล้ว แยกประเภทให้ครบก่อนส่งต่อไปขั้นตอนแยกสี',
+      mode: 'interactive',
+    },
     countColumns: [
       { key: 'type', label: 'ประเภทผ้า' },
       { key: 'category', label: 'หมวดหมู่' },
@@ -53,6 +59,11 @@ export const laundryWorkDetailMock = {
       { id: 'line-3', type: 'ผ้าเช็ดตัว', category: 'ห้องน้ำ', color: 'ขาว', quantity: 48, weight: '26 กก.' },
       { id: 'line-4', type: 'ผ้าเช็ดเท้า', category: 'ห้องน้ำ', color: 'เทา', quantity: 14, weight: '12.5 กก.' },
     ],
+    countSummaryItems: [
+      { key: 'line-count', label: 'รวมรายการ', value: 4 },
+      { key: 'quantity-total', label: 'รวมจำนวน', value: 342 },
+    ],
+    countRemark: 'น้ำหนักรวมประมาณ 86.5 กก.',
     issues: [
       {
         id: 'issue-1',
