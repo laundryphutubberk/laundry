@@ -1,15 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 
-import { laundryWorkApi, type ApiFailure, type LaundryWorkDTO, type LaundryWorkRequestMeta, type WorkspaceType } from '../api/laundryWorkApi'
-
-type LaundryWorkSessionContext = {
-  token?: string
-  actorId?: number | string
-  actorRole?: string
-  workspaceType?: WorkspaceType
-  resortId?: number
-}
+import { getWorkspaceContext } from '../../auth/authSession'
+import { laundryWorkApi, type ApiFailure, type LaundryWorkDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
 
 const createRequestId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -19,56 +12,14 @@ const createRequestId = () => {
   return `lw-list-${Date.now()}`
 }
 
-const readStoredToken = () => {
-  if (typeof window === 'undefined') return undefined
-
-  return (
-    window.localStorage.getItem('laundry.auth.token') ||
-    window.localStorage.getItem('authToken') ||
-    window.localStorage.getItem('token') ||
-    undefined
-  )
-}
-
-const decodeJwtPayload = (token?: string) => {
-  if (!token || typeof window === 'undefined') return null
-
-  try {
-    const payload = token.split('.')[1]
-    if (!payload) return null
-
-    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
-    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=')
-    return JSON.parse(window.atob(padded)) as Record<string, unknown>
-  } catch (_error) {
-    return null
-  }
-}
-
-const readLaundryWorkSessionContext = (): LaundryWorkSessionContext => {
-  const token = readStoredToken()
-  const payload = decodeJwtPayload(token)
-  const workspaceType = payload?.workspaceType === 'LAUNDRY' || payload?.workspaceType === 'RESORT' ? payload.workspaceType : undefined
-  const rawResortId = payload?.resortId
-  const resortId = rawResortId === undefined || rawResortId === null ? undefined : Number(rawResortId)
-
-  return {
-    token,
-    actorId: (payload?.userId || payload?.id) as string | number | undefined,
-    actorRole: payload?.role as string | undefined,
-    workspaceType,
-    resortId: Number.isInteger(resortId) && resortId > 0 ? resortId : undefined,
-  }
-}
-
-const createRequestMeta = (sessionContext: LaundryWorkSessionContext): LaundryWorkRequestMeta => ({
+const createRequestMeta = (sessionContext: ReturnType<typeof getWorkspaceContext>): LaundryWorkRequestMeta => ({
   requestId: createRequestId(),
   feature: 'laundry-work',
   action: 'listLaundryWorks',
   actorId: sessionContext.actorId,
   actorRole: sessionContext.actorRole,
   workspaceType: sessionContext.workspaceType,
-  resortId: sessionContext.resortId,
+  resortId: sessionContext.resortId || undefined,
   token: sessionContext.token,
   createdAt: new Date().toISOString(),
 })
@@ -105,7 +56,7 @@ function statusLabel(status?: string) {
 }
 
 export function LaundryWorkListPage() {
-  const sessionContext = useMemo(() => readLaundryWorkSessionContext(), [])
+  const sessionContext = useMemo(() => getWorkspaceContext(), [])
   const [items, setItems] = useState<LaundryWorkDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiFailure['error'] | null>(null)
