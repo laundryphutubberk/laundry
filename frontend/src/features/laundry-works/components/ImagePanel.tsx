@@ -57,7 +57,7 @@ export function ImagePanel({
   if (error) {
     return (
       <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
-        <h2 className="text-lg font-bold">รูปภาพประกอบ</h2>
+        <h2 className="text-lg font-black">รูปภาพประกอบ</h2>
         <p className="mt-2 text-sm">{error}</p>
       </section>
     )
@@ -67,17 +67,17 @@ export function ImagePanel({
     <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-950">รูปภาพประกอบ</h2>
+          <h2 className="text-xl font-black tracking-tight text-slate-950">รูปภาพประกอบ</h2>
           <p className="mt-1 text-sm text-slate-500">รูปภาพหรือหลักฐานที่เกี่ยวข้องกับงานนี้</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {viewAllAction ? (
-            <button type="button" onClick={viewAllAction.onClick} disabled={viewAllAction.disabled || viewAllAction.loading} className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="button" onClick={viewAllAction.onClick} disabled={viewAllAction.disabled || viewAllAction.loading} className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-blue-900 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
               {viewAllAction.loading ? 'กำลังโหลด...' : viewAllAction.label || 'ดูทั้งหมด'}
             </button>
           ) : null}
           {canUploadImage ? (
-            <button type="button" onClick={onUploadImage} disabled={uploadAction?.disabled || uploadAction?.loading} className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="button" onClick={onUploadImage} disabled={uploadAction?.disabled || uploadAction?.loading} className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-blue-900 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
               {uploadAction?.loading ? 'กำลังดำเนินการ...' : uploadAction?.label || 'เพิ่มรูป'}
             </button>
           ) : null}
@@ -96,7 +96,7 @@ export function ImagePanel({
                   <div className="flex aspect-[4/3] items-center justify-center text-sm text-slate-400">ไม่มีรูป</div>
                 )}
                 <figcaption className="space-y-1 px-3 py-3 text-xs text-slate-500">
-                  <p className="truncate font-semibold text-slate-700">{image.name || image.caption || 'รูปประกอบงาน'}</p>
+                  <p className="truncate font-bold text-slate-700">{image.name || image.caption || 'รูปประกอบงาน'}</p>
                   {image.uploadedAt || image.uploadedBy ? <p className="truncate text-slate-400">{[image.uploadedAt, image.uploadedBy].filter(Boolean).join(' • ')}</p> : null}
                 </figcaption>
               </figure>
@@ -104,7 +104,7 @@ export function ImagePanel({
           })}
         </div>
       ) : (
-        <p className="mt-5 rounded-2xl border border-dashed p-4 text-sm text-slate-500">{emptyText}</p>
+        <p className="mt-5 rounded-2xl border border-dashed p-5 text-sm text-slate-500">{emptyText}</p>
       )}
     </section>
   )
