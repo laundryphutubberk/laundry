@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
-import { useLaundryWorkController } from '../controllers/useLaundryWorkController'
+import { useLaundryWorkRuntime, type LaundryWorkRuntime } from '../hooks/useLaundryWorkRuntime'
 
-export type LaundryWorkRuntimeHostRenderProps = ReturnType<typeof useLaundryWorkController>
+export type LaundryWorkRuntimeHostRenderProps = LaundryWorkRuntime
 
 export type LaundryWorkRuntimeHostProps = {
   children: (runtime: LaundryWorkRuntimeHostRenderProps) => ReactNode
 }
 
 export function LaundryWorkRuntimeHost({ children }: LaundryWorkRuntimeHostProps) {
-  const runtime = useLaundryWorkController()
+  const runtime = useLaundryWorkRuntime()
 
   return <>{children(runtime)}</>
 }
