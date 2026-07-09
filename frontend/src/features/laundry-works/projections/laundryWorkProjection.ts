@@ -42,6 +42,15 @@ const formatDate = (value?: string | null) => {
   return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+const toNumber = (value: unknown) => {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[^\d.-]/g, ''))
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  return 0
+}
+
 const buildTimeline = (currentStatus?: string) => {
   const currentIndex = workflowSteps.findIndex((step) => step.backendStatus === currentStatus)
 
@@ -72,6 +81,16 @@ export function createLaundryWorkDetailProjection({
   const work = detail?.work
   const statusLabel = statusLabels[work?.currentStatus || ''] || work?.currentStatus || 'ไม่ระบุสถานะ'
   const issueCount = detail?.issues?.length ?? work?.issueCount ?? 0
+  const countRows = (detail?.countLines || []).map((line) => ({
+    id: line.id,
+    type: line.itemTypeName || '-',
+    category: line.category || '-',
+    color: line.colorGroup || '-',
+    quantity: line.quantity,
+    weight: line.weight ?? '-',
+  }))
+  const totalQuantity = countRows.reduce((sum, row) => sum + toNumber(row.quantity), 0)
+  const totalWeight = countRows.reduce((sum, row) => sum + toNumber(row.weight), 0)
 
   return {
     loading,
@@ -117,14 +136,12 @@ export function createLaundryWorkDetailProjection({
         { key: 'quantity', label: 'จำนวน', align: 'right' as const },
         { key: 'weight', label: 'น้ำหนัก', align: 'right' as const },
       ],
-      countRows: (detail?.countLines || []).map((line) => ({
-        id: line.id,
-        type: line.itemTypeName || '-',
-        category: line.category || '-',
-        color: line.colorGroup || '-',
-        quantity: line.quantity,
-        weight: line.weight ?? '-',
-      })),
+      countRows,
+      countSummaryItems: [
+        { key: 'line-count', label: 'รวมรายการ', value: countRows.length },
+        { key: 'quantity-total', label: 'รวมจำนวน', value: totalQuantity || '-' },
+      ],
+      countRemark: totalWeight ? `น้ำหนักรวมประมาณ ${totalWeight} กก.` : 'รอตรวจสอบน้ำหนักรวม',
       issues: (detail?.issues || []).map((issue) => ({
         id: issue.id,
         issueType: issue.issueType,
