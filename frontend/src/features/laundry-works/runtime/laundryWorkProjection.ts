@@ -1,0 +1,156 @@
+import type { LaundryWorkApiError, LaundryWorkDetail } from '../api/laundryWorkApi'
+import type { LaundryWorkWorkspaceScope } from '../state/laundryWork.store'
+
+export type LaundryWorkDetailProjectionInput = {
+  detail?: LaundryWorkDetail | null
+  loading?: boolean
+  error?: LaundryWorkApiError | string | null
+  workspaceScope: LaundryWorkWorkspaceScope
+}
+
+const workflowSteps = [
+  { key: 'receive_bags', label: 'รับถุง', status: 'BAG_RECEIVED' },
+  { key: 'factory_receive', label: 'โรงซักรับถุง', status: 'FACTORY_RECEIVED' },
+  { key: 'open_bag', label: 'เปิดถุง', status: 'BAG_OPENED' },
+  { key: 'count_items', label: 'นับชิ้น', status: 'ITEM_COUNTED' },
+  { key: 'sort_type', label: 'แยกประเภท', status: 'TYPE_SORTED' },
+  { key: 'sort_color', label: 'แยกสี', status: 'COLOR_SORTED' },
+  { key: 'record_data', label: 'บันทึกข้อมูล', status: 'DATA_RECORDED' },
+  { key: 'return_work', label: 'ส่งกลับ', status: 'RETURNED' },
+  { key: 'close_work', label: 'ปิดงาน', status: 'CLOSED' },
+]
+
+const statusLabels: Record<string, string> = {
+  DRAFT: 'ฉบับร่าง',
+  BAG_RECEIVED: 'รับถุงแล้ว',
+  FACTORY_RECEIVED: 'โรงซักรับถุงแล้ว',
+  BAG_OPENED: 'เปิดถุงแล้ว',
+  ITEM_COUNTED: 'นับชิ้นแล้ว',
+  TYPE_SORTED: 'แยกประเภทแล้ว',
+  COLOR_SORTED: 'แยกสีแล้ว',
+  DATA_RECORDED: 'บันทึกข้อมูลแล้ว',
+  RETURNED: 'ส่งกลับแล้ว',
+  CLOSED: 'ปิดงานแล้ว',
+  CANCELLED: 'ยกเลิก',
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return '-'
+
+  return value
+}
+
+function getErrorMessage(error?: LaundryWorkApiError | string | null) {
+  if (!error) return null
+  if (typeof error === 'string') return error
+
+  return error.requestId ? `${error.message} (requestId: ${error.requestId})` : error.message
+}
+
+function buildTimeline(currentStatus?: string) {
+  const currentIndex = workflowSteps.findIndex((step) => step.status === currentStatus)
+
+  return workflowSteps.map((step, index) => ({
+    key: step.key,
+    label: step.label,
+    state: currentStatus === 'CANCELLED'
+      ? 'cancelled'
+      : currentIndex === -1
+        ? 'pending'
+        : index < currentIndex
+          ? 'completed'
+          : index === currentIndex
+            ? 'current'
+            : 'pending',
+    description: step.status === currentStatus ? 'ขั้นตอนปัจจุบัน' : undefined,
+  }))
+}
+
+export function buildLaundryWorkDetailProjection({
+  detail,
+  loading = false,
+  error = null,
+  workspaceScope,
+}: LaundryWorkDetailProjectionInput) {
+  const errorMessage = getErrorMessage(error)
+  const currentStatus = detail?.currentStatus || 'DRAFT'
+  const statusLabel = statusLabels[currentStatus] || currentStatus
+  const countLines = detail?.countLines || []
+  const issues = detail?.issues || []
+  const bags = detail?.bags || []
+  const history = detail?.statusLogs || []
+  const countedQuantity = countLines.reduce((total, line) => total + Number(line.quantity || 0), 0)
+  const issueQuantity = issues.reduce((total, issue) => total + Number(issue.quantity || 0), 0)
+
+  return {
+    work: detail
+      ? {
+          id: detail.id,
+          workNo: detail.workNo,
+          title: detail.workNo,
+          description: detail.note || 'ภาพรวมงานซักและสถานะปัจจุบัน',
+          resortName: detail.resortName,
+          currentStatus,
+          receivedAt: formatDate(detail.receivedDate),
+          updatedAt: formatDate(detail.updatedAt),
+          note: detail.note || undefined,
+        }
+      : {
+          title: 'Laundry Work',
+          description: loading ? 'กำลังโหลดข้อมูลงานซัก' : 'ไม่พบข้อมูลงานซัก',
+        },
+    status: {
+      label: statusLabel,
+    },
+    workspace: {
+      resortName: detail?.resortName,
+      workspaceLabel: workspaceScope.workspaceType === 'RESORT' ? 'Resort Workspace' : 'Laundry Workspace',
+    },
+    meta: {
+      receivedAt: formatDate(detail?.receivedDate),
+      updatedAt: formatDate(detail?.updatedAt),
+    },
+    timeline: detail ? buildTimeline(currentStatus) : [],
+    nextHint: detail ? 'เลือก action ด้านล่างเพื่อไปขั้นตอนถัดไปตาม policy' : undefined,
+    summaryCards: [
+      { key: 'bag-count', label: 'จำนวนถุง', value: detail?.bagCount ?? '-', unit: 'ถุง' },
+      { key: 'counted-items', label: 'นับแล้วทั้งหมด', value: detail ? countedQuantity : '-', unit: 'ชิ้น' },
+      { key: 'issue-items', label: 'ชิ้นที่มีปัญหา', value: detail ? issueQuantity : '-', unit: 'ชิ้น', tone: issueQuantity ? 'warning' : 'default' },
+      { key: 'work-status', label: 'สถานะงาน', value: statusLabel },
+    ],
+    countRows: countLines.map((line) => ({
+      id: line.id,
+      type: line.itemTypeName || line.itemTypeId || '-',
+      category: line.category || '-',
+      color: line.colorGroup || '-',
+      quantity: line.quantity ?? '-',
+      weight: line.weight || '-',
+    })),
+    countColumns: [
+      { key: 'type', label: 'ประเภทผ้า' },
+      { key: 'category', label: 'หมวดหมู่' },
+      { key: 'color', label: 'สี' },
+      { key: 'quantity', label: 'จำนวน', align: 'right' },
+      { key: 'weight', label: 'น้ำหนัก', align: 'right' },
+    ],
+    issues: issues.map((issue) => ({
+      id: issue.id,
+      issueType: issue.issueType,
+      description: issue.description || undefined,
+      quantity: issue.quantity,
+      status: issue.status,
+      reportedAt: formatDate(issue.reportedAt),
+    })),
+    images: [],
+    history: history.map((event) => ({
+      id: event.id,
+      eventLabel: event.toStatus,
+      description: event.note || undefined,
+      timestamp: formatDate(event.changedAt),
+      actorName: event.changedByName || undefined,
+    })),
+    loading,
+    error: errorMessage,
+    empty: !loading && !error && !detail,
+  }
+}
