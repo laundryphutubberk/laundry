@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { laundryWorkApi, type ApiFailure, type LaundryWorkDetailDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
@@ -29,6 +29,18 @@ const toButtonAction = (action: LaundryWorkPolicyAction, onClick?: () => void) =
   disabled: action.disabled || !action.allowed,
 })
 
+const nextBackendStatusByCurrentStatus: Record<string, string> = {
+  DRAFT: 'BAG_RECEIVED',
+  BAG_RECEIVED: 'FACTORY_RECEIVED',
+  FACTORY_RECEIVED: 'BAG_OPENED',
+  BAG_OPENED: 'ITEM_COUNTED',
+  ITEM_COUNTED: 'TYPE_SORTED',
+  TYPE_SORTED: 'COLOR_SORTED',
+  COLOR_SORTED: 'DATA_RECORDED',
+  DATA_RECORDED: 'RETURNED',
+  RETURNED: 'CLOSED',
+}
+
 export function useLaundryWorkController() {
   const params = useParams()
   const navigate = useNavigate()
@@ -41,9 +53,9 @@ export function useLaundryWorkController() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiFailure['error'] | null>(null)
   const [requestId, setRequestId] = useState<string | undefined>()
+  const [isContinuing, setIsContinuing] = useState(false)
 
-  useEffect(() => {
-    let active = true
+  const loadDetail = useCallback(async () => {
     const meta = createRequestMeta('getLaundryWorkDetail')
 
     setLoading(true)
@@ -51,27 +63,36 @@ export function useLaundryWorkController() {
     setRequestId(meta.requestId)
     selectWork(workId)
 
-    laundryWorkApi.getLaundryWorkDetail({ workId, meta }).then((result) => {
+    const result = await laundryWorkApi.getLaundryWorkDetail({ workId, meta })
+
+    setRequestId(result.meta.requestId)
+
+    if (result.ok) {
+      setDetail(result.data)
+      setError(null)
+    } else {
+      setDetail(null)
+      setError(result.error)
+    }
+
+    setLoading(false)
+  }, [selectWork, workId])
+
+  useEffect(() => {
+    let active = true
+
+    async function safeLoadDetail() {
+      await loadDetail()
       if (!active) return
+    }
 
-      setRequestId(result.meta.requestId)
-
-      if (result.ok) {
-        setDetail(result.data)
-        setError(null)
-      } else {
-        setDetail(null)
-        setError(result.error)
-      }
-
-      setLoading(false)
-    })
+    void safeLoadDetail()
 
     return () => {
       active = false
       resetLaundryWorkSelection()
     }
-  }, [workId, selectWork, resetLaundryWorkSelection])
+  }, [loadDetail, resetLaundryWorkSelection])
 
   const workspaceScope = useMemo(
     () => ({
@@ -106,13 +127,42 @@ export function useLaundryWorkController() {
     [detail, error, loading, policyActionModel, requestId],
   )
 
+  const continueWork = useCallback(async () => {
+    if (!policyActionModel.work.continue.allowed || !detail?.work.currentStatus) return
+
+    const toStatus = nextBackendStatusByCurrentStatus[detail.work.currentStatus]
+    if (!toStatus) return
+
+    const meta = createRequestMeta('updateLaundryWorkStatus')
+    setIsContinuing(true)
+    setError(null)
+    setRequestId(meta.requestId)
+
+    const result = await laundryWorkApi.updateLaundryWorkStatus({
+      workId,
+      toStatus,
+      meta,
+    })
+
+    setRequestId(result.meta.requestId)
+
+    if (!result.ok) {
+      setError(result.error)
+      setIsContinuing(false)
+      return
+    }
+
+    await loadDetail()
+    setIsContinuing(false)
+  }, [detail?.work.currentStatus, loadDetail, policyActionModel.work.continue.allowed, workId])
+
   return {
     ...viewModel,
     actions: {
       work: {
         back: toButtonAction(policyActionModel.work.back, () => navigate(-1)),
         saveDraft: toButtonAction(policyActionModel.work.saveDraft),
-        continue: toButtonAction(policyActionModel.work.continue),
+        continue: toButtonAction(policyActionModel.work.continue, continueWork),
         canSaveDraft: policyActionModel.work.saveDraft.allowed,
         canContinue: policyActionModel.work.continue.allowed,
       },
@@ -124,6 +174,11 @@ export function useLaundryWorkController() {
         uploadImage: toButtonAction(policyActionModel.image.uploadImage),
         canUploadImage: policyActionModel.image.uploadImage.allowed,
       },
+    },
+    state: {
+      ...viewModel.state,
+      isBusy: loading || isContinuing,
+      isContinuing,
     },
   }
 }
