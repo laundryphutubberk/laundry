@@ -10,7 +10,7 @@ const navItems = [
   { label: 'งานวันนี้', icon: '□' },
   { label: 'งานค้าง', icon: '◷' },
   { label: 'พร้อมส่ง', icon: '▰' },
-  { label: 'ลูกค้า/รีสอร์ต', icon: '♙' },
+  { label: 'ลูกค้า/รีสอร์ต', icon: '♙', to: '/workspace/laundry/resorts' },
   { label: 'รายการผ้า', icon: '≡' },
   { label: 'รายงาน', icon: '▥' },
   { label: 'แจ้งปัญหา', icon: '!' },
