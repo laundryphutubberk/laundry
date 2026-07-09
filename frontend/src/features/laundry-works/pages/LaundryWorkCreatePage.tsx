@@ -1,7 +1,8 @@
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { getWorkspaceContext } from '../../auth/authSession'
+import { createResort, listResorts, type ResortDTO } from '../../resorts/resortApi'
 import { laundryWorkApi, type ApiFailure, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
 
 const createRequestId = () => {
@@ -36,47 +37,97 @@ function toIsoDateTime(value: string) {
 export function LaundryWorkCreatePage() {
   const navigate = useNavigate()
   const sessionContext = useMemo(() => getWorkspaceContext(), [])
-  const [resortId, setResortId] = useState(sessionContext.resortId ? String(sessionContext.resortId) : '1')
+  const [resorts, setResorts] = useState<ResortDTO[]>([])
+  const [resortId, setResortId] = useState('')
+  const [newResortName, setNewResortName] = useState('')
   const [workNo, setWorkNo] = useState('')
   const [bagCount, setBagCount] = useState('0')
   const [receivedDate, setReceivedDate] = useState('')
   const [note, setNote] = useState('')
+  const [loadingResorts, setLoadingResorts] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<ApiFailure['error'] | null>(null)
+  const [resortError, setResortError] = useState<string | null>(null)
   const [requestId, setRequestId] = useState<string | undefined>()
 
   const canCreate = sessionContext.workspaceType === 'LAUNDRY'
 
+  useEffect(() => {
+    let active = true
+
+    async function loadResorts() {
+      setLoadingResorts(true)
+      setResortError(null)
+
+      try {
+        const result = await listResorts()
+        if (!active) return
+        setResorts(result.items)
+        setResortId((current) => current || result.items[0]?.id?.toString() || '')
+      } catch (loadError) {
+        if (!active) return
+        setResortError(loadError instanceof Error ? loadError.message : 'Unable to load resorts')
+      } finally {
+        if (active) setLoadingResorts(false)
+      }
+    }
+
+    void loadResorts()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  async function resolveResortId() {
+    if (resortId) return Number(resortId)
+
+    const name = newResortName.trim()
+    if (!name) {
+      throw new Error('กรุณาเลือกรีสอร์ต หรือสร้างรีสอร์ตใหม่ก่อน')
+    }
+
+    const resort = await createResort({ name })
+    setResorts((current) => [...current, resort])
+    setResortId(String(resort.id))
+    return resort.id
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const parsedResortId = Number(resortId)
     const parsedBagCount = Number(bagCount)
-
     const meta = createRequestMeta(sessionContext)
     setLoading(true)
     setError(null)
+    setResortError(null)
     setRequestId(meta.requestId)
 
-    const result = await laundryWorkApi.createLaundryWork({
-      meta,
-      resortId: parsedResortId,
-      workNo: workNo.trim() || undefined,
-      bagCount: Number.isFinite(parsedBagCount) ? parsedBagCount : 0,
-      receivedDate: toIsoDateTime(receivedDate),
-      note: note.trim() || undefined,
-      currentStatus: 'DRAFT',
-    })
+    try {
+      const parsedResortId = await resolveResortId()
+      const result = await laundryWorkApi.createLaundryWork({
+        meta,
+        resortId: parsedResortId,
+        workNo: workNo.trim() || undefined,
+        bagCount: Number.isFinite(parsedBagCount) ? parsedBagCount : 0,
+        receivedDate: toIsoDateTime(receivedDate),
+        note: note.trim() || undefined,
+        currentStatus: 'DRAFT',
+      })
 
-    setRequestId(result.meta.requestId)
+      setRequestId(result.meta.requestId)
 
-    if (!result.ok) {
-      setError(result.error)
+      if (!result.ok) {
+        setError(result.error)
+        setLoading(false)
+        return
+      }
+
+      navigate(`/workspace/laundry/works/${result.data.id}`, { replace: true })
+    } catch (createError) {
+      setResortError(createError instanceof Error ? createError.message : 'Unable to create Laundry Work')
       setLoading(false)
-      return
     }
-
-    navigate(`/workspace/laundry/works/${result.data.id}`, { replace: true })
   }
 
   return (
@@ -105,17 +156,34 @@ export function LaundryWorkCreatePage() {
         <form onSubmit={handleSubmit} className="rounded-[28px] border border-white/70 bg-white p-6 shadow-sm">
           <div className="grid gap-5 md:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-bold text-slate-700">Resort ID</span>
-              <input
-                type="number"
-                min="1"
+              <span className="text-sm font-bold text-slate-700">รีสอร์ต / ลูกค้า</span>
+              <select
                 value={resortId}
                 onChange={(event) => setResortId(event.target.value)}
                 className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-base font-semibold outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                required
-                disabled={!canCreate || loading}
+                disabled={!canCreate || loading || loadingResorts}
+              >
+                <option value="">{loadingResorts ? 'กำลังโหลดรีสอร์ต...' : 'สร้างรีสอร์ตใหม่ด้านล่าง'}</option>
+                {resorts.map((resort) => (
+                  <option key={resort.id} value={resort.id}>
+                    {resort.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs font-semibold text-slate-400">ใช้รีสอร์ตจริงจาก backend แทนการกรอก ID เอง</p>
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-bold text-slate-700">สร้างรีสอร์ตใหม่</span>
+              <input
+                type="text"
+                value={newResortName}
+                onChange={(event) => setNewResortName(event.target.value)}
+                className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-base font-semibold outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                placeholder="เช่น รีสอร์ตภูทับเบิก A"
+                disabled={!canCreate || loading || Boolean(resortId)}
               />
-              <p className="mt-2 text-xs font-semibold text-slate-400">ชั่วคราวใช้ Resort ID จาก backend contract จนกว่าจะมี Resort selector</p>
+              <p className="mt-2 text-xs font-semibold text-slate-400">กรอกเมื่อยังไม่มีรีสอร์ตในรายการ</p>
             </label>
 
             <label className="block">
@@ -142,7 +210,7 @@ export function LaundryWorkCreatePage() {
               />
             </label>
 
-            <label className="block">
+            <label className="block md:col-span-2">
               <span className="text-sm font-bold text-slate-700">วันที่รับงาน</span>
               <input
                 type="datetime-local"
@@ -164,6 +232,12 @@ export function LaundryWorkCreatePage() {
             />
           </label>
 
+          {resortError ? (
+            <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+              {resortError}
+            </div>
+          ) : null}
+
           {error ? (
             <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
               <p>{error.message}</p>
@@ -177,7 +251,7 @@ export function LaundryWorkCreatePage() {
             </Link>
             <button
               type="submit"
-              disabled={!canCreate || loading}
+              disabled={!canCreate || loading || loadingResorts}
               className="rounded-2xl bg-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'กำลังสร้างงาน...' : 'สร้างงานซัก'}
