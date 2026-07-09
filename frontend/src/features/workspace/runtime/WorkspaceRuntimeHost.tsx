@@ -1,10 +1,3 @@
-/**
- * Workspace runtime host placeholder.
- *
- * Owns runtime composition boundary for workspace behavior.
- * FE-01 skeleton only.
- */
-
-export function WorkspaceRuntimeHost() {
-  return null
-}
+// Placeholder for Workspace runtime host ownership.
+// FE-01 Foundation only: no implementation.
+export {};

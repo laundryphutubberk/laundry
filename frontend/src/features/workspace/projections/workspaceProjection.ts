@@ -1,8 +1,3 @@
-/**
- * Workspace projection placeholder.
- *
- * Owns UI-safe derived read models for workspace context.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Workspace projection ownership.
+// FE-01 Foundation only: no implementation.
+export {};

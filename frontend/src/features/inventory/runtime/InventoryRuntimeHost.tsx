@@ -1,10 +1,3 @@
-/**
- * Inventory runtime host placeholder.
- *
- * Owns runtime composition boundary for inventory visibility.
- * FE-01 skeleton only.
- */
-
-export function InventoryRuntimeHost() {
-  return null
-}
+// Placeholder for Inventory runtime host ownership.
+// FE-01 Foundation only: no implementation.
+export {};

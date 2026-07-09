@@ -1,8 +1,3 @@
-/**
- * Workspace feature store placeholder.
- *
- * Owns feature-local workspace UI state only.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Workspace store ownership.
+// FE-01 Foundation only: no implementation.
+export {};

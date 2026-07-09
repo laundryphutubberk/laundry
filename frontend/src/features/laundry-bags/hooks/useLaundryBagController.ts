@@ -1,9 +1,3 @@
-/**
- * Laundry Bag controller hook placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export function useLaundryBagController() {
-  return {}
-}
+// Placeholder for Laundry Bag hook orchestration ownership.
+// FE-01 Foundation only: no implementation.
+export {};

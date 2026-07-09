@@ -1,8 +1,3 @@
-/**
- * Issue feature store placeholder.
- *
- * Owns feature-local client state only.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Issue store ownership.
+// FE-01 Foundation only: no implementation.
+export {};

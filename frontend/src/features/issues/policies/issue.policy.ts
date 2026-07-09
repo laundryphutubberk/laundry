@@ -1,8 +1,3 @@
-/**
- * Issue policy placeholder.
- *
- * Owns issue eligibility, visibility, and status policy checks.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Issue policy ownership.
+// FE-01 Foundation only: no implementation.
+export {};

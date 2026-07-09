@@ -1,9 +1,3 @@
-/**
- * Resort controller hook placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export function useResortController() {
-  return {}
-}
+// Placeholder for Resort hook orchestration ownership.
+// FE-01 Foundation only: no implementation.
+export {};

@@ -1,8 +1,3 @@
-/**
- * Dashboard policy placeholder.
- *
- * Owns dashboard widget visibility, workspace visibility, and task eligibility checks.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Dashboard policy ownership.
+// FE-01 Foundation only: no implementation.
+export {};

@@ -1,8 +1,3 @@
-/**
- * Laundry Work feature store placeholder.
- *
- * Owns feature-local client state only.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Laundry Work store ownership.
+// FE-01 Foundation only: no implementation.
+export {};

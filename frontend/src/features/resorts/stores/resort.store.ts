@@ -1,8 +1,3 @@
-/**
- * Resort feature store placeholder.
- *
- * Owns feature-local client state only.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Resort store ownership.
+// FE-01 Foundation only: no implementation.
+export {};

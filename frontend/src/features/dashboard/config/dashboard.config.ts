@@ -1,7 +1,3 @@
-/**
- * Dashboard feature configuration placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export const dashboardConfig = {}
+// Placeholder for Dashboard configuration ownership.
+// FE-01 Foundation only: no implementation.
+export {};

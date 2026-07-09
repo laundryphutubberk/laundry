@@ -1,9 +1,3 @@
-/**
- * Inventory controller hook placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export function useInventoryController() {
-  return {}
-}
+// Placeholder for Inventory hook orchestration ownership.
+// FE-01 Foundation only: no implementation.
+export {};

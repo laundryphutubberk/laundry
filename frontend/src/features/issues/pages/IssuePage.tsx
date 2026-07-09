@@ -1,9 +1,3 @@
-/**
- * Issue route page placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export function IssuePage() {
-  return null
-}
+// Placeholder for Issue page ownership.
+// FE-01 Foundation only: no implementation.
+export {};

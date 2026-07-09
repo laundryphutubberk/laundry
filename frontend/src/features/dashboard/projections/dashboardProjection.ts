@@ -1,8 +1,3 @@
-/**
- * Dashboard projection placeholder.
- *
- * Owns UI-safe derived read models for task-oriented dashboard surfaces.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Dashboard projection ownership.
+// FE-01 Foundation only: no implementation.
+export {};

@@ -1,7 +1,3 @@
-/**
- * Resort feature configuration placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export const resortConfig = {}
+// Placeholder for Resort configuration ownership.
+// FE-01 Foundation only: no implementation.
+export {};

@@ -1,7 +1,3 @@
-/**
- * Resort frontend model placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Resort model ownership.
+// FE-01 Foundation only: no implementation.
+export {};

@@ -1,8 +1,3 @@
-/**
- * Issue projection placeholder.
- *
- * Owns UI-safe derived read models for Issue.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Issue projection ownership.
+// FE-01 Foundation only: no implementation.
+export {};

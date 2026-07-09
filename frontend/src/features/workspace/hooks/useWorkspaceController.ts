@@ -1,9 +1,3 @@
-/**
- * Workspace controller hook placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export function useWorkspaceController() {
-  return {}
-}
+// Placeholder for Workspace hook orchestration ownership.
+// FE-01 Foundation only: no implementation.
+export {};
