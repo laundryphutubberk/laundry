@@ -15,6 +15,7 @@ export type CountTableProps = {
   loading?: boolean
   error?: string | null
   emptyText?: string
+  title?: string
 }
 
 const defaultColumns: CountTableColumn[] = [
@@ -37,16 +38,17 @@ export function CountTable({
   loading = false,
   error = null,
   emptyText = 'ยังไม่มีข้อมูลการนับผ้า',
+  title = 'รายการผ้าที่นับแล้ว',
 }: CountTableProps) {
   const tableColumns = columns?.length ? columns : defaultColumns
 
   if (loading) {
     return (
-      <section className="overflow-hidden rounded-2xl border bg-white shadow-sm" aria-busy="true">
-        <div className="border-b p-4">
-          <div className="h-5 w-32 animate-pulse rounded bg-slate-100" />
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-busy="true">
+        <div className="border-b border-slate-100 p-5">
+          <div className="h-5 w-40 animate-pulse rounded bg-slate-100" />
         </div>
-        <div className="space-y-3 p-4">
+        <div className="space-y-3 p-5">
           {[0, 1, 2].map((item) => (
             <div key={item} className="h-10 animate-pulse rounded bg-slate-100" />
           ))}
@@ -57,8 +59,8 @@ export function CountTable({
 
   if (error) {
     return (
-      <section className="rounded-2xl border border-red-100 bg-red-50 p-4 text-red-800 shadow-sm">
-        <h2 className="text-base font-semibold">รายการนับผ้า</h2>
+      <section className="rounded-2xl border border-red-100 bg-red-50 p-5 text-red-800 shadow-sm">
+        <h2 className="text-lg font-bold">{title}</h2>
         <p className="mt-2 text-sm">{error}</p>
       </section>
     )
@@ -66,35 +68,38 @@ export function CountTable({
 
   if (!rows.length) {
     return (
-      <section className="rounded-2xl border bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold text-slate-950">รายการนับผ้า</h2>
-        <p className="mt-2 rounded-xl border border-dashed p-4 text-sm text-slate-500">{emptyText}</p>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-bold text-slate-950">{title}</h2>
+        <p className="mt-3 rounded-xl border border-dashed p-4 text-sm text-slate-500">{emptyText}</p>
       </section>
     )
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-      <div className="border-b p-4">
-        <h2 className="text-base font-semibold text-slate-950">รายการนับผ้า</h2>
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-5">
+        <h2 className="text-lg font-bold text-slate-950">{title}</h2>
+        <button type="button" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-blue-900 hover:bg-slate-50">
+          ดูรายละเอียด
+        </button>
       </div>
 
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="bg-slate-50 text-xs text-slate-500">
             <tr>
               {tableColumns.map((column) => (
-                <th key={column.key} className={`px-4 py-3 font-medium ${alignClassName[column.align || 'left']}`}>
+                <th key={column.key} className={`px-5 py-3 font-semibold ${alignClassName[column.align || 'left']}`}>
                   {column.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-slate-100">
             {rows.map((row, index) => (
-              <tr key={row.id || index} className="text-slate-700">
+              <tr key={row.id || index} className="text-slate-700 hover:bg-slate-50/80">
                 {tableColumns.map((column) => (
-                  <td key={column.key} className={`px-4 py-3 ${alignClassName[column.align || 'left']}`}>
+                  <td key={column.key} className={`px-5 py-4 ${alignClassName[column.align || 'left']}`}>
                     {row[column.key] ?? '-'}
                   </td>
                 ))}
@@ -106,11 +111,11 @@ export function CountTable({
 
       <div className="grid gap-3 p-4 md:hidden">
         {rows.map((row, index) => (
-          <article key={row.id || index} className="rounded-xl border bg-slate-50 p-3">
+          <article key={row.id || index} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             {tableColumns.map((column) => (
               <div key={column.key} className="flex justify-between gap-3 py-1 text-sm">
                 <span className="text-slate-500">{column.label}</span>
-                <span className="text-right font-medium text-slate-800">{row[column.key] ?? '-'}</span>
+                <span className="text-right font-semibold text-slate-800">{row[column.key] ?? '-'}</span>
               </div>
             ))}
           </article>
