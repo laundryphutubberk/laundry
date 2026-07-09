@@ -1,7 +1,7 @@
 import type { LaundryWorkBackendCapability, LaundryWorkDetailDTO, WorkspaceType } from '../api/laundryWorkApi'
 
 export type LaundryWorkWorkspaceScope = {
-  workspaceType: WorkspaceType
+  workspaceType?: WorkspaceType
   resortId?: string | number
   role?: string
 }
