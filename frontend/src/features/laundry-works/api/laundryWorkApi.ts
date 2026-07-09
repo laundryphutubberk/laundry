@@ -429,12 +429,21 @@ export const laundryWorkApi = {
     return mapResult(result, normalizeWork)
   },
 
+  async getLaundryWorkDetail({ workId, meta }: GetLaundryWorkDetailInput): Promise<ApiResult<LaundryWorkDetailDTO>> {
+    if (!workId) {
+      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
+    }
+
+    const result = await requestBackend<any>(`/laundry/works/${workId}`, meta)
+    return mapResult(result, normalizeDetail)
+  },
+
   async createLaundryBag({ workId, meta, ...input }: CreateLaundryBagInput): Promise<ApiResult<LaundryBagDTO>> {
     if (!workId) {
       return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
     }
 
-    if (!input.bagNo?.trim()) {
+    if (!input.bagNo.trim()) {
       return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'bagNo is required.', 400)
     }
 
@@ -443,15 +452,6 @@ export const laundryWorkApi = {
       body: JSON.stringify(input),
     })
     return mapResult(result, normalizeBag)
-  },
-
-  async getLaundryWorkDetail({ workId, meta }: GetLaundryWorkDetailInput): Promise<ApiResult<LaundryWorkDetailDTO>> {
-    if (!workId) {
-      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
-    }
-
-    const result = await requestBackend<any>(`/laundry/works/${workId}`, meta)
-    return mapResult(result, normalizeDetail)
   },
 
   async updateLaundryWorkStatus({
