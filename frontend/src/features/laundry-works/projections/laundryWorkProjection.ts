@@ -120,6 +120,7 @@ export function createLaundryWorkDetailProjection({
   requestId,
 }: LaundryWorkDetailProjectionInput) {
   const work = detail?.work
+  const bags = detail?.bags || []
   const statusLabel = statusLabels[work?.currentStatus || ''] || work?.currentStatus || 'ไม่ระบุสถานะ'
   const issueCount = detail?.issues?.length ?? work?.issueCount ?? 0
   const countRows = (detail?.countLines || []).map((line) => ({
@@ -166,11 +167,18 @@ export function createLaundryWorkDetailProjection({
       nextHint: work ? `สถานะปัจจุบัน: ${statusLabel}` : undefined,
       mainTaskPanel: buildMainTaskPanel(work?.currentStatus, actionModel?.work.continue, error?.message || null),
       summaryCards: [
-        { key: 'bag-count', label: 'จำนวนถุง', value: work?.bagCount ?? '-', unit: 'ถุง' },
+        { key: 'bag-count', label: 'จำนวนถุง', value: bags.length || work?.bagCount || '-', unit: 'ถุง' },
         { key: 'count-lines', label: 'รายการที่นับ', value: detail?.countLines?.length ?? '-', unit: 'รายการ' },
         { key: 'issue-count', label: 'ปัญหา', value: issueCount, unit: 'รายการ', tone: issueCount > 0 ? 'warning' : 'success' },
         { key: 'status', label: 'สถานะ', value: statusLabel },
       ],
+      bags: bags.map((bag) => ({
+        id: bag.id,
+        bagNo: bag.bagNo,
+        status: bag.status,
+        note: bag.note,
+        receivedAt: bag.receivedAt,
+      })),
       countColumns: [
         { key: 'type', label: 'ประเภทผ้า' },
         { key: 'category', label: 'หมวดหมู่' },
@@ -206,6 +214,7 @@ export function createLaundryWorkDetailProjection({
     },
     actions: {
       work: actionModel?.work,
+      bag: actionModel?.bag,
       issue: actionModel?.issue,
       image: actionModel?.image,
     },
@@ -213,6 +222,7 @@ export function createLaundryWorkDetailProjection({
       isBusy: loading,
       isSavingDraft: false,
       isContinuing: false,
+      isCreatingBag: false,
     },
   }
 }
