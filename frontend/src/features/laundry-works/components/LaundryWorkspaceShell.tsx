@@ -19,7 +19,7 @@ const navItems = [
 
 function LaundryBrandMark() {
   return (
-    <svg viewBox="0 0 64 64" role="img" aria-label="Laundry Phu Thap Boek" className="h-14 w-14 shrink-0">
+    <svg viewBox="0 0 64 64" role="img" aria-label="Laundry Phu Thap Boek" className="h-13 w-13 shrink-0">
       <circle cx="32" cy="32" r="30" fill="white" />
       <circle cx="32" cy="32" r="29" fill="none" stroke="#0b2f5f" strokeWidth="3" />
       <circle cx="32" cy="32" r="25" fill="none" stroke="#5b8fbd" strokeWidth="1.5" />
@@ -32,13 +32,13 @@ function LaundryBrandMark() {
 
 export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) {
   return (
-    <div className="min-h-screen bg-slate-100/70 text-[16px] lg:pl-[300px] 2xl:text-[17px]">
+    <div className="min-h-screen bg-slate-100/70 text-[16px] lg:pl-[300px]">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[300px] overflow-y-auto bg-gradient-to-b from-blue-950 via-blue-950 to-slate-950 text-white shadow-2xl shadow-blue-950/20 lg:block">
-        <div className="flex h-30 items-center gap-3 border-b border-white/10 px-5">
+        <div className="flex h-28 items-center gap-3 border-b border-white/10 px-5">
           <LaundryBrandMark />
           <div className="min-w-0">
-            <p className="truncate text-[22px] font-black leading-tight">โรงซักภูทับเบิก</p>
-            <p className="mt-1 text-base font-semibold leading-snug text-blue-100/80">Laundry Management System</p>
+            <p className="truncate text-[20px] font-black leading-tight">โรงซักภูทับเบิก</p>
+            <p className="mt-1 text-sm font-semibold leading-snug text-blue-100/80">Laundry Management System</p>
           </div>
         </div>
 
@@ -49,11 +49,11 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
               type="button"
               className={
                 item.active
-                  ? 'flex w-full items-center gap-4 rounded-2xl bg-white/10 px-4 py-4 text-left text-xl font-black text-white shadow-sm ring-1 ring-white/10'
-                  : 'flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left text-xl font-extrabold text-blue-100/85 hover:bg-white/10 hover:text-white'
+                  ? 'flex w-full items-center gap-4 rounded-2xl bg-white/10 px-4 py-4 text-left text-lg font-black text-white shadow-sm ring-1 ring-white/10'
+                  : 'flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left text-lg font-bold text-blue-100/85 hover:bg-white/10 hover:text-white'
               }
             >
-              <span className={item.active ? 'flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400 text-2xl text-white' : 'flex h-10 w-10 items-center justify-center rounded-xl text-2xl text-blue-100'}>
+              <span className={item.active ? 'flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400 text-xl text-white' : 'flex h-10 w-10 items-center justify-center rounded-xl text-xl text-blue-100'}>
                 {item.icon}
               </span>
               <span>{item.label}</span>
