@@ -4,6 +4,7 @@ import { HistoryPanel } from '../components/HistoryPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { IssuePanel } from '../components/IssuePanel'
 import { LaundryWorkspaceShell } from '../components/LaundryWorkspaceShell'
+import { MainTaskPanel } from '../components/MainTaskPanel'
 import { WorkHeader } from '../components/WorkHeader'
 import { WorkSummaryCards } from '../components/WorkSummaryCards'
 import { WorkTimeline } from '../components/WorkTimeline'
@@ -39,7 +40,14 @@ export function LaundryWorkDetailPreview() {
             </aside>
 
             <div className="flex min-w-0 flex-col gap-5">
-              <CountTable rows={projection.countRows} columns={projection.countColumns} />
+              <MainTaskPanel mainTaskPanel={projection.mainTaskPanel} />
+
+              <CountTable
+                rows={projection.countRows}
+                columns={projection.countColumns}
+                summaryItems={projection.countSummaryItems}
+                remark={projection.countRemark}
+              />
 
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
                 <IssuePanel issues={projection.issues} actions={actions.issue} />
