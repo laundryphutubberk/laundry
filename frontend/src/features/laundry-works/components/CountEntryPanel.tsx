@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 
 export type CountEntryBagOption = {
   id?: string | number
@@ -36,7 +36,7 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
 
   const canSubmit = Boolean(action?.onCreate && itemTypeName.trim() && Number(quantity) > 0 && !action?.disabled && !action?.loading)
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!canSubmit) return
 
