@@ -97,7 +97,7 @@ export function MainTaskPanel({
         ) : null}
       </div>
 
-      {mainTaskPanel.blockerReason ? (
+      {mode === 'blocked' && mainTaskPanel.blockerReason ? (
         <div className="mt-5 rounded-2xl border border-amber-200 bg-white/70 p-4 text-sm font-semibold leading-6 text-amber-800">
           {mainTaskPanel.blockerReason}
         </div>
