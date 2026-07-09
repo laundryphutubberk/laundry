@@ -32,6 +32,9 @@ export type LaundryWorkPolicyActionModel = {
   bag: {
     createBag: LaundryWorkPolicyAction
   }
+  countLine: {
+    createCountLine: LaundryWorkPolicyAction
+  }
   issue: {
     createIssue: LaundryWorkPolicyAction
   }
@@ -69,6 +72,8 @@ function getNextBackendStatus(currentStatus?: string) {
   return transitions[currentStatus || '']
 }
 
+const countLineStatuses = new Set(['BAG_OPENED', 'ITEM_COUNTED', 'TYPE_SORTED', 'COLOR_SORTED'])
+
 export function getLaundryWorkActionModel({
   workId,
   detail,
@@ -79,12 +84,14 @@ export function getLaundryWorkActionModel({
 }: LaundryWorkPolicyInput): LaundryWorkPolicyActionModel {
   const missingWorkspace = !workspaceScope?.workspaceType
   const missingResortScope = workspaceScope?.workspaceType === 'RESORT' && !workspaceScope.resortId
+  const wrongWorkspaceForMutation = workspaceScope?.workspaceType !== 'LAUNDRY'
   const missingWork = !workId || !detail?.work
   const busyOrErrored = loading || Boolean(error)
   const terminalWork = ['CLOSED', 'CANCELLED'].includes(detail?.work.currentStatus || '')
   const backendStatusTransitionReady = Boolean(capability?.statusTransition)
   const nextBackendStatus = getNextBackendStatus(detail?.work.currentStatus)
   const canContinueByBackend = backendStatusTransitionReady && Boolean(nextBackendStatus)
+  const countLineStatusReady = countLineStatuses.has(detail?.work.currentStatus || '')
 
   const boundaryDenyReason = missingWorkspace
     ? ['MISSING_WORKSPACE_SCOPE', 'Missing workspace scope.']
@@ -109,6 +116,16 @@ export function getLaundryWorkActionModel({
           'Continue action requires a supported backend status transition command for the current status.',
         )
 
+  const createCountLineAction = boundaryDenyReason
+    ? deny('เพิ่มรายการนับผ้า', boundaryDenyReason[0], boundaryDenyReason[1])
+    : wrongWorkspaceForMutation
+      ? deny('เพิ่มรายการนับผ้า', 'LAUNDRY_WORKSPACE_REQUIRED', 'Laundry workspace is required to create count lines.')
+      : !capability?.countLines.create
+        ? deny('เพิ่มรายการนับผ้า', 'BACKEND_CONTRACT_REQUIRED', 'Count line creation endpoint is not available.')
+        : !countLineStatusReady
+          ? deny('เพิ่มรายการนับผ้า', 'WORK_STATUS_NOT_READY', 'Laundry Work must be opened before count lines can be recorded.')
+          : allow('เพิ่มรายการนับผ้า')
+
   return {
     work: {
       back: allow('ย้อนกลับ'),
@@ -130,6 +147,9 @@ export function getLaundryWorkActionModel({
                 ? boundaryDenyReason?.[1] || 'Action is not allowed.'
                 : 'Bag creation endpoint is not available in backend contract.',
             ),
+    },
+    countLine: {
+      createCountLine: createCountLineAction,
     },
     issue: {
       createIssue:
