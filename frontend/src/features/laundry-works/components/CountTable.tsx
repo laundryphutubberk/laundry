@@ -9,13 +9,31 @@ export type CountTableRow = {
   [key: string]: string | number | null | undefined
 }
 
+export type CountTableSummaryItem = {
+  key?: string
+  label: string
+  value?: string | number | null
+  description?: string
+}
+
+export type CountTableAction = {
+  label?: string
+  onClick?: () => void
+  disabled?: boolean
+  loading?: boolean
+}
+
 export type CountTableProps = {
   rows?: CountTableRow[]
   columns?: CountTableColumn[]
+  summaryItems?: CountTableSummaryItem[]
+  remark?: string
+  action?: CountTableAction
   loading?: boolean
   error?: string | null
   emptyText?: string
   title?: string
+  description?: string
 }
 
 const defaultColumns: CountTableColumn[] = [
@@ -32,26 +50,19 @@ const alignClassName: Record<string, string> = {
   center: 'text-center',
 }
 
-const toNumber = (value: unknown) => {
-  if (typeof value === 'number') return value
-  if (typeof value === 'string') {
-    const parsed = Number(value.replace(/[^\d.-]/g, ''))
-    return Number.isFinite(parsed) ? parsed : 0
-  }
-  return 0
-}
-
 export function CountTable({
   rows = [],
   columns,
+  summaryItems = [],
+  remark,
+  action,
   loading = false,
   error = null,
   emptyText = 'ยังไม่มีข้อมูลการนับผ้า',
   title = 'รายการผ้าที่นับแล้ว',
+  description = 'ข้อมูลนับจริงจากงานนี้ แสดงเพื่อปฏิบัติงานต่ออย่างปลอดภัย',
 }: CountTableProps) {
   const tableColumns = columns?.length ? columns : defaultColumns
-  const totalQuantity = rows.reduce((sum, row) => sum + toNumber(row.quantity), 0)
-  const totalWeight = rows.reduce((sum, row) => sum + toNumber(row.weight), 0)
 
   if (loading) {
     return (
@@ -91,11 +102,18 @@ export function CountTable({
       <div className="flex flex-col gap-4 border-b border-slate-100 p-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-xl font-bold text-slate-950">{title}</h2>
-          <p className="mt-1 text-sm text-slate-500">ข้อมูลนับจริงจากงานนี้ แสดงเพื่อปฏิบัติงานต่ออย่างปลอดภัย</p>
+          <p className="mt-1 text-sm text-slate-500">{description}</p>
         </div>
-        <button type="button" className="w-fit rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-slate-50">
-          ดูรายละเอียด
-        </button>
+        {action ? (
+          <button
+            type="button"
+            onClick={action.onClick}
+            disabled={action.disabled || action.loading}
+            className="w-fit rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {action.loading ? 'กำลังโหลด...' : action.label || 'ดูรายละเอียด'}
+          </button>
+        ) : null}
       </div>
 
       <div className="hidden overflow-x-auto md:block">
@@ -136,20 +154,23 @@ export function CountTable({
         ))}
       </div>
 
-      <div className="grid gap-3 border-t border-slate-100 bg-slate-50/80 p-5 md:grid-cols-3">
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
-          <p className="text-xs font-semibold text-slate-400">รวมรายการ</p>
-          <p className="mt-1 text-2xl font-black text-blue-950">{rows.length}</p>
+      {summaryItems.length || remark ? (
+        <div className="grid gap-3 border-t border-slate-100 bg-slate-50/80 p-5 md:grid-cols-3">
+          {summaryItems.map((item, index) => (
+            <div key={item.key || index} className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+              <p className="text-xs font-semibold text-slate-400">{item.label}</p>
+              <p className="mt-1 text-2xl font-black text-blue-950">{item.value ?? '-'}</p>
+              {item.description ? <p className="mt-1 text-xs font-semibold text-slate-500">{item.description}</p> : null}
+            </div>
+          ))}
+          {remark ? (
+            <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+              <p className="text-xs font-semibold text-slate-400">หมายเหตุ</p>
+              <p className="mt-1 text-sm font-semibold text-slate-700">{remark}</p>
+            </div>
+          ) : null}
         </div>
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
-          <p className="text-xs font-semibold text-slate-400">รวมจำนวน</p>
-          <p className="mt-1 text-2xl font-black text-blue-950">{totalQuantity || '-'}</p>
-        </div>
-        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
-          <p className="text-xs font-semibold text-slate-400">หมายเหตุ</p>
-          <p className="mt-1 text-sm font-semibold text-slate-700">{totalWeight ? `น้ำหนักรวมประมาณ ${totalWeight} กก.` : 'รอตรวจสอบน้ำหนักรวม'}</p>
-        </div>
-      </div>
+      ) : null}
     </section>
   )
 }
