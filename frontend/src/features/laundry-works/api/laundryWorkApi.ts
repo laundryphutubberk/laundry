@@ -258,33 +258,16 @@ function getAuthToken(meta: LaundryWorkRequestMeta) {
   )
 }
 
-function assertRequestContext(meta: LaundryWorkRequestMeta): ApiFailure | null {
-  if (!meta.workspaceType) {
-    return createClientFailure(meta.requestId, 'MISSING_WORKSPACE_SCOPE', 'Missing workspace scope for Laundry Work request.')
-  }
-
-  if (meta.workspaceType === 'RESORT' && !meta.resortId) {
-    return createClientFailure(meta.requestId, 'MISSING_RESORT_SCOPE', 'Missing resortId for Resort Workspace request.')
-  }
-
-  if (!getAuthToken(meta)) {
-    return createClientFailure(meta.requestId, 'UNAUTHORIZED', 'Bearer token is required for Laundry Work backend endpoints.', 401)
-  }
-
-  return null
-}
-
 async function requestBackend<T>(path: string, meta: LaundryWorkRequestMeta, init: RequestInit = {}): Promise<ApiResult<T>> {
-  const contextFailure = assertRequestContext(meta)
-  if (contextFailure) return contextFailure
-
   try {
     const headers = new Headers(init.headers)
+    const token = getAuthToken(meta)
+
     headers.set('Content-Type', 'application/json')
-    headers.set('Authorization', `Bearer ${getAuthToken(meta)}`)
     headers.set('X-Request-Id', meta.requestId)
     headers.set('X-Feature', meta.feature)
     headers.set('X-Action', meta.action)
+    if (token) headers.set('Authorization', `Bearer ${token}`)
     if (meta.workspaceType) headers.set('X-Workspace-Type', meta.workspaceType)
     if (meta.resortId) headers.set('X-Resort-Id', String(meta.resortId))
 
