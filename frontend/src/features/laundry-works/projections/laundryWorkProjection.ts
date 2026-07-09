@@ -1,5 +1,5 @@
 import type { ApiFailure, LaundryWorkDetailDTO } from '../api/laundryWorkApi'
-import type { LaundryWorkPolicyActionModel } from '../policies/laundryWork.policy'
+import type { LaundryWorkPolicyAction, LaundryWorkPolicyActionModel } from '../policies/laundryWork.policy'
 
 export type LaundryWorkDetailProjectionInput = {
   detail?: LaundryWorkDetailDTO | null
@@ -71,7 +71,7 @@ const buildTimeline = (currentStatus?: string) => {
   }))
 }
 
-const buildMainTaskPanel = (currentStatus?: string, canContinue?: boolean, errorMessage?: string | null) => {
+const buildMainTaskPanel = (currentStatus?: string, continueAction?: LaundryWorkPolicyAction, errorMessage?: string | null) => {
   const currentStep = workflowSteps.find((step) => step.backendStatus === currentStatus)
   const statusLabel = statusLabels[currentStatus || ''] || currentStatus
 
@@ -94,11 +94,21 @@ const buildMainTaskPanel = (currentStatus?: string, canContinue?: boolean, error
     }
   }
 
+  if (continueAction && !continueAction.allowed) {
+    return {
+      activeStepKey: currentStep.key,
+      title: currentStep.label,
+      description: `ขั้นตอนปัจจุบันของงานนี้คือ ${statusLabels[currentStep.backendStatus] || currentStep.backendStatus}`,
+      mode: continueAction.message ? 'blocked' as const : 'read-only' as const,
+      blockerReason: continueAction.message,
+    }
+  }
+
   return {
     activeStepKey: currentStep.key,
     title: currentStep.label,
     description: `ขั้นตอนปัจจุบันของงานนี้คือ ${statusLabels[currentStep.backendStatus] || currentStep.backendStatus}`,
-    mode: canContinue ? 'interactive' as const : 'read-only' as const,
+    mode: 'interactive' as const,
   }
 }
 
@@ -154,7 +164,7 @@ export function createLaundryWorkDetailProjection({
       },
       timeline: buildTimeline(work?.currentStatus),
       nextHint: work ? `สถานะปัจจุบัน: ${statusLabel}` : undefined,
-      mainTaskPanel: buildMainTaskPanel(work?.currentStatus, actionModel?.work.continue.allowed, error?.message || null),
+      mainTaskPanel: buildMainTaskPanel(work?.currentStatus, actionModel?.work.continue, error?.message || null),
       summaryCards: [
         { key: 'bag-count', label: 'จำนวนถุง', value: work?.bagCount ?? '-', unit: 'ถุง' },
         { key: 'count-lines', label: 'รายการที่นับ', value: detail?.countLines?.length ?? '-', unit: 'รายการ' },
