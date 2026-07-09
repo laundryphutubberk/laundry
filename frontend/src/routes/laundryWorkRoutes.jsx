@@ -4,6 +4,7 @@ import { LaundryWorkspaceLayout } from '../layouts/LaundryWorkspaceLayout'
 import { LaundryWorkCreatePage } from '../features/laundry-works/pages/LaundryWorkCreatePage'
 import { LaundryWorkListPage } from '../features/laundry-works/pages/LaundryWorkListPage'
 import { LaundryWorkDetailPage } from '../features/laundry-works/pages/LaundryWorkDetailPage'
+import { ResortListPage } from '../features/resorts/ResortListPage'
 
 export const laundryWorkRoutes = [
   {
@@ -25,6 +26,10 @@ export const laundryWorkRoutes = [
       {
         path: 'works/:workId',
         element: <LaundryWorkDetailPage />,
+      },
+      {
+        path: 'resorts',
+        element: <ResortListPage />,
       },
     ],
   },
