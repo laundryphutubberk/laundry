@@ -32,6 +32,15 @@ const alignClassName: Record<string, string> = {
   center: 'text-center',
 }
 
+const toNumber = (value: unknown) => {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[^\d.-]/g, ''))
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  return 0
+}
+
 export function CountTable({
   rows = [],
   columns,
@@ -41,16 +50,18 @@ export function CountTable({
   title = 'รายการผ้าที่นับแล้ว',
 }: CountTableProps) {
   const tableColumns = columns?.length ? columns : defaultColumns
+  const totalQuantity = rows.reduce((sum, row) => sum + toNumber(row.quantity), 0)
+  const totalWeight = rows.reduce((sum, row) => sum + toNumber(row.weight), 0)
 
   if (loading) {
     return (
-      <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm" aria-busy="true">
+      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm" aria-busy="true">
         <div className="border-b border-slate-100 p-6">
           <div className="h-5 w-40 animate-pulse rounded bg-slate-100" />
         </div>
         <div className="space-y-3 p-6">
           {[0, 1, 2].map((item) => (
-            <div key={item} className="h-10 animate-pulse rounded bg-slate-100" />
+            <div key={item} className="h-12 animate-pulse rounded-xl bg-slate-100" />
           ))}
         </div>
       </section>
@@ -59,7 +70,7 @@ export function CountTable({
 
   if (error) {
     return (
-      <section className="rounded-[22px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
+      <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
         <h2 className="text-lg font-bold">{title}</h2>
         <p className="mt-2 text-sm">{error}</p>
       </section>
@@ -68,18 +79,21 @@ export function CountTable({
 
   if (!rows.length) {
     return (
-      <section className="rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-bold text-slate-950">{title}</h2>
-        <p className="mt-3 rounded-xl border border-dashed p-4 text-sm text-slate-500">{emptyText}</p>
+        <p className="mt-3 rounded-2xl border border-dashed p-4 text-sm text-slate-500">{emptyText}</p>
       </section>
     )
   }
 
   return (
-    <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-6">
-        <h2 className="text-lg font-bold text-slate-950">{title}</h2>
-        <button type="button" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-slate-50">
+    <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-slate-100 p-6 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-slate-950">{title}</h2>
+          <p className="mt-1 text-sm text-slate-500">ข้อมูลนับจริงจากงานนี้ แสดงเพื่อปฏิบัติงานต่ออย่างปลอดภัย</p>
+        </div>
+        <button type="button" className="w-fit rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-slate-50">
           ดูรายละเอียด
         </button>
       </div>
@@ -111,15 +125,30 @@ export function CountTable({
 
       <div className="grid gap-3 p-4 md:hidden">
         {rows.map((row, index) => (
-          <article key={row.id || index} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <article key={row.id || index} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             {tableColumns.map((column) => (
-              <div key={column.key} className="flex justify-between gap-3 py-1 text-sm">
+              <div key={column.key} className="flex justify-between gap-3 py-1.5 text-sm">
                 <span className="text-slate-500">{column.label}</span>
                 <span className="text-right font-semibold text-slate-800">{row[column.key] ?? '-'}</span>
               </div>
             ))}
           </article>
         ))}
+      </div>
+
+      <div className="grid gap-3 border-t border-slate-100 bg-slate-50/80 p-5 md:grid-cols-3">
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+          <p className="text-xs font-semibold text-slate-400">รวมรายการ</p>
+          <p className="mt-1 text-2xl font-black text-blue-950">{rows.length}</p>
+        </div>
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+          <p className="text-xs font-semibold text-slate-400">รวมจำนวน</p>
+          <p className="mt-1 text-2xl font-black text-blue-950">{totalQuantity || '-'}</p>
+        </div>
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+          <p className="text-xs font-semibold text-slate-400">หมายเหตุ</p>
+          <p className="mt-1 text-sm font-semibold text-slate-700">{totalWeight ? `น้ำหนักรวมประมาณ ${totalWeight} กก.` : 'รอตรวจสอบน้ำหนักรวม'}</p>
+        </div>
       </div>
     </section>
   )
