@@ -71,6 +71,37 @@ const buildTimeline = (currentStatus?: string) => {
   }))
 }
 
+const buildMainTaskPanel = (currentStatus?: string, canContinue?: boolean, errorMessage?: string | null) => {
+  const currentStep = workflowSteps.find((step) => step.backendStatus === currentStatus)
+  const statusLabel = statusLabels[currentStatus || ''] || currentStatus
+
+  if (errorMessage) {
+    return {
+      activeStepKey: currentStep?.key,
+      title: 'ไม่สามารถโหลดงานหลักได้',
+      description: errorMessage,
+      mode: 'blocked' as const,
+      blockerReason: errorMessage,
+    }
+  }
+
+  if (!currentStep) {
+    return {
+      activeStepKey: undefined,
+      title: statusLabel ? `สถานะปัจจุบัน: ${statusLabel}` : 'ยังไม่มีขั้นตอนปัจจุบัน',
+      description: 'ระบบยังไม่มีข้อมูลขั้นตอนหลักสำหรับงานนี้',
+      mode: 'read-only' as const,
+    }
+  }
+
+  return {
+    activeStepKey: currentStep.key,
+    title: currentStep.label,
+    description: `ขั้นตอนปัจจุบันของงานนี้คือ ${statusLabels[currentStep.backendStatus] || currentStep.backendStatus}`,
+    mode: canContinue ? 'interactive' as const : 'read-only' as const,
+  }
+}
+
 export function createLaundryWorkDetailProjection({
   detail,
   actionModel,
@@ -123,6 +154,7 @@ export function createLaundryWorkDetailProjection({
       },
       timeline: buildTimeline(work?.currentStatus),
       nextHint: work ? `สถานะปัจจุบัน: ${statusLabel}` : undefined,
+      mainTaskPanel: buildMainTaskPanel(work?.currentStatus, actionModel?.work.continue.allowed, error?.message || null),
       summaryCards: [
         { key: 'bag-count', label: 'จำนวนถุง', value: work?.bagCount ?? '-', unit: 'ถุง' },
         { key: 'count-lines', label: 'รายการที่นับ', value: detail?.countLines?.length ?? '-', unit: 'รายการ' },
