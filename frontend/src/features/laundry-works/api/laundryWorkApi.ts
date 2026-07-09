@@ -58,6 +58,12 @@ export type LaundryWorkBackendCapability = {
     detail: true
     create: true
   }
+  countLines: {
+    list: true
+    create: true
+    update: true
+    delete: true
+  }
   issue: {
     list: false
     create: false
@@ -82,6 +88,12 @@ export const laundryWorkBackendCapability: LaundryWorkBackendCapability = {
     list: true,
     detail: true,
     create: true,
+  },
+  countLines: {
+    list: true,
+    create: true,
+    update: true,
+    delete: true,
   },
   issue: {
     list: false,
@@ -125,12 +137,15 @@ export type LaundryBagDTO = {
 
 export type LaundryCountLineDTO = {
   id: string | number
+  bagId?: string | number | null
+  bagNo?: string
   itemTypeName?: string
   category?: string
   colorGroup?: string
   quantity: number
   weight?: string | number | null
   issueQuantity?: number
+  note?: string | null
 }
 
 export type IssueReportDTO = {
@@ -195,6 +210,16 @@ export type CreateLaundryBagInput = {
   workId?: string | number
   bagNo: string
   receivedAt?: string
+  note?: string
+  meta: LaundryWorkRequestMeta
+}
+
+export type CreateLaundryCountLineInput = {
+  workId?: string | number
+  bagId?: string | number
+  itemTypeName: string
+  colorGroup?: string
+  quantity: number
   note?: string
   meta: LaundryWorkRequestMeta
 }
@@ -360,19 +385,26 @@ function normalizeBag(raw: any): LaundryBagDTO {
   }
 }
 
+function normalizeCountLine(raw: any): LaundryCountLineDTO {
+  return {
+    id: raw.id,
+    bagId: raw.bagId,
+    bagNo: raw.bagNo || raw.bag?.bagNo,
+    itemTypeName: raw.itemTypeName || raw.itemType?.name,
+    category: raw.category || raw.itemType?.category,
+    colorGroup: raw.colorGroup,
+    quantity: raw.quantity,
+    issueQuantity: raw.issueQuantity,
+    weight: raw.weight,
+    note: raw.note,
+  }
+}
+
 function normalizeDetail(raw: any): LaundryWorkDetailDTO {
   return {
     work: normalizeWork(raw),
     bags: (raw.bags || []).map(normalizeBag),
-    countLines: (raw.countLines || []).map((line: any) => ({
-      id: line.id,
-      itemTypeName: line.itemTypeName || line.itemType?.name,
-      category: line.category || line.itemType?.category,
-      colorGroup: line.colorGroup,
-      quantity: line.quantity,
-      issueQuantity: line.issueQuantity,
-      weight: line.weight,
-    })),
+    countLines: (raw.countLines || []).map(normalizeCountLine),
     issues: (raw.issues || []).map((issue: any) => ({
       id: issue.id,
       issueType: issue.issueType,
@@ -452,6 +484,26 @@ export const laundryWorkApi = {
       body: JSON.stringify(input),
     })
     return mapResult(result, normalizeBag)
+  },
+
+  async createLaundryCountLine({ workId, meta, ...input }: CreateLaundryCountLineInput): Promise<ApiResult<LaundryCountLineDTO>> {
+    if (!workId) {
+      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
+    }
+
+    if (!input.itemTypeName.trim()) {
+      return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'itemTypeName is required.', 400)
+    }
+
+    if (!input.quantity || input.quantity <= 0) {
+      return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'quantity must be greater than zero.', 400)
+    }
+
+    const result = await requestBackend<any>(`/laundry/works/${workId}/count-lines`, meta, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+    return mapResult(result, normalizeCountLine)
   },
 
   async updateLaundryWorkStatus({
