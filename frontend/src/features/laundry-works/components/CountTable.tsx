@@ -23,12 +23,22 @@ export type CountTableAction = {
   loading?: boolean
 }
 
+export type CountTableRowActions = {
+  canUpdate?: boolean
+  canDelete?: boolean
+  updating?: boolean
+  deleting?: boolean
+  onUpdate?: (row: CountTableRow) => void | Promise<void>
+  onDelete?: (row: CountTableRow) => void | Promise<void>
+}
+
 export type CountTableProps = {
   rows?: CountTableRow[]
   columns?: CountTableColumn[]
   summaryItems?: CountTableSummaryItem[]
   remark?: string
   action?: CountTableAction
+  rowActions?: CountTableRowActions
   loading?: boolean
   error?: string | null
   emptyText?: string
@@ -56,6 +66,7 @@ export function CountTable({
   summaryItems = [],
   remark,
   action,
+  rowActions,
   loading = false,
   error = null,
   emptyText = 'ยังไม่มีข้อมูลการนับผ้า',
@@ -63,6 +74,7 @@ export function CountTable({
   description = 'ข้อมูลนับจริงจากงานนี้ แสดงเพื่อปฏิบัติงานต่ออย่างปลอดภัย',
 }: CountTableProps) {
   const tableColumns = columns?.length ? columns : defaultColumns
+  const hasRowActions = Boolean(rowActions?.canUpdate || rowActions?.canDelete)
 
   if (loading) {
     return (
@@ -125,6 +137,7 @@ export function CountTable({
                   {column.label}
                 </th>
               ))}
+              {hasRowActions ? <th className="px-6 py-4 text-right font-semibold">จัดการ</th> : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -135,6 +148,32 @@ export function CountTable({
                     {row[column.key] ?? '-'}
                   </td>
                 ))}
+                {hasRowActions ? (
+                  <td className="px-6 py-[18px] text-right">
+                    <div className="flex justify-end gap-2">
+                      {rowActions?.canUpdate ? (
+                        <button
+                          type="button"
+                          onClick={() => rowActions.onUpdate?.(row)}
+                          disabled={rowActions.updating}
+                          className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          แก้ไข
+                        </button>
+                      ) : null}
+                      {rowActions?.canDelete ? (
+                        <button
+                          type="button"
+                          onClick={() => rowActions.onDelete?.(row)}
+                          disabled={rowActions.deleting}
+                          className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          ลบ
+                        </button>
+                      ) : null}
+                    </div>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
@@ -150,6 +189,30 @@ export function CountTable({
                 <span className="text-right font-semibold text-slate-800">{row[column.key] ?? '-'}</span>
               </div>
             ))}
+            {hasRowActions ? (
+              <div className="mt-3 flex justify-end gap-2 border-t border-slate-200 pt-3">
+                {rowActions?.canUpdate ? (
+                  <button
+                    type="button"
+                    onClick={() => rowActions.onUpdate?.(row)}
+                    disabled={rowActions.updating}
+                    className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    แก้ไข
+                  </button>
+                ) : null}
+                {rowActions?.canDelete ? (
+                  <button
+                    type="button"
+                    onClick={() => rowActions.onDelete?.(row)}
+                    disabled={rowActions.deleting}
+                    className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    ลบ
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </article>
         ))}
       </div>
