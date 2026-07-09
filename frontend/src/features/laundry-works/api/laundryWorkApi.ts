@@ -191,6 +191,14 @@ export type CreateLaundryWorkInput = {
   meta: LaundryWorkRequestMeta
 }
 
+export type CreateLaundryBagInput = {
+  workId?: string | number
+  bagNo: string
+  receivedAt?: string
+  note?: string
+  meta: LaundryWorkRequestMeta
+}
+
 export type UpdateLaundryWorkStatusInput = {
   workId?: string | number
   toStatus: string
@@ -341,17 +349,21 @@ function normalizeWork(raw: any): LaundryWorkDTO {
   }
 }
 
+function normalizeBag(raw: any): LaundryBagDTO {
+  return {
+    id: raw.id,
+    bagNo: raw.bagNo,
+    status: raw.status,
+    note: raw.note,
+    receivedAt: raw.receivedAt,
+    openedAt: raw.openedAt,
+  }
+}
+
 function normalizeDetail(raw: any): LaundryWorkDetailDTO {
   return {
     work: normalizeWork(raw),
-    bags: (raw.bags || []).map((bag: any) => ({
-      id: bag.id,
-      bagNo: bag.bagNo,
-      status: bag.status,
-      note: bag.note,
-      receivedAt: bag.receivedAt,
-      openedAt: bag.openedAt,
-    })),
+    bags: (raw.bags || []).map(normalizeBag),
     countLines: (raw.countLines || []).map((line: any) => ({
       id: line.id,
       itemTypeName: line.itemTypeName || line.itemType?.name,
@@ -415,6 +427,22 @@ export const laundryWorkApi = {
       body: JSON.stringify(input),
     })
     return mapResult(result, normalizeWork)
+  },
+
+  async createLaundryBag({ workId, meta, ...input }: CreateLaundryBagInput): Promise<ApiResult<LaundryBagDTO>> {
+    if (!workId) {
+      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
+    }
+
+    if (!input.bagNo?.trim()) {
+      return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'bagNo is required.', 400)
+    }
+
+    const result = await requestBackend<any>(`/laundry/works/${workId}/bags`, meta, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+    return mapResult(result, normalizeBag)
   },
 
   async getLaundryWorkDetail({ workId, meta }: GetLaundryWorkDetailInput): Promise<ApiResult<LaundryWorkDetailDTO>> {
