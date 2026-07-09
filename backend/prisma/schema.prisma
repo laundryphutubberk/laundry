@@ -406,7 +406,7 @@ model LaundryMachine {
   active       Boolean  @default(true)
 
   loadRules    LaundryMachineLoadRule[]
-  washLoadPlans LaundryMachineLoadRule[]
+  washLoadPlans WashLoadPlan[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
