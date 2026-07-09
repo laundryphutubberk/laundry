@@ -1,8 +1,10 @@
+import { RouterProvider } from 'react-router-dom'
+
 import './App.css'
-import { LaundryWorkDetailPreview } from './features/laundry-works/dev/laundryWorkDetail.preview'
+import { router } from './routes'
 
 function App() {
-  return <LaundryWorkDetailPreview />
+  return <RouterProvider router={router} />
 }
 
 export default App
