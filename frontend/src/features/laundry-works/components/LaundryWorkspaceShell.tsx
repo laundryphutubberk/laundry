@@ -19,8 +19,8 @@ const navItems = [
 
 export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) {
   return (
-    <div className="min-h-screen bg-slate-100/70 text-[16px] lg:grid lg:grid-cols-[300px_minmax(0,1fr)] 2xl:text-[17px]">
-      <aside className="hidden min-h-screen overflow-hidden bg-gradient-to-b from-blue-950 via-blue-950 to-slate-950 text-white shadow-2xl shadow-blue-950/20 lg:block">
+    <div className="min-h-screen bg-slate-100/70 text-[16px] lg:pl-[300px] 2xl:text-[17px]">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[300px] overflow-y-auto bg-gradient-to-b from-blue-950 via-blue-950 to-slate-950 text-white shadow-2xl shadow-blue-950/20 lg:block">
         <div className="flex h-28 items-center gap-3 border-b border-white/10 px-6">
           <div className="flex h-13 w-13 items-center justify-center rounded-2xl bg-amber-400 text-2xl font-black text-white shadow-lg shadow-amber-500/20">
             ♨
