@@ -1,11 +1,11 @@
-import type { LaundryWorkApiError, LaundryWorkDetailDTO } from './api/laundryWorkApi'
+import type { ApiFailure, LaundryWorkDetailDTO } from './api/laundryWorkApi'
 import type { LaundryWorkPolicyActionModel } from './laundryWork.policy'
 import type { LaundryWorkWorkspaceScope } from './laundryWork.store'
 
 export type LaundryWorkDetailProjectionInput = {
-  work?: LaundryWorkDetailDTO | null
+  detail?: LaundryWorkDetailDTO | null
   loading?: boolean
-  error?: LaundryWorkApiError | null
+  error?: ApiFailure['error'] | null
   workspaceScope: LaundryWorkWorkspaceScope
   actionModel: LaundryWorkPolicyActionModel
 }
@@ -63,7 +63,8 @@ function buildTimeline(status?: string) {
 }
 
 export function projectLaundryWorkDetail(input: LaundryWorkDetailProjectionInput) {
-  const { work, loading = false, error = null, workspaceScope, actionModel } = input
+  const { detail, loading = false, error = null, workspaceScope, actionModel } = input
+  const work = detail?.work
   const safeError = error ? `${error.message}${error.requestId ? ` (requestId: ${error.requestId})` : ''}` : null
 
   return {
@@ -107,18 +108,25 @@ export function projectLaundryWorkDetail(input: LaundryWorkDetailProjectionInput
       { key: 'status', label: 'สถานะ', value: statusLabel(work?.currentStatus) },
       { key: 'resort', label: 'รีสอร์ต', value: work?.resortName || '-' },
     ],
-    countRows: (work?.countLines || []).map((line) => ({
+    countRows: (detail?.countLines || []).map((line) => ({
       id: line.id,
-      type: line.itemTypeName || line.itemTypeId,
-      category: '-',
+      type: line.itemTypeName || '-',
+      category: line.category || '-',
       color: line.colorGroup || '-',
       quantity: line.quantity,
-      weight: '-',
+      weight: line.weight || '-',
     })),
     countColumns: undefined,
-    issues: work?.issues || [],
-    images: work?.images || [],
-    history: work?.statusLogs || [],
+    issues: detail?.issues || [],
+    images: [],
+    history: (detail?.statusLogs || []).map((log) => ({
+      id: log.id,
+      label: log.toStatus,
+      eventLabel: statusLabel(log.toStatus),
+      timestamp: formatDate(log.changedAt),
+      actorName: log.changedByName,
+      note: log.note,
+    })),
     actions: actionModel,
   }
 }
