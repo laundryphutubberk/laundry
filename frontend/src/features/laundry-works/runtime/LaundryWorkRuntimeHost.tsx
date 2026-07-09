@@ -1,10 +1,20 @@
-/**
- * Laundry Work runtime host placeholder.
- *
- * Owns runtime composition boundary for Laundry Work.
- * FE-01 skeleton only.
- */
+import type { ReactNode } from 'react'
+import type { LaundryWorkWorkspaceScope } from '../state/laundryWork.store'
+import { useLaundryWorkController } from './useLaundryWorkController'
 
-export function LaundryWorkRuntimeHost() {
-  return null
+export type LaundryWorkRuntimeHostRenderProps = ReturnType<typeof useLaundryWorkController>
+
+export type LaundryWorkRuntimeHostProps = {
+  children: (runtime: LaundryWorkRuntimeHostRenderProps) => ReactNode
+  initialWorkId?: string | number
+  workspaceScope?: LaundryWorkWorkspaceScope
+}
+
+export function LaundryWorkRuntimeHost({ children, initialWorkId, workspaceScope }: LaundryWorkRuntimeHostProps) {
+  const runtime = useLaundryWorkController({
+    workId: initialWorkId,
+    workspaceScope,
+  })
+
+  return <>{children(runtime)}</>
 }
