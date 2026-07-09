@@ -1,8 +1,3 @@
-/**
- * Workspace policy placeholder.
- *
- * Owns workspace isolation, workspace visibility, and workspace access policy checks.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Workspace policy ownership.
+// FE-01 Foundation only: no implementation.
+export {};

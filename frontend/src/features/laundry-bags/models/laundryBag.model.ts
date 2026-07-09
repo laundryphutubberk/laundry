@@ -1,7 +1,3 @@
-/**
- * Laundry Bag frontend model placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Laundry Bag model ownership.
+// FE-01 Foundation only: no implementation.
+export {};

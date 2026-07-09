@@ -1,9 +1,3 @@
-/**
- * Inventory route page placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export function InventoryPage() {
-  return null
-}
+// Placeholder for Inventory page ownership.
+// FE-01 Foundation only: no implementation.
+export {};

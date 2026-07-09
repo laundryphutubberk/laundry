@@ -1,8 +1,3 @@
-/**
- * Resort policy placeholder.
- *
- * Owns resort visibility, workspace isolation, and resort selection policy checks.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Resort policy ownership.
+// FE-01 Foundation only: no implementation.
+export {};

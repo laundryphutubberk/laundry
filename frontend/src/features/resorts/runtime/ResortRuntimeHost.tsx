@@ -1,10 +1,3 @@
-/**
- * Resort runtime host placeholder.
- *
- * Owns runtime composition boundary for resort workspace behavior.
- * FE-01 skeleton only.
- */
-
-export function ResortRuntimeHost() {
-  return null
-}
+// Placeholder for Resort runtime host ownership.
+// FE-01 Foundation only: no implementation.
+export {};

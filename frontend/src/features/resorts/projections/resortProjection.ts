@@ -1,8 +1,3 @@
-/**
- * Resort projection placeholder.
- *
- * Owns UI-safe derived read models for Resort and workspace scope views.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Resort projection ownership.
+// FE-01 Foundation only: no implementation.
+export {};

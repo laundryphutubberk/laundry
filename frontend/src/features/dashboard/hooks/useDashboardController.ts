@@ -1,9 +1,3 @@
-/**
- * Dashboard controller hook placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export function useDashboardController() {
-  return {}
-}
+// Placeholder for Dashboard hook orchestration ownership.
+// FE-01 Foundation only: no implementation.
+export {};

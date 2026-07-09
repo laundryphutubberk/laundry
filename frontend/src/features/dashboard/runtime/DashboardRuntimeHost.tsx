@@ -1,10 +1,3 @@
-/**
- * Dashboard runtime host placeholder.
- *
- * Owns runtime composition boundary for dashboard behavior.
- * FE-01 skeleton only.
- */
-
-export function DashboardRuntimeHost() {
-  return null
-}
+// Placeholder for Dashboard runtime host ownership.
+// FE-01 Foundation only: no implementation.
+export {};

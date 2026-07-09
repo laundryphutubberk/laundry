@@ -1,7 +1,3 @@
-/**
- * Workspace feature configuration placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export const workspaceConfig = {}
+// Placeholder for Workspace configuration ownership.
+// FE-01 Foundation only: no implementation.
+export {};

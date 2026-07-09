@@ -1,8 +1,3 @@
-/**
- * Inventory projection placeholder.
- *
- * Owns UI-safe derived read models for inventory summary and movement history.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Inventory projection ownership.
+// FE-01 Foundation only: no implementation.
+export {};

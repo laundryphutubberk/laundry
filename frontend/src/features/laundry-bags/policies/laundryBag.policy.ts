@@ -1,8 +1,3 @@
-/**
- * Laundry Bag policy placeholder.
- *
- * Owns bag action eligibility and bag workflow policy checks.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Laundry Bag policy ownership.
+// FE-01 Foundation only: no implementation.
+export {};

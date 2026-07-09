@@ -1,8 +1,3 @@
-/**
- * Inventory policy placeholder.
- *
- * Owns inventory visibility and adjustment eligibility policy checks.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Inventory policy ownership.
+// FE-01 Foundation only: no implementation.
+export {};

@@ -1,9 +1,3 @@
-/**
- * Resort route page placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export function ResortPage() {
-  return null
-}
+// Placeholder for Resort page ownership.
+// FE-01 Foundation only: no implementation.
+export {};

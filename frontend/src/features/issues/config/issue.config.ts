@@ -1,7 +1,3 @@
-/**
- * Issue feature configuration placeholder.
- *
- * FE-01 skeleton only.
- */
-
-export const issueConfig = {}
+// Placeholder for Issue configuration ownership.
+// FE-01 Foundation only: no implementation.
+export {};

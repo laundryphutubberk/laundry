@@ -1,8 +1,3 @@
-/**
- * Resort mapper placeholder.
- *
- * Owns API/domain/UI mapping for Resort.
- * FE-01 skeleton only.
- */
-
-export {}
+// Placeholder for Resort mapping ownership.
+// FE-01 Foundation only: no implementation.
+export {};
