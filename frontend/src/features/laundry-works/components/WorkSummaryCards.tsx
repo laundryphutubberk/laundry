@@ -25,9 +25,16 @@ const fallbackItems: WorkSummaryCardItem[] = [
 
 const toneClassName: Record<string, string> = {
   default: 'border-slate-200 bg-white text-slate-950',
-  warning: 'border-amber-200 bg-amber-50 text-amber-950',
-  danger: 'border-red-200 bg-red-50 text-red-950',
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+  warning: 'border-amber-200 bg-amber-50 text-amber-950 shadow-amber-100/70',
+  danger: 'border-red-200 bg-red-50 text-red-950 shadow-red-100/70',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-950 shadow-emerald-100/70',
+}
+
+const valueClassName: Record<string, string> = {
+  default: 'text-blue-950',
+  warning: 'text-amber-600',
+  danger: 'text-red-500',
+  success: 'text-emerald-700',
 }
 
 export function WorkSummaryCards({
@@ -38,12 +45,12 @@ export function WorkSummaryCards({
 }: WorkSummaryCardsProps) {
   if (loading) {
     return (
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-busy="true">
+      <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4" aria-busy="true">
         {[0, 1, 2, 3].map((item) => (
-          <article key={item} className="rounded-[20px] border bg-white p-5 shadow-sm">
-            <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
-            <div className="mt-3 h-9 w-16 animate-pulse rounded bg-slate-100" />
-            <div className="mt-3 h-3 w-32 animate-pulse rounded bg-slate-100" />
+          <article key={item} className="min-h-[130px] rounded-[26px] border bg-white p-6 shadow-sm">
+            <div className="h-4 w-28 animate-pulse rounded bg-slate-100" />
+            <div className="mt-5 h-11 w-20 animate-pulse rounded bg-slate-100" />
+            <div className="mt-4 h-3 w-36 animate-pulse rounded bg-slate-100" />
           </article>
         ))}
       </section>
@@ -52,7 +59,7 @@ export function WorkSummaryCards({
 
   if (error) {
     return (
-      <section className="rounded-[20px] border border-red-100 bg-red-50 p-4 text-sm text-red-800 shadow-sm">
+      <section className="rounded-[26px] border border-red-100 bg-red-50 p-5 text-sm text-red-800 shadow-sm">
         {error}
       </section>
     )
@@ -61,21 +68,21 @@ export function WorkSummaryCards({
   const safeItems = items.length ? items : fallbackItems
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="สรุปงานซัก">
+    <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4" aria-label="สรุปงานซัก">
       {safeItems.map((item, index) => {
-        const tone = toneClassName[item.tone || 'default'] || toneClassName.default
+        const toneKey = item.tone || 'default'
+        const tone = toneClassName[toneKey] || toneClassName.default
+        const valueTone = valueClassName[toneKey] || valueClassName.default
         const value = item.value ?? '-'
         return (
-          <article key={item.id || item.key || index} className={`rounded-[20px] border p-5 shadow-sm ${tone}`}>
-            <p className="text-sm font-medium text-slate-500">{item.label}</p>
-            <div className="mt-3 flex items-end justify-between gap-3">
-              <p className={item.tone === 'warning' || item.tone === 'danger' ? 'break-words text-[32px] font-bold leading-none tracking-tight text-red-500' : 'break-words text-[32px] font-bold leading-none tracking-tight text-blue-950'}>
-                {value}
-              </p>
-              {item.unit ? <span className="pb-1 text-sm font-medium text-slate-500">{item.unit}</span> : null}
+          <article key={item.id || item.key || index} className={`min-h-[130px] rounded-[26px] border p-6 shadow-sm ${tone}`}>
+            <p className="text-sm font-semibold text-slate-500">{item.label}</p>
+            <div className="mt-4 flex items-end justify-between gap-4">
+              <p className={`break-words text-[40px] font-black leading-none tracking-tight ${valueTone}`}>{value}</p>
+              {item.unit ? <span className="pb-1.5 text-sm font-semibold text-slate-500">{item.unit}</span> : null}
             </div>
             {item.description || item.helperText ? (
-              <p className="mt-3 text-xs leading-relaxed text-slate-500">{item.description || item.helperText}</p>
+              <p className="mt-4 text-xs leading-relaxed text-slate-500">{item.description || item.helperText}</p>
             ) : null}
             {!items.length && index === 0 ? <span className="sr-only">{emptyText}</span> : null}
           </article>
