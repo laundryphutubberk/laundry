@@ -3,11 +3,11 @@
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
 Track: UI Package
-Runtime Source: `FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
+Runtime Source: `project-os/frontend/execution/fe-03-runtime-contract/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
 
-Implement the Laundry Work header component from projection output.
+Implement the Laundry Work header component from `WorkHeaderProjection`.
 
 ## Target File
 
@@ -15,56 +15,32 @@ Implement the Laundry Work header component from projection output.
 
 ## Runtime Contract Mapping
 
-Uses projection output derived from:
+Uses `WorkHeaderProjection` from `LaundryWorkDetailProjection`:
 
-```text
-LaundryWorkDetailVM
-- id
-- workNo
-- resortName
-- currentStatus
-- statusLabel
-- receivedDateLabel
-- returnedAtLabel optional
-- closedAtLabel optional
-- note optional
-
-LaundryWorkViewModel.workspace
-- workspaceType
-- resortScoped
-
-LaundryWorkViewModel.meta
-- lastUpdatedAt
+```ts
+type WorkHeaderProjection = {
+  workNo?: string
+  resortName?: string
+  statusLabel: string
+  description?: string
+  receivedAtLabel?: string
+  updatedAtLabel?: string
+}
 ```
 
 ## Inputs
 
 ```text
-work
-  - id
+workHeader
   - workNo
-  - resortName/customerName
-  - status/currentStatus
-  - receivedAt/receivedDateLabel
-  - updatedAt/lastUpdatedAt
-  - note/description
-status
-  - label
-  - tone
-workspace
-  - workspaceLabel
   - resortName
-meta
-  - receivedAt
-  - updatedAt
-  - ownerName
-actions optional
-  - label
-  - variant
-  - disabled
-  - onClick
+  - statusLabel
+  - description
+  - receivedAtLabel
+  - updatedAtLabel
 loading optional
 error optional
+headerActions optional from controller/policy projection
 ```
 
 ## Outputs
@@ -72,8 +48,8 @@ error optional
 - Presentational screen header.
 - Work identity area.
 - Status badge display.
-- Metadata cards.
-- Header toolbar buttons when provided.
+- Metadata display.
+- Header toolbar buttons when provided by controller/policy projection.
 
 ## Rules
 
@@ -88,8 +64,8 @@ error optional
 ## Acceptance Criteria
 
 - Renders safely with partial projection data.
-- Shows work number/status/resort/date/owner when provided.
+- Shows work number/status/resort/date when provided.
 - Loading and error states render safely.
 - Responsive on desktop/tablet/mobile.
 - Component remains presentation-only.
-- FE-05 can pass controller/projection props without changing component boundary.
+- FE-05 can pass `WorkHeaderProjection` without changing component boundary.
