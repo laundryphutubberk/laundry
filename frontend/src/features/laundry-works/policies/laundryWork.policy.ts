@@ -29,6 +29,9 @@ export type LaundryWorkPolicyActionModel = {
     saveDraft: LaundryWorkPolicyAction
     continue: LaundryWorkPolicyAction
   }
+  bag: {
+    createBag: LaundryWorkPolicyAction
+  }
   issue: {
     createIssue: LaundryWorkPolicyAction
   }
@@ -115,6 +118,18 @@ export function getLaundryWorkActionModel({
         'Save Draft is disabled until a backend draft contract exists.',
       ),
       continue: continueAction,
+    },
+    bag: {
+      createBag:
+        canMutate && capability?.bags.create
+          ? allow('เพิ่มถุง')
+          : deny(
+              'เพิ่มถุง',
+              capability?.bags.create ? boundaryDenyReason?.[0] || 'ACTION_NOT_ALLOWED' : 'BACKEND_CONTRACT_REQUIRED',
+              capability?.bags.create
+                ? boundaryDenyReason?.[1] || 'Action is not allowed.'
+                : 'Bag creation endpoint is not available in backend contract.',
+            ),
     },
     issue: {
       createIssue:
