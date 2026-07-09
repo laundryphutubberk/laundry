@@ -3,97 +3,106 @@ import { CountTable } from '../components/CountTable'
 import { HistoryPanel } from '../components/HistoryPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { IssuePanel } from '../components/IssuePanel'
+import { LaundryWorkspaceShell } from '../components/LaundryWorkspaceShell'
 import { WorkHeader } from '../components/WorkHeader'
 import { WorkSummaryCards } from '../components/WorkSummaryCards'
 import { WorkTimeline } from '../components/WorkTimeline'
 import { LaundryWorkRuntimeHost } from '../runtime/LaundryWorkRuntimeHost'
 
 const pageClassName = 'min-h-screen bg-slate-100/70'
-const mainClassName = 'mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-4 py-5 pb-28 md:px-6 lg:px-8'
+const mainClassName = 'mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-5 pb-28 md:px-6 lg:px-8 xl:px-10'
 const detailGridClassName = 'grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[390px_minmax(0,1fr)]'
 
 function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId }: any) {
   if (loading) {
     return (
-      <div className={pageClassName}>
-        <main className={mainClassName}>
-          <WorkHeader loading />
-          <WorkSummaryCards loading />
-          <div className={detailGridClassName}>
-            <aside className="xl:sticky xl:top-5 xl:self-start">
-              <WorkTimeline loading />
-            </aside>
-            <div className="flex min-w-0 flex-col gap-5">
-              <CountTable loading />
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
-                <IssuePanel loading />
-                <ImagePanel loading />
+      <LaundryWorkspaceShell>
+        <div className={pageClassName}>
+          <main className={mainClassName}>
+            <WorkHeader loading />
+            <WorkSummaryCards loading />
+            <div className={detailGridClassName}>
+              <aside className="xl:sticky xl:top-25 xl:self-start">
+                <WorkTimeline loading />
+              </aside>
+              <div className="flex min-w-0 flex-col gap-5">
+                <CountTable loading />
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
+                  <IssuePanel loading />
+                  <ImagePanel loading />
+                </div>
+                <HistoryPanel loading />
               </div>
-              <HistoryPanel loading />
             </div>
-          </div>
-        </main>
-        <BottomActionBar actions={actions.work} state={state} loading />
-      </div>
+          </main>
+          <BottomActionBar actions={actions.work} state={state} loading />
+        </div>
+      </LaundryWorkspaceShell>
     )
   }
 
   if (error) {
     return (
-      <div className={pageClassName}>
-        <main className={mainClassName}>
-          <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
-            <p className="text-base font-semibold">ไม่สามารถโหลดรายละเอียดงานซักได้</p>
-            <p className="mt-2 text-sm">{error}</p>
-            {requestId ? <p className="mt-3 text-xs text-red-600">requestId: {requestId}</p> : null}
-          </section>
-        </main>
-        <BottomActionBar actions={actions.work} state={state} error={error} />
-      </div>
+      <LaundryWorkspaceShell>
+        <div className={pageClassName}>
+          <main className={mainClassName}>
+            <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
+              <p className="text-base font-semibold">ไม่สามารถโหลดรายละเอียดงานซักได้</p>
+              <p className="mt-2 text-sm">{error}</p>
+              {requestId ? <p className="mt-3 text-xs text-red-600">requestId: {requestId}</p> : null}
+            </section>
+          </main>
+          <BottomActionBar actions={actions.work} state={state} error={error} />
+        </div>
+      </LaundryWorkspaceShell>
     )
   }
 
   if (empty) {
     return (
-      <div className={pageClassName}>
-        <main className={mainClassName}>
-          <section className="rounded-[28px] border bg-white p-6 shadow-sm">
-            <p className="text-base font-semibold text-slate-950">ไม่พบข้อมูลงานซัก</p>
-            <p className="mt-2 text-sm text-slate-500">ยังไม่มีข้อมูลที่พร้อมแสดงสำหรับ Work Detail นี้</p>
-          </section>
-        </main>
-        <BottomActionBar actions={actions.work} state={state} />
-      </div>
+      <LaundryWorkspaceShell>
+        <div className={pageClassName}>
+          <main className={mainClassName}>
+            <section className="rounded-[28px] border bg-white p-6 shadow-sm">
+              <p className="text-base font-semibold text-slate-950">ไม่พบข้อมูลงานซัก</p>
+              <p className="mt-2 text-sm text-slate-500">ยังไม่มีข้อมูลที่พร้อมแสดงสำหรับ Work Detail นี้</p>
+            </section>
+          </main>
+          <BottomActionBar actions={actions.work} state={state} />
+        </div>
+      </LaundryWorkspaceShell>
     )
   }
 
   return (
-    <div className={pageClassName}>
-      <main className={mainClassName}>
-        <WorkHeader work={projection.work} status={projection.status} workspace={projection.workspace} meta={projection.meta} />
+    <LaundryWorkspaceShell>
+      <div className={pageClassName}>
+        <main className={mainClassName}>
+          <WorkHeader work={projection.work} status={projection.status} workspace={projection.workspace} meta={projection.meta} />
 
-        <WorkSummaryCards items={projection.summaryCards} />
+          <WorkSummaryCards items={projection.summaryCards} />
 
-        <div className={detailGridClassName}>
-          <aside className="xl:sticky xl:top-5 xl:self-start">
-            <WorkTimeline steps={projection.timeline} nextHint={projection.nextHint} />
-          </aside>
+          <div className={detailGridClassName}>
+            <aside className="xl:sticky xl:top-25 xl:self-start">
+              <WorkTimeline steps={projection.timeline} nextHint={projection.nextHint} />
+            </aside>
 
-          <div className="flex min-w-0 flex-col gap-5">
-            <CountTable rows={projection.countRows} columns={projection.countColumns} />
+            <div className="flex min-w-0 flex-col gap-5">
+              <CountTable rows={projection.countRows} columns={projection.countColumns} />
 
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
-              <IssuePanel issues={projection.issues} actions={actions.issue} />
-              <ImagePanel images={projection.images} actions={actions.image} />
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
+                <IssuePanel issues={projection.issues} actions={actions.issue} />
+                <ImagePanel images={projection.images} actions={actions.image} />
+              </div>
+
+              <HistoryPanel events={projection.history} />
             </div>
-
-            <HistoryPanel events={projection.history} />
           </div>
-        </div>
-      </main>
+        </main>
 
-      <BottomActionBar actions={actions.work} state={state} />
-    </div>
+        <BottomActionBar actions={actions.work} state={state} />
+      </div>
+    </LaundryWorkspaceShell>
   )
 }
 
