@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { laundryWorkApi, type ApiFailure, type LaundryWorkDetailDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
+import { laundryWorkApi, type ApiFailure, type LaundryWorkDetailDTO, type LaundryWorkRequestMeta, type WorkspaceType } from '../api/laundryWorkApi'
 import { getLaundryWorkActionModel, type LaundryWorkPolicyAction } from '../policies/laundryWork.policy'
 import { createLaundryWorkDetailProjection } from '../projections/laundryWorkProjection'
 import { useLaundryWorkStore } from '../stores/laundryWork.store'
@@ -14,12 +14,68 @@ const createRequestId = () => {
   return `lw-${Date.now()}`
 }
 
-const createRequestMeta = (action: LaundryWorkRequestMeta['action'] = 'getLaundryWorkDetail'): LaundryWorkRequestMeta => ({
+type LaundryWorkSessionContext = {
+  token?: string
+  actorId?: number | string
+  actorRole?: string
+  workspaceType?: WorkspaceType
+  resortId?: number
+}
+
+const readStoredToken = () => {
+  if (typeof window === 'undefined') return undefined
+
+  return (
+    window.localStorage.getItem('laundry.auth.token') ||
+    window.localStorage.getItem('authToken') ||
+    window.localStorage.getItem('token') ||
+    undefined
+  )
+}
+
+const decodeJwtPayload = (token?: string) => {
+  if (!token) return null
+
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=')
+    return JSON.parse(window.atob(padded)) as Record<string, unknown>
+  } catch (_error) {
+    return null
+  }
+}
+
+const readLaundryWorkSessionContext = (): LaundryWorkSessionContext => {
+  const token = readStoredToken()
+  const payload = decodeJwtPayload(token)
+  const workspaceType = payload?.workspaceType === 'LAUNDRY' || payload?.workspaceType === 'RESORT' ? payload.workspaceType : undefined
+  const rawResortId = payload?.resortId
+  const resortId = rawResortId === undefined || rawResortId === null ? undefined : Number(rawResortId)
+
+  return {
+    token,
+    actorId: (payload?.userId || payload?.id) as string | number | undefined,
+    actorRole: payload?.role as string | undefined,
+    workspaceType,
+    resortId: Number.isInteger(resortId) && resortId > 0 ? resortId : undefined,
+  }
+}
+
+const createRequestMeta = (
+  action: LaundryWorkRequestMeta['action'] = 'getLaundryWorkDetail',
+  sessionContext: LaundryWorkSessionContext,
+): LaundryWorkRequestMeta => ({
   requestId: createRequestId(),
   feature: 'laundry-work',
   action,
-  workspaceType: 'LAUNDRY',
-  actorRole: 'LAUNDRY_STAFF',
+  actorId: sessionContext.actorId,
+  actorRole: sessionContext.actorRole,
+  workspaceType: sessionContext.workspaceType,
+  resortId: sessionContext.resortId,
+  token: sessionContext.token,
   createdAt: new Date().toISOString(),
 })
 
@@ -55,8 +111,10 @@ export function useLaundryWorkController() {
   const [requestId, setRequestId] = useState<string | undefined>()
   const [isContinuing, setIsContinuing] = useState(false)
 
+  const sessionContext = useMemo(() => readLaundryWorkSessionContext(), [])
+
   const loadDetail = useCallback(async () => {
-    const meta = createRequestMeta('getLaundryWorkDetail')
+    const meta = createRequestMeta('getLaundryWorkDetail', sessionContext)
 
     setLoading(true)
     setError(null)
@@ -76,7 +134,7 @@ export function useLaundryWorkController() {
     }
 
     setLoading(false)
-  }, [selectWork, workId])
+  }, [selectWork, sessionContext, workId])
 
   useEffect(() => {
     let active = true
@@ -96,10 +154,11 @@ export function useLaundryWorkController() {
 
   const workspaceScope = useMemo(
     () => ({
-      workspaceType: 'LAUNDRY' as const,
-      role: 'LAUNDRY_STAFF',
+      workspaceType: sessionContext.workspaceType,
+      resortId: sessionContext.resortId,
+      role: sessionContext.actorRole,
     }),
-    [],
+    [sessionContext.actorRole, sessionContext.resortId, sessionContext.workspaceType],
   )
 
   const policyActionModel = useMemo(
@@ -133,7 +192,7 @@ export function useLaundryWorkController() {
     const toStatus = nextBackendStatusByCurrentStatus[detail.work.currentStatus]
     if (!toStatus) return
 
-    const meta = createRequestMeta('updateLaundryWorkStatus')
+    const meta = createRequestMeta('updateLaundryWorkStatus', sessionContext)
     setIsContinuing(true)
     setError(null)
     setRequestId(meta.requestId)
@@ -154,7 +213,7 @@ export function useLaundryWorkController() {
 
     await loadDetail()
     setIsContinuing(false)
-  }, [detail?.work.currentStatus, loadDetail, policyActionModel.work.continue.allowed, workId])
+  }, [detail?.work.currentStatus, loadDetail, policyActionModel.work.continue.allowed, sessionContext, workId])
 
   return {
     ...viewModel,
