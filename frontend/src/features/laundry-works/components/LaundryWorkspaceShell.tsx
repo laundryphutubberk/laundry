@@ -19,30 +19,30 @@ const navItems = [
 
 export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) {
   return (
-    <div className="min-h-screen bg-slate-100/70 text-[16px] lg:grid lg:grid-cols-[300px_minmax(0,1fr)] 2xl:text-[17px]">
+    <div className="min-h-screen bg-slate-100/70 text-[16px] lg:grid lg:grid-cols-[340px_minmax(0,1fr)] 2xl:text-[17px]">
       <aside className="hidden min-h-screen overflow-hidden bg-gradient-to-b from-blue-950 via-blue-950 to-slate-950 text-white shadow-2xl shadow-blue-950/20 lg:block">
-        <div className="flex h-24 items-center gap-3 border-b border-white/10 px-7">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400 text-2xl font-black text-white shadow-lg shadow-amber-500/20">
+        <div className="flex h-28 items-center gap-4 border-b border-white/10 px-7">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400 text-3xl font-black text-white shadow-lg shadow-amber-500/20">
             ♨
           </div>
           <div className="min-w-0">
-            <p className="truncate text-xl font-black leading-tight">โรงซักผ้าอุตสาหกรรม</p>
-            <p className="mt-1 text-sm font-semibold text-blue-100/80">Laundry Management System</p>
+            <p className="truncate text-2xl font-black leading-tight">โรงซักผ้าอุตสาหกรรม</p>
+            <p className="mt-1 text-base font-semibold text-blue-100/80">Laundry Management System</p>
           </div>
         </div>
 
-        <nav className="space-y-1.5 px-4 py-7">
+        <nav className="space-y-2 px-4 py-7">
           {navItems.map((item) => (
             <button
               key={item.label}
               type="button"
               className={
                 item.active
-                  ? 'flex w-full items-center gap-4 rounded-2xl bg-white/10 px-4 py-4 text-left text-base font-black text-white shadow-sm ring-1 ring-white/10'
-                  : 'flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left text-base font-bold text-blue-100/85 hover:bg-white/10 hover:text-white'
+                  ? 'flex w-full items-center gap-4 rounded-2xl bg-white/10 px-5 py-4.5 text-left text-lg font-black text-white shadow-sm ring-1 ring-white/10'
+                  : 'flex w-full items-center gap-4 rounded-2xl px-5 py-4.5 text-left text-lg font-bold text-blue-100/85 hover:bg-white/10 hover:text-white'
               }
             >
-              <span className={item.active ? 'flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400 text-lg text-white' : 'flex h-9 w-9 items-center justify-center rounded-xl text-lg text-blue-100'}>
+              <span className={item.active ? 'flex h-11 w-11 items-center justify-center rounded-xl bg-amber-400 text-xl text-white' : 'flex h-11 w-11 items-center justify-center rounded-xl text-xl text-blue-100'}>
                 {item.icon}
               </span>
               <span>{item.label}</span>
