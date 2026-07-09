@@ -14,10 +14,10 @@ const createRequestId = () => {
   return `lw-${Date.now()}`
 }
 
-const createRequestMeta = (): LaundryWorkRequestMeta => ({
+const createRequestMeta = (action: LaundryWorkRequestMeta['action'] = 'getLaundryWorkDetail'): LaundryWorkRequestMeta => ({
   requestId: createRequestId(),
   feature: 'laundry-work',
-  action: 'getLaundryWorkDetail',
+  action,
   workspaceType: 'LAUNDRY',
   actorRole: 'LAUNDRY_STAFF',
   createdAt: new Date().toISOString(),
@@ -33,7 +33,7 @@ export function useLaundryWorkController() {
   const params = useParams()
   const navigate = useNavigate()
   const routeWorkId = params.workId || params.id
-  const workId = routeWorkId || 'mock-work-001'
+  const workId = routeWorkId
   const selectWork = useLaundryWorkStore((state) => state.selectWork)
   const resetLaundryWorkSelection = useLaundryWorkStore((state) => state.resetLaundryWorkSelection)
 
@@ -44,7 +44,7 @@ export function useLaundryWorkController() {
 
   useEffect(() => {
     let active = true
-    const meta = createRequestMeta()
+    const meta = createRequestMeta('getLaundryWorkDetail')
 
     setLoading(true)
     setError(null)
@@ -89,6 +89,7 @@ export function useLaundryWorkController() {
         workspaceScope,
         loading,
         error: error?.message || null,
+        capability: laundryWorkApi.capability,
       }),
     [detail, error, loading, workId, workspaceScope],
   )
