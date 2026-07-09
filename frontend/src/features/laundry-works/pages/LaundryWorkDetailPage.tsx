@@ -6,11 +6,9 @@ import { IssuePanel } from '../components/IssuePanel'
 import { WorkHeader } from '../components/WorkHeader'
 import { WorkSummaryCards } from '../components/WorkSummaryCards'
 import { WorkTimeline } from '../components/WorkTimeline'
-import { useLaundryWorkController } from '../controllers/useLaundryWorkController'
+import { LaundryWorkRuntimeHost } from '../runtime/LaundryWorkRuntimeHost'
 
-export function LaundryWorkDetailPage() {
-  const { projection, actions, state, loading, error, empty, requestId } = useLaundryWorkController()
-
+function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId }: any) {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -92,5 +90,13 @@ export function LaundryWorkDetailPage() {
 
       <BottomActionBar actions={actions.work} state={state} />
     </div>
+  )
+}
+
+export function LaundryWorkDetailPage() {
+  return (
+    <LaundryWorkRuntimeHost>
+      {(runtime) => <LaundryWorkDetailContent {...runtime} />}
+    </LaundryWorkRuntimeHost>
   )
 }
