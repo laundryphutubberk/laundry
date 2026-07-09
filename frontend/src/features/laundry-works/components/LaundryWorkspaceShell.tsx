@@ -17,17 +17,28 @@ const navItems = [
   { label: 'ตั้งค่า', icon: '⚙' },
 ]
 
+function LaundryBrandMark() {
+  return (
+    <svg viewBox="0 0 64 64" role="img" aria-label="Laundry Phu Thap Boek" className="h-14 w-14 shrink-0">
+      <circle cx="32" cy="32" r="30" fill="white" />
+      <circle cx="32" cy="32" r="29" fill="none" stroke="#0b2f5f" strokeWidth="3" />
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#5b8fbd" strokeWidth="1.5" />
+      <path d="M12 30 L24 19 L31 25 L39 12 L53 30" fill="none" stroke="#0b2f5f" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 40 C20 32 29 48 42 39 C48 35 53 35 58 38" fill="none" stroke="#5b8fbd" strokeWidth="4" strokeLinecap="round" />
+      <path d="M12 45 C23 38 32 51 46 43 C51 40 55 41 59 43" fill="none" stroke="#0f5f9a" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) {
   return (
     <div className="min-h-screen bg-slate-100/70 text-[16px] lg:pl-[300px] 2xl:text-[17px]">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[300px] overflow-y-auto bg-gradient-to-b from-blue-950 via-blue-950 to-slate-950 text-white shadow-2xl shadow-blue-950/20 lg:block">
-        <div className="flex h-28 items-center gap-3 border-b border-white/10 px-6">
-          <div className="flex h-13 w-13 items-center justify-center rounded-2xl bg-amber-400 text-2xl font-black text-white shadow-lg shadow-amber-500/20">
-            ♨
-          </div>
+        <div className="flex h-30 items-center gap-3 border-b border-white/10 px-5">
+          <LaundryBrandMark />
           <div className="min-w-0">
-            <p className="truncate text-xl font-black leading-tight">โรงซักผ้าอุตสาหกรรม</p>
-            <p className="mt-1 text-sm font-semibold text-blue-100/80">Laundry Management System</p>
+            <p className="truncate text-[22px] font-black leading-tight">โรงซักภูทับเบิก</p>
+            <p className="mt-1 text-base font-semibold leading-snug text-blue-100/80">Laundry Management System</p>
           </div>
         </div>
 
@@ -38,11 +49,11 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
               type="button"
               className={
                 item.active
-                  ? 'flex w-full items-center gap-4 rounded-2xl bg-white/10 px-4 py-4 text-left text-lg font-black text-white shadow-sm ring-1 ring-white/10'
-                  : 'flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left text-lg font-bold text-blue-100/85 hover:bg-white/10 hover:text-white'
+                  ? 'flex w-full items-center gap-4 rounded-2xl bg-white/10 px-4 py-4 text-left text-xl font-black text-white shadow-sm ring-1 ring-white/10'
+                  : 'flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left text-xl font-extrabold text-blue-100/85 hover:bg-white/10 hover:text-white'
               }
             >
-              <span className={item.active ? 'flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400 text-xl text-white' : 'flex h-10 w-10 items-center justify-center rounded-xl text-xl text-blue-100'}>
+              <span className={item.active ? 'flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400 text-2xl text-white' : 'flex h-10 w-10 items-center justify-center rounded-xl text-2xl text-blue-100'}>
                 {item.icon}
               </span>
               <span>{item.label}</span>
