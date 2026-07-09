@@ -13,10 +13,13 @@ const createRequestId = () => {
   return `lw-create-${Date.now()}`
 }
 
-const createRequestMeta = (sessionContext: ReturnType<typeof getWorkspaceContext>): LaundryWorkRequestMeta => ({
+const createRequestMeta = (
+  sessionContext: ReturnType<typeof getWorkspaceContext>,
+  action: LaundryWorkRequestMeta['action'] = 'createLaundryWork',
+): LaundryWorkRequestMeta => ({
   requestId: createRequestId(),
   feature: 'laundry-work',
-  action: 'createLaundryWork',
+  action,
   actorId: sessionContext.actorId,
   actorRole: sessionContext.actorRole,
   workspaceType: sessionContext.workspaceType,
@@ -32,6 +35,10 @@ function toIsoDateTime(value: string) {
   if (Number.isNaN(date.getTime())) return undefined
 
   return date.toISOString()
+}
+
+function formatBagNo(workNo: string, index: number) {
+  return `${workNo}-BAG-${String(index).padStart(3, '0')}`
 }
 
 export function LaundryWorkCreatePage() {
@@ -93,10 +100,28 @@ export function LaundryWorkCreatePage() {
     return resort.id
   }
 
+  async function createInitialBags(workId: string | number, generatedWorkNo: string, count: number) {
+    for (let index = 1; index <= count; index += 1) {
+      const meta = createRequestMeta(sessionContext, 'createLaundryBag')
+      const result = await laundryWorkApi.createLaundryBag({
+        workId,
+        bagNo: formatBagNo(generatedWorkNo, index),
+        receivedAt: receivedDate ? toIsoDateTime(receivedDate) : new Date().toISOString(),
+        meta,
+      })
+
+      setRequestId(result.meta.requestId)
+
+      if (!result.ok) {
+        throw new Error(result.error.message)
+      }
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const parsedBagCount = Number(bagCount)
+    const parsedBagCount = Math.max(0, Number(bagCount) || 0)
     const meta = createRequestMeta(sessionContext)
     setLoading(true)
     setError(null)
@@ -109,7 +134,7 @@ export function LaundryWorkCreatePage() {
         meta,
         resortId: parsedResortId,
         workNo: workNo.trim() || undefined,
-        bagCount: Number.isFinite(parsedBagCount) ? parsedBagCount : 0,
+        bagCount: 0,
         receivedDate: toIsoDateTime(receivedDate),
         note: note.trim() || undefined,
         currentStatus: 'DRAFT',
@@ -121,6 +146,10 @@ export function LaundryWorkCreatePage() {
         setError(result.error)
         setLoading(false)
         return
+      }
+
+      if (parsedBagCount > 0) {
+        await createInitialBags(result.data.id, result.data.workNo, parsedBagCount)
       }
 
       navigate(`/workspace/laundry/works/${result.data.id}`, { replace: true })
@@ -208,6 +237,7 @@ export function LaundryWorkCreatePage() {
                 className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-base font-semibold outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 disabled={!canCreate || loading}
               />
+              <p className="mt-2 text-xs font-semibold text-slate-400">ระบบจะสร้างเลขถุงจริงให้อัตโนมัติหลังสร้างงาน</p>
             </label>
 
             <label className="block md:col-span-2">
@@ -254,7 +284,7 @@ export function LaundryWorkCreatePage() {
               disabled={!canCreate || loading || loadingResorts}
               className="rounded-2xl bg-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'กำลังสร้างงาน...' : 'สร้างงานซัก'}
+              {loading ? 'กำลังสร้างงานและถุง...' : 'สร้างงานซัก'}
             </button>
           </div>
         </form>
