@@ -4,10 +4,11 @@ Status: BLOCKED
 Validation Type: Run Validation
 Target: Frontend
 Date: 2026-07-09
+Latest Reopen: 2026-07-09
 
 ## Task
 
-ตรวจด้วยการรัน ไม่ใช่ review ลอย ๆ
+ตรวจด้วยการรันจริง ไม่ใช่ review ลอย ๆ
 
 Required checks:
 
@@ -50,7 +51,7 @@ Detected checks:
 
 ## Run Attempt Evidence
 
-### Attempt: Clone repository for local run
+### Attempt 1: Clone repository for local run
 
 Command attempted:
 
@@ -69,6 +70,26 @@ Result:
 
 - Failed before repository checkout.
 - `npm install`, `npm run build`, and `npm run lint` could not be executed because the repository could not be cloned into the run environment.
+
+### Attempt 2: OPEN FE-08-RUN-VALIDATION rerun
+
+Command attempted:
+
+```bash
+rm -rf /mnt/data/laundry && git clone --depth=1 https://github.com/laundryphutubberk/laundry.git /mnt/data/laundry
+```
+
+Actual output:
+
+```text
+Cloning into '/mnt/data/laundry'...
+fatal: unable to access 'https://github.com/laundryphutubberk/laundry.git/': Could not resolve host: github.com
+```
+
+Result:
+
+- Failed before repository checkout again.
+- No source files were available locally for `npm install`, `npm run build`, or `npm run lint`.
 
 ## Command Results
 
@@ -117,3 +138,5 @@ DONE condition is partially satisfied:
 - Actual run attempt evidence is recorded.
 - Build success is not proven.
 - Blocker requiring resolution is recorded.
+
+DONE condition is not fully satisfied because this environment cannot currently produce FE compile/build pass evidence.
