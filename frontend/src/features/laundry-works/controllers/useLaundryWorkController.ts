@@ -63,6 +63,8 @@ export function useLaundryWorkController() {
   const [isContinuing, setIsContinuing] = useState(false)
   const [isCreatingBag, setIsCreatingBag] = useState(false)
   const [isCreatingCountLine, setIsCreatingCountLine] = useState(false)
+  const [isUpdatingCountLine, setIsUpdatingCountLine] = useState(false)
+  const [isDeletingCountLine, setIsDeletingCountLine] = useState(false)
 
   const sessionContext = useMemo(() => getWorkspaceContext(), [])
 
@@ -232,6 +234,66 @@ export function useLaundryWorkController() {
     [loadDetail, policyActionModel.countLine.createCountLine.allowed, sessionContext, workId],
   )
 
+  const updateCountLine = useCallback(
+    async (
+      lineId: string | number,
+      input: { bagId?: string | number | null; itemTypeName?: string; colorGroup?: string | null; quantity?: number; note?: string | null },
+    ) => {
+      if (!policyActionModel.countLine.createCountLine.allowed) return
+
+      const meta = createRequestMeta('updateLaundryCountLine', sessionContext)
+      setIsUpdatingCountLine(true)
+      setError(null)
+      setRequestId(meta.requestId)
+
+      const result = await laundryWorkApi.updateLaundryCountLine({
+        lineId,
+        ...input,
+        meta,
+      })
+
+      setRequestId(result.meta.requestId)
+
+      if (!result.ok) {
+        setError(result.error)
+        setIsUpdatingCountLine(false)
+        return
+      }
+
+      await loadDetail()
+      setIsUpdatingCountLine(false)
+    },
+    [loadDetail, policyActionModel.countLine.createCountLine.allowed, sessionContext],
+  )
+
+  const deleteCountLine = useCallback(
+    async (lineId: string | number) => {
+      if (!policyActionModel.countLine.createCountLine.allowed) return
+
+      const meta = createRequestMeta('deleteLaundryCountLine', sessionContext)
+      setIsDeletingCountLine(true)
+      setError(null)
+      setRequestId(meta.requestId)
+
+      const result = await laundryWorkApi.deleteLaundryCountLine({
+        lineId,
+        meta,
+      })
+
+      setRequestId(result.meta.requestId)
+
+      if (!result.ok) {
+        setError(result.error)
+        setIsDeletingCountLine(false)
+        return
+      }
+
+      await loadDetail()
+      setIsDeletingCountLine(false)
+    },
+    [loadDetail, policyActionModel.countLine.createCountLine.allowed, sessionContext],
+  )
+
   return {
     ...viewModel,
     actions: {
@@ -255,7 +317,11 @@ export function useLaundryWorkController() {
           onCreate: createCountLine,
           loading: isCreatingCountLine,
         },
+        updateCountLine,
+        deleteCountLine,
         canCreateCountLine: policyActionModel.countLine.createCountLine.allowed,
+        canUpdateCountLine: policyActionModel.countLine.createCountLine.allowed,
+        canDeleteCountLine: policyActionModel.countLine.createCountLine.allowed,
       },
       issue: {
         createIssue: toButtonAction(policyActionModel.issue.createIssue),
@@ -268,10 +334,12 @@ export function useLaundryWorkController() {
     },
     state: {
       ...viewModel.state,
-      isBusy: loading || isContinuing || isCreatingBag || isCreatingCountLine,
+      isBusy: loading || isContinuing || isCreatingBag || isCreatingCountLine || isUpdatingCountLine || isDeletingCountLine,
       isContinuing,
       isCreatingBag,
       isCreatingCountLine,
+      isUpdatingCountLine,
+      isDeletingCountLine,
     },
   }
 }
