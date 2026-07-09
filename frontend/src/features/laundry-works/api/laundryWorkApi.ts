@@ -196,14 +196,14 @@ type BackendEnvelope<T> = {
   error?: {
     message?: string
     statusCode?: number
+  }
+  meta?: {
+    requestId?: string
     code?: string
     details?: {
       fieldErrors?: Record<string, string[]>
       formErrors?: string[]
     }
-  }
-  meta?: {
-    requestId?: string
     pagination?: {
       total?: number
       skip?: number
@@ -300,10 +300,10 @@ async function requestBackend<T>(path: string, meta: LaundryWorkRequestMeta, ini
       return {
         ok: false,
         error: {
-          code: envelope.error?.code || normalizeStatusToCode(status),
+          code: envelope.meta?.code || normalizeStatusToCode(status),
           message: envelope.error?.message || response.statusText || 'Laundry Work request failed.',
           status,
-          fieldErrors: envelope.error?.details?.fieldErrors,
+          fieldErrors: envelope.meta?.details?.fieldErrors,
           requestId,
           retryable: status >= 500,
         },
