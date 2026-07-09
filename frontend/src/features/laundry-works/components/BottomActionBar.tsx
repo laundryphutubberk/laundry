@@ -55,13 +55,13 @@ export function BottomActionBar({ actions = {}, state = {}, loading = false, err
   const busy = Boolean(state.isBusy || loading)
 
   return (
-    <div className="sticky bottom-0 z-10 border-t bg-white/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      <div className="mx-auto flex max-w-7xl flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-white/85">
+      <div className="mx-auto flex max-w-6xl flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={backAction.onClick}
           disabled={busy || backAction.disabled || backAction.loading}
-          className="rounded-xl border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {backAction.loading ? 'กำลังโหลด...' : backAction.label || 'ย้อนกลับ'}
         </button>
@@ -75,7 +75,7 @@ export function BottomActionBar({ actions = {}, state = {}, loading = false, err
               type="button"
               onClick={action.onClick}
               disabled={busy || action.disabled || action.loading}
-              className="rounded-xl border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {action.loading ? 'กำลังดำเนินการ...' : action.label || 'เพิ่มเติม'}
             </button>
@@ -86,7 +86,7 @@ export function BottomActionBar({ actions = {}, state = {}, loading = false, err
               type="button"
               onClick={saveDraftAction.onClick}
               disabled={busy || saveDraftAction.disabled || saveDraftAction.loading}
-              className="rounded-xl border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saveDraftAction.loading ? 'กำลังบันทึก...' : saveDraftAction.label || 'บันทึกชั่วคราว'}
             </button>
@@ -97,7 +97,7 @@ export function BottomActionBar({ actions = {}, state = {}, loading = false, err
               type="button"
               onClick={actions.destructive.onClick}
               disabled={busy || actions.destructive.disabled || actions.destructive.loading}
-              className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {actions.destructive.loading ? 'กำลังดำเนินการ...' : actions.destructive.label || 'ยกเลิก'}
             </button>
@@ -108,7 +108,7 @@ export function BottomActionBar({ actions = {}, state = {}, loading = false, err
               type="button"
               onClick={continueAction.onClick}
               disabled={busy || continueAction.disabled || continueAction.loading}
-              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-blue-900 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {continueAction.loading ? 'กำลังดำเนินการ...' : continueAction.label || 'ดำเนินการขั้นตอนถัดไป'}
             </button>
