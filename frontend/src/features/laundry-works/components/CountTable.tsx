@@ -99,7 +99,7 @@ export function CountTable({
             {rows.map((row, index) => (
               <tr key={row.id || index} className="text-slate-700 hover:bg-slate-50/80">
                 {tableColumns.map((column) => (
-                  <td key={column.key} className={`px-6 py-4.5 ${alignClassName[column.align || 'left']}`}>
+                  <td key={column.key} className={`px-6 py-[18px] ${alignClassName[column.align || 'left']}`}>
                     {row[column.key] ?? '-'}
                   </td>
                 ))}
