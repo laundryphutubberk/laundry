@@ -3,6 +3,7 @@ const express = require('express');
 const { getHealthStatus } = require('../core/health');
 const { sendSuccess } = require('../core/httpResponse');
 const { authActorMiddleware } = require('../middlewares/authActor.middleware');
+const authRoutes = require('./auth.routes');
 const laundryWorksRoutes = require('./laundryWorks.routes');
 const laundryBagsRoutes = require('./laundryBags.routes');
 
@@ -17,6 +18,7 @@ router.get('/health', async function healthHandler(_req, res, next) {
   }
 });
 
+router.use('/auth', authRoutes);
 router.use('/laundry/works/:workId/bags', authActorMiddleware, laundryBagsRoutes);
 router.use('/laundry/works', authActorMiddleware, laundryWorksRoutes);
 
