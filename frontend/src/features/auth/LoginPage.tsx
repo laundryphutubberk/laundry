@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { login } from './authApi'
 
@@ -69,6 +69,13 @@ export function LoginPage() {
         >
           {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
         </button>
+
+        <p className="mt-5 text-center text-sm font-semibold text-slate-500">
+          ยังไม่มีบัญชี?{' '}
+          <Link to="/register" className="font-black text-blue-700 hover:text-blue-800">
+            ลงทะเบียน
+          </Link>
+        </p>
       </form>
     </div>
   )
