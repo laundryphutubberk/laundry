@@ -38,7 +38,7 @@ export function HistoryPanel({
   if (error) {
     return (
       <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
-        <h2 className="text-lg font-bold">ประวัติงาน</h2>
+        <h2 className="text-lg font-black">ประวัติงาน</h2>
         <p className="mt-2 text-sm">{error}</p>
       </section>
     )
@@ -46,7 +46,7 @@ export function HistoryPanel({
 
   return (
     <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-bold text-slate-950">ประวัติงาน</h2>
+      <h2 className="text-xl font-black tracking-tight text-slate-950">ประวัติงาน</h2>
       <p className="mt-1 text-sm text-slate-500">เหตุการณ์สำคัญที่เกิดขึ้นในงานนี้</p>
 
       {events.length ? (
@@ -60,11 +60,11 @@ export function HistoryPanel({
                 {!isLast ? <span className="absolute left-[9px] top-5 h-full w-0.5 bg-slate-200" aria-hidden="true" /> : null}
                 <span className="relative z-10 mt-2 h-5 w-5 shrink-0 rounded-full border-4 border-white bg-blue-500 shadow-sm ring-1 ring-blue-100" />
                 <div className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-slate-50/80 px-5 py-4 transition hover:bg-white hover:shadow-sm">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                    <p className="text-sm font-bold text-slate-950">{label}</p>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">{eventTime}</span>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <p className="text-sm font-black text-slate-950">{label}</p>
+                    <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 ring-1 ring-slate-200">{eventTime}</span>
                   </div>
-                  {event.actorName ? <p className="mt-2 text-xs font-semibold text-slate-400">โดย {event.actorName}</p> : null}
+                  {event.actorName ? <p className="mt-2 text-xs font-bold text-slate-400">โดย {event.actorName}</p> : null}
                   {event.description || event.note ? <p className="mt-2 text-sm leading-6 text-slate-600">{event.description || event.note}</p> : null}
                 </div>
               </li>
@@ -72,7 +72,7 @@ export function HistoryPanel({
           })}
         </ol>
       ) : (
-        <p className="mt-5 rounded-2xl border border-dashed p-4 text-sm text-slate-500">{emptyText}</p>
+        <p className="mt-5 rounded-2xl border border-dashed p-5 text-sm text-slate-500">{emptyText}</p>
       )}
     </section>
   )
