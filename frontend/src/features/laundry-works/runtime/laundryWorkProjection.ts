@@ -1,10 +1,10 @@
-import type { LaundryWorkApiError, LaundryWorkDetail } from '../api/laundryWorkApi'
+import type { ApiFailure, LaundryWorkDetailDTO } from '../api/laundryWorkApi'
 import type { LaundryWorkWorkspaceScope } from '../state/laundryWork.store'
 
 export type LaundryWorkDetailProjectionInput = {
-  detail?: LaundryWorkDetail | null
+  detail?: LaundryWorkDetailDTO | null
   loading?: boolean
-  error?: LaundryWorkApiError | string | null
+  error?: ApiFailure['error'] | string | null
   workspaceScope: LaundryWorkWorkspaceScope
 }
 
@@ -40,7 +40,7 @@ function formatDate(value?: string | null) {
   return value
 }
 
-function getErrorMessage(error?: LaundryWorkApiError | string | null) {
+function getErrorMessage(error?: ApiFailure['error'] | string | null) {
   if (!error) return null
   if (typeof error === 'string') return error
 
@@ -72,28 +72,28 @@ export function buildLaundryWorkDetailProjection({
   error = null,
   workspaceScope,
 }: LaundryWorkDetailProjectionInput) {
+  const work = detail?.work
   const errorMessage = getErrorMessage(error)
-  const currentStatus = detail?.currentStatus || 'DRAFT'
+  const currentStatus = work?.currentStatus || 'DRAFT'
   const statusLabel = statusLabels[currentStatus] || currentStatus
   const countLines = detail?.countLines || []
   const issues = detail?.issues || []
-  const bags = detail?.bags || []
   const history = detail?.statusLogs || []
   const countedQuantity = countLines.reduce((total, line) => total + Number(line.quantity || 0), 0)
   const issueQuantity = issues.reduce((total, issue) => total + Number(issue.quantity || 0), 0)
 
   return {
-    work: detail
+    work: work
       ? {
-          id: detail.id,
-          workNo: detail.workNo,
-          title: detail.workNo,
-          description: detail.note || 'ภาพรวมงานซักและสถานะปัจจุบัน',
-          resortName: detail.resortName,
+          id: work.id,
+          workNo: work.workNo,
+          title: work.workNo,
+          description: work.note || 'ภาพรวมงานซักและสถานะปัจจุบัน',
+          resortName: work.resortName,
           currentStatus,
-          receivedAt: formatDate(detail.receivedDate),
-          updatedAt: formatDate(detail.updatedAt),
-          note: detail.note || undefined,
+          receivedAt: formatDate(work.receivedDate),
+          updatedAt: formatDate(work.updatedAt),
+          note: work.note || undefined,
         }
       : {
           title: 'Laundry Work',
@@ -103,24 +103,24 @@ export function buildLaundryWorkDetailProjection({
       label: statusLabel,
     },
     workspace: {
-      resortName: detail?.resortName,
+      resortName: work?.resortName,
       workspaceLabel: workspaceScope.workspaceType === 'RESORT' ? 'Resort Workspace' : 'Laundry Workspace',
     },
     meta: {
-      receivedAt: formatDate(detail?.receivedDate),
-      updatedAt: formatDate(detail?.updatedAt),
+      receivedAt: formatDate(work?.receivedDate),
+      updatedAt: formatDate(work?.updatedAt),
     },
-    timeline: detail ? buildTimeline(currentStatus) : [],
-    nextHint: detail ? 'เลือก action ด้านล่างเพื่อไปขั้นตอนถัดไปตาม policy' : undefined,
+    timeline: work ? buildTimeline(currentStatus) : [],
+    nextHint: work ? 'เลือก action ด้านล่างเพื่อไปขั้นตอนถัดไปตาม policy' : undefined,
     summaryCards: [
-      { key: 'bag-count', label: 'จำนวนถุง', value: detail?.bagCount ?? '-', unit: 'ถุง' },
-      { key: 'counted-items', label: 'นับแล้วทั้งหมด', value: detail ? countedQuantity : '-', unit: 'ชิ้น' },
-      { key: 'issue-items', label: 'ชิ้นที่มีปัญหา', value: detail ? issueQuantity : '-', unit: 'ชิ้น', tone: issueQuantity ? 'warning' : 'default' },
+      { key: 'bag-count', label: 'จำนวนถุง', value: work?.bagCount ?? '-', unit: 'ถุง' },
+      { key: 'counted-items', label: 'นับแล้วทั้งหมด', value: work ? countedQuantity : '-', unit: 'ชิ้น' },
+      { key: 'issue-items', label: 'ชิ้นที่มีปัญหา', value: work ? issueQuantity : '-', unit: 'ชิ้น', tone: issueQuantity ? 'warning' : 'default' },
       { key: 'work-status', label: 'สถานะงาน', value: statusLabel },
     ],
     countRows: countLines.map((line) => ({
       id: line.id,
-      type: line.itemTypeName || line.itemTypeId || '-',
+      type: line.itemTypeName || '-',
       category: line.category || '-',
       color: line.colorGroup || '-',
       quantity: line.quantity ?? '-',
@@ -138,8 +138,10 @@ export function buildLaundryWorkDetailProjection({
       issueType: issue.issueType,
       description: issue.description || undefined,
       quantity: issue.quantity,
+      itemTypeName: issue.itemTypeName,
       status: issue.status,
       reportedAt: formatDate(issue.reportedAt),
+      reportedBy: issue.reportedBy,
     })),
     images: [],
     history: history.map((event) => ({
@@ -151,6 +153,6 @@ export function buildLaundryWorkDetailProjection({
     })),
     loading,
     error: errorMessage,
-    empty: !loading && !error && !detail,
+    empty: !loading && !error && !work,
   }
 }
