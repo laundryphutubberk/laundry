@@ -22,8 +22,4 @@ export const laundryWorkRoutes = [
       },
     ],
   },
-  {
-    path: '/laundry/works/:workId',
-    element: <Navigate to="/workspace/laundry/works/:workId" replace />,
-  },
 ]
