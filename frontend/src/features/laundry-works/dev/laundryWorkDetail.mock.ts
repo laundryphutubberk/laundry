@@ -1,0 +1,109 @@
+export const laundryWorkDetailMock = {
+  projection: {
+    work: {
+      id: 250701001,
+      workNo: 'LW-250701-001',
+      resortName: 'ภูทับเบิก รีสอร์ต',
+      currentStatus: 'TYPE_SORTED',
+      note: 'งานซักรอบเช้า ตรวจนับและแยกประเภทแล้ว',
+      receivedAt: '7 ก.ค. 2569 08:30',
+      updatedAt: '7 ก.ค. 2569 10:15',
+      ownerName: 'ทีมโรงซัก A',
+    },
+    status: {
+      label: 'แยกประเภทแล้ว',
+      tone: 'current',
+    },
+    workspace: {
+      workspaceLabel: 'Laundry Workspace',
+      resortName: 'ภูทับเบิก รีสอร์ต',
+    },
+    meta: {
+      receivedAt: '7 ก.ค. 2569 08:30',
+      updatedAt: '7 ก.ค. 2569 10:15',
+      ownerName: 'ทีมโรงซัก A',
+    },
+    summaryCards: [
+      { key: 'bags', label: 'จำนวนถุง', value: 12, unit: 'ถุง', description: 'รับเข้าจากรีสอร์ต' },
+      { key: 'weight', label: 'น้ำหนักรวม', value: 86.5, unit: 'กก.', description: 'น้ำหนักประมาณการ' },
+      { key: 'counted', label: 'นับแล้วทั้งหมด', value: 342, unit: 'ชิ้น', description: 'รวมทุกรายการ' },
+      { key: 'issues', label: 'ชิ้นที่มีปัญหา', value: 4, unit: 'ชิ้น', tone: 'warning', description: 'รอตรวจสอบ' },
+    ],
+    timeline: [
+      { key: 'receive_bags', label: 'รับถุง', state: 'completed', completedAt: '08:30', actorName: 'พนักงานรับถุง' },
+      { key: 'factory_receive', label: 'โรงซักรับถุง', state: 'completed', completedAt: '08:45', actorName: 'ทีมโรงซัก A' },
+      { key: 'open_bag', label: 'เปิดถุง', state: 'completed', completedAt: '09:00', actorName: 'ทีมคัดแยก' },
+      { key: 'count_items', label: 'นับชิ้น', state: 'completed', completedAt: '09:35', actorName: 'ทีมคัดแยก' },
+      { key: 'sort_type', label: 'แยกประเภท', state: 'current', helperText: 'กำลังตรวจรายการก่อนแยกสี' },
+      { key: 'sort_color', label: 'แยกสี', state: 'pending' },
+      { key: 'record_data', label: 'บันทึกข้อมูล', state: 'pending' },
+      { key: 'return_work', label: 'ส่งกลับ', state: 'pending' },
+    ],
+    nextHint: 'ขั้นตอนถัดไป: แยกสี',
+    countColumns: [
+      { key: 'type', label: 'ประเภทผ้า' },
+      { key: 'category', label: 'หมวดหมู่' },
+      { key: 'color', label: 'สี' },
+      { key: 'quantity', label: 'จำนวน', align: 'right' },
+      { key: 'weight', label: 'น้ำหนัก', align: 'right' },
+    ],
+    countRows: [
+      { id: 'line-1', type: 'ผ้าปูเตียง', category: 'ห้องพัก', color: 'ขาว', quantity: 120, weight: '30 กก.' },
+      { id: 'line-2', type: 'ปลอกหมอน', category: 'ห้องพัก', color: 'ขาว', quantity: 160, weight: '18 กก.' },
+      { id: 'line-3', type: 'ผ้าเช็ดตัว', category: 'ห้องน้ำ', color: 'ขาว', quantity: 48, weight: '26 กก.' },
+      { id: 'line-4', type: 'ผ้าเช็ดเท้า', category: 'ห้องน้ำ', color: 'เทา', quantity: 14, weight: '12.5 กก.' },
+    ],
+    issues: [
+      {
+        id: 'issue-1',
+        issueType: 'ผ้าขาด',
+        quantity: 2,
+        itemTypeName: 'ผ้าเช็ดตัว',
+        status: 'OPEN',
+        reportedAt: '09:40',
+        reportedBy: 'ทีมคัดแยก',
+        description: 'พบขอบผ้าขาด 2 ชิ้น',
+      },
+      {
+        id: 'issue-2',
+        issueType: 'คราบหนัก',
+        quantity: 2,
+        itemTypeName: 'ผ้าปูเตียง',
+        status: 'REVIEWING',
+        reportedAt: '09:45',
+        reportedBy: 'ทีมคัดแยก',
+      },
+    ],
+    images: [
+      { id: 'img-1', thumbnailUrl: 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&w=500&q=80', caption: 'ถุงผ้าก่อนเปิด', uploadedAt: '08:35', uploadedBy: 'ทีมรับถุง' },
+      { id: 'img-2', thumbnailUrl: 'https://images.unsplash.com/photo-1551761429-8232f9f5955c?auto=format&fit=crop&w=500&q=80', caption: 'รายการผ้าที่นับแล้ว', uploadedAt: '09:35', uploadedBy: 'ทีมคัดแยก' },
+    ],
+    history: [
+      { id: 'h-1', eventLabel: 'รับถุงจากรีสอร์ต', time: '08:30', actorName: 'พนักงานรับถุง' },
+      { id: 'h-2', eventLabel: 'เปิดถุงและเริ่มนับ', time: '09:00', actorName: 'ทีมคัดแยก' },
+      { id: 'h-3', eventLabel: 'บันทึกปัญหา 2 รายการ', time: '09:45', actorName: 'ทีมคัดแยก' },
+      { id: 'h-4', eventLabel: 'รอแยกสี', time: '10:15', actorName: 'ระบบ Preview' },
+    ],
+  },
+  actions: {
+    work: {
+      back: { label: 'กลับไปหน้ารายการ', onClick: () => undefined },
+      saveDraft: { label: 'บันทึกชั่วคราว', onClick: () => undefined },
+      continue: { label: 'ไปขั้นตอนแยกสี', onClick: () => undefined },
+      canSaveDraft: true,
+      canContinue: true,
+    },
+    issue: {
+      createIssue: { label: 'เพิ่มปัญหา', onClick: () => undefined },
+    },
+    image: {
+      uploadImage: { label: 'เพิ่มรูป', onClick: () => undefined },
+      viewAll: { label: 'ดูทั้งหมด', onClick: () => undefined },
+    },
+  },
+  state: {
+    isBusy: false,
+    isSavingDraft: false,
+    isContinuing: false,
+  },
+}
