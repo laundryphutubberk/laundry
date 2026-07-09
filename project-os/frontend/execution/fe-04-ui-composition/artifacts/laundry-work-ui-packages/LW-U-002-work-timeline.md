@@ -3,11 +3,11 @@
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
 Track: UI Package
-Runtime Source: `FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
+Runtime Source: `project-os/frontend/execution/fe-03-runtime-contract/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
 
-Implement the Laundry Work workflow timeline component from workflow projection output.
+Implement the Laundry Work workflow timeline component from `WorkflowTimelineProjection`.
 
 ## Target File
 
@@ -15,37 +15,29 @@ Implement the Laundry Work workflow timeline component from workflow projection 
 
 ## Runtime Contract Mapping
 
-Uses `LaundryWorkWorkflowProjection`:
+Uses `WorkflowTimelineProjection` from `LaundryWorkDetailProjection`:
 
-```text
-currentStatus
-currentStepKey
-steps[]
-  - key
-  - status
-  - backendStatus
-  - isCompleted
-  - isCurrent
-  - isPending
-nextActionKeys[]
-terminal
-  - isClosed
-  - isCancelled
+```ts
+type WorkflowTimelineProjection = {
+  steps: WorkflowStep[]
+  currentStepKey?: WorkflowStepKey
+  nextHint?: string
+}
 ```
 
-Projection may convert the runtime workflow shape into UI-ready step objects before passing to this component.
+`WorkflowStep.state` may be:
+
+```text
+completed | current | pending | blocked | cancelled | disabled
+```
 
 ## Inputs
 
 ```text
-steps[]
-  - id/key
-  - label/name
-  - state
-  - description/helperText
-  - completedAt
-  - actorName
-nextHint optional
+workflowTimeline
+  - steps[]
+  - currentStepKey
+  - nextHint
 loading optional
 error optional
 emptyText optional
@@ -73,4 +65,4 @@ emptyText optional
 - Completed/pending states are distinct.
 - Empty/loading/error states render safely.
 - Mobile layout remains readable.
-- FE-05 can replace mock timeline with workflow projection without component redesign.
+- FE-05 can pass `WorkflowTimelineProjection` without component redesign.
