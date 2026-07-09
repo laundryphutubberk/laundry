@@ -3,11 +3,11 @@
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
 Track: UI Package
-Runtime Source: `FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
+Runtime Source: `project-os/frontend/execution/fe-03-runtime-contract/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
 
-Implement the Laundry Work bottom action bar from policy-derived action model and controller handlers.
+Implement the Laundry Work bottom action bar from `ActionBarProjection` and controller handlers.
 
 ## Target File
 
@@ -15,49 +15,38 @@ Implement the Laundry Work bottom action bar from policy-derived action model an
 
 ## Runtime Contract Mapping
 
-Uses controller and policy output:
+Uses `actionBar` from `LaundryWorkDetailProjection`:
 
-```text
-UseLaundryWorkControllerResult.actions
-- receiveBags(workId, input)
-- markFactoryReceived(workId)
-- openBag(workId, bagId)
-- recordCountLines(workId, input)
-- markTypeSorted(workId)
-- markColorSorted(workId)
-- recordWorkData(workId)
-- returnWork(workId)
-- closeWork(workId)
-- cancelWork(workId, reason)
-- refresh()
+```ts
+type ActionBarProjection = {
+  primaryAction?: RuntimeActionProjection
+  secondaryActions: RuntimeActionProjection[]
+  backAction: RuntimeActionProjection
+  destructiveAction?: RuntimeActionProjection
+}
 
-LaundryWorkPolicyResult
-- allowed
-- reasonCode optional
-- message optional
-
-LaundryWorkViewModel.actions
-- primaryAction
-- secondaryActions[]
-- disabledReasonsByAction
+type RuntimeActionProjection = {
+  key: string
+  label: string
+  disabled: boolean
+  loading?: boolean
+  reasonCode?: PolicyDenyReason
+  message?: string
+  command?: LaundryWorkCommandType
+}
 ```
 
-Projection/controller must create UI-ready action descriptors before passing them to this component.
+Controller supplies handlers for projected actions. Policy decides eligibility before action descriptors reach UI.
 
 ## Inputs
 
 ```text
-actions
-  - back
-  - saveDraft
-  - continue
-  - secondary[]
-  - destructive optional
-legacy-compatible action props optional
-state
-  - isBusy
-  - isSavingDraft
-  - isContinuing
+actionBar
+  - primaryAction
+  - secondaryActions[]
+  - backAction
+  - destructiveAction
+handlers from controller by action key
 loading optional
 error optional
 ```
@@ -84,5 +73,5 @@ error optional
 - Disabled/loading states are safe.
 - Mobile action bar remains reachable.
 - Error message can display without blocking layout.
-- Action eligibility comes from policy/controller only.
+- Action eligibility comes from `ActionBarProjection` / controller only.
 - FE-05 can pass action descriptors without changing component boundary.
