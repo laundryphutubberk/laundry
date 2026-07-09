@@ -29,6 +29,15 @@ const markerClassName: Record<string, string> = {
   disabled: 'bg-slate-100 text-slate-400 ring-1 ring-slate-200',
 }
 
+const lineClassName: Record<string, string> = {
+  completed: 'bg-emerald-400',
+  current: 'bg-slate-200',
+  pending: 'bg-slate-200',
+  blocked: 'bg-amber-300',
+  cancelled: 'bg-red-300',
+  disabled: 'bg-slate-100',
+}
+
 const labelClassName: Record<string, string> = {
   completed: 'text-slate-900',
   current: 'text-slate-950',
@@ -47,7 +56,7 @@ export function WorkTimeline({
 }: WorkTimelineProps) {
   if (loading) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-busy="true">
+      <section className="rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm" aria-busy="true">
         <div className="mb-5 h-5 w-28 animate-pulse rounded bg-slate-100" />
         <div className="space-y-5">
           {[0, 1, 2, 3].map((item) => (
@@ -60,7 +69,7 @@ export function WorkTimeline({
 
   if (error) {
     return (
-      <section className="rounded-2xl border border-red-100 bg-red-50 p-5 text-red-800 shadow-sm">
+      <section className="rounded-[22px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
         <h2 className="text-base font-semibold">ลำดับงาน</h2>
         <p className="mt-2 text-sm">{error}</p>
       </section>
@@ -69,7 +78,7 @@ export function WorkTimeline({
 
   if (!steps.length) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-base font-bold text-slate-950">ลำดับงาน</h2>
         <p className="mt-3 rounded-xl border border-dashed p-4 text-sm text-slate-500">{emptyText}</p>
       </section>
@@ -77,27 +86,28 @@ export function WorkTimeline({
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm">
       <div>
         <h2 className="text-base font-bold text-slate-950">ลำดับงาน</h2>
         {nextHint ? <p className="mt-1 text-sm text-slate-500">{nextHint}</p> : null}
       </div>
 
-      <ol className="mt-6 space-y-0">
+      <ol className="mt-7 space-y-0">
         {steps.map((step, index) => {
           const state = step.state || 'pending'
           const markerTone = markerClassName[state] || markerClassName.pending
+          const lineTone = lineClassName[state] || lineClassName.pending
           const labelTone = labelClassName[state] || labelClassName.pending
           const isLast = index === steps.length - 1
           return (
-            <li key={step.id || step.key || index} className="relative flex gap-4 pb-6 last:pb-0">
+            <li key={step.id || step.key || index} className="relative flex gap-4 pb-7 last:pb-0">
               {!isLast ? (
-                <span className="absolute left-[17px] top-9 h-[calc(100%-1.25rem)] w-0.5 bg-slate-200" aria-hidden="true" />
+                <span className={`absolute left-[17px] top-10 h-[calc(100%-1.4rem)] w-0.5 ${lineTone}`} aria-hidden="true" />
               ) : null}
               <span className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold shadow-sm ${markerTone}`}>
                 {state === 'completed' ? '✓' : index + 1}
               </span>
-              <div className="min-w-0 pt-1">
+              <div className="min-w-0 pt-0.5">
                 <p className={`text-sm font-bold ${labelTone}`}>{step.label || step.name || 'ขั้นตอน'}</p>
                 {step.description || step.helperText ? (
                   <p className={state === 'current' ? 'mt-1 text-xs font-semibold text-amber-600' : 'mt-1 text-xs text-slate-500'}>
