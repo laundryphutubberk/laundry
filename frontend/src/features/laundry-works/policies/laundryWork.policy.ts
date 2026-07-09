@@ -75,6 +75,11 @@ export function getLaundryWorkActionModel({
             : null
 
   const canMutate = !boundaryDenyReason
+  const continueRequiresBackendContract = deny(
+    'ดำเนินการขั้นตอนถัดไป',
+    'BACKEND_CONTRACT_REQUIRED',
+    'Continue action requires final backend command contract before it can be enabled.',
+  )
 
   return {
     work: {
@@ -82,9 +87,9 @@ export function getLaundryWorkActionModel({
       saveDraft: canMutate
         ? allow('บันทึกชั่วคราว')
         : deny('บันทึกชั่วคราว', boundaryDenyReason?.[0] || 'ACTION_NOT_ALLOWED', boundaryDenyReason?.[1] || 'Action is not allowed.'),
-      continue: canMutate
-        ? allow('ดำเนินการขั้นตอนถัดไป')
-        : deny('ดำเนินการขั้นตอนถัดไป', boundaryDenyReason?.[0] || 'ACTION_NOT_ALLOWED', boundaryDenyReason?.[1] || 'Action is not allowed.'),
+      continue: boundaryDenyReason
+        ? deny('ดำเนินการขั้นตอนถัดไป', boundaryDenyReason[0], boundaryDenyReason[1])
+        : continueRequiresBackendContract,
     },
     issue: {
       createIssue: canMutate
