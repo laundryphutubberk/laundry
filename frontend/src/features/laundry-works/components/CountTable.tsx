@@ -83,10 +83,12 @@ export function CountTable({
   const tableColumns = columns?.length ? columns : defaultColumns
   const hasRowActions = Boolean(rowActions?.canUpdate || rowActions?.canDelete)
   const [editingRowId, setEditingRowId] = useState<string | number | null>(null)
+  const [confirmingDeleteRowId, setConfirmingDeleteRowId] = useState<string | number | null>(null)
   const [editDraft, setEditDraft] = useState<CountTableRow>({})
 
   const startEdit = (row: CountTableRow) => {
     if (!row.id) return
+    setConfirmingDeleteRowId(null)
     setEditingRowId(row.id)
     setEditDraft({
       ...row,
@@ -109,6 +111,22 @@ export function CountTable({
     if (!editingRowId || !rowActions?.onUpdate) return
     await rowActions.onUpdate({ ...editDraft, id: editingRowId })
     cancelEdit()
+  }
+
+  const requestDelete = (row: CountTableRow) => {
+    if (!row.id) return
+    setEditingRowId(null)
+    setConfirmingDeleteRowId(row.id)
+  }
+
+  const cancelDelete = () => {
+    setConfirmingDeleteRowId(null)
+  }
+
+  const confirmDelete = async (row: CountTableRow) => {
+    if (!row.id || !rowActions?.onDelete) return
+    await rowActions.onDelete(row)
+    setConfirmingDeleteRowId(null)
   }
 
   if (loading) {
@@ -178,6 +196,7 @@ export function CountTable({
           <tbody className="divide-y divide-slate-100">
             {rows.map((row, index) => {
               const isEditing = Boolean(row.id && editingRowId === row.id)
+              const isConfirmingDelete = Boolean(row.id && confirmingDeleteRowId === row.id)
 
               return (
                 <tr key={row.id || index} className="text-slate-700 hover:bg-slate-50/80">
@@ -218,6 +237,26 @@ export function CountTable({
                               ยกเลิก
                             </button>
                           </>
+                        ) : isConfirmingDelete ? (
+                          <>
+                            <span className="self-center text-xs font-semibold text-red-700">ยืนยันลบ?</span>
+                            <button
+                              type="button"
+                              onClick={() => confirmDelete(row)}
+                              disabled={rowActions?.deleting}
+                              className="rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              ยืนยัน
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelDelete}
+                              disabled={rowActions?.deleting}
+                              className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              ยกเลิก
+                            </button>
+                          </>
                         ) : (
                           <>
                             {rowActions?.canUpdate ? (
@@ -233,7 +272,7 @@ export function CountTable({
                             {rowActions?.canDelete ? (
                               <button
                                 type="button"
-                                onClick={() => rowActions.onDelete?.(row)}
+                                onClick={() => requestDelete(row)}
                                 disabled={rowActions.deleting}
                                 className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                               >
@@ -255,6 +294,7 @@ export function CountTable({
       <div className="grid gap-3 p-4 md:hidden">
         {rows.map((row, index) => {
           const isEditing = Boolean(row.id && editingRowId === row.id)
+          const isConfirmingDelete = Boolean(row.id && confirmingDeleteRowId === row.id)
 
           return (
             <article key={row.id || index} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -295,6 +335,26 @@ export function CountTable({
                         ยกเลิก
                       </button>
                     </>
+                  ) : isConfirmingDelete ? (
+                    <>
+                      <span className="self-center text-xs font-semibold text-red-700">ยืนยันลบ?</span>
+                      <button
+                        type="button"
+                        onClick={() => confirmDelete(row)}
+                        disabled={rowActions?.deleting}
+                        className="rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        ยืนยัน
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelDelete}
+                        disabled={rowActions?.deleting}
+                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        ยกเลิก
+                      </button>
+                    </>
                   ) : (
                     <>
                       {rowActions?.canUpdate ? (
@@ -310,7 +370,7 @@ export function CountTable({
                       {rowActions?.canDelete ? (
                         <button
                           type="button"
-                          onClick={() => rowActions.onDelete?.(row)}
+                          onClick={() => requestDelete(row)}
                           disabled={rowActions.deleting}
                           className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
