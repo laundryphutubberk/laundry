@@ -3,11 +3,11 @@
 Status: READY_FOR_IMPLEMENTATION
 Feature Cell: Laundry Work
 Track: UI Package
-Runtime Source: `FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
+Runtime Source: `project-os/frontend/execution/fe-03-runtime-contract/FE-03-LAUNDRY-WORK-RUNTIME-CONTRACT.md`
 
 ## TASK
 
-Implement the Laundry Work issue panel component from issue projection and policy-derived action model.
+Implement the Laundry Work issue panel component from `IssuePanelProjection` and policy/controller action descriptors.
 
 ## Target File
 
@@ -15,41 +15,36 @@ Implement the Laundry Work issue panel component from issue projection and polic
 
 ## Runtime Contract Mapping
 
-Uses detail and policy/controller output:
+Uses `issuePanel` from `LaundryWorkDetailProjection`:
 
-```text
-LaundryWorkDetailDTO
-- issues
-
-LaundryWorkPolicyResult
-- allowed
-- reasonCode
-- message
-
-UseLaundryWorkControllerResult.actions
-- controller-provided handlers
+```ts
+type IssuePanelProjection = {
+  issues: Array<{
+    id: string | number
+    title: string
+    description?: string
+    quantity?: number
+    statusLabel: string
+    reportedAtLabel?: string
+  }>
+  canCreateIssue: boolean
+  emptyText: string
+}
 ```
 
-Projection must convert issues into display-safe issue cards. Policy/controller must decide action visibility and handlers.
+Issue action requests map to controller/policy only. The component does not decide whether `REPORT_ISSUE` is allowed.
 
 ## Inputs
 
 ```text
-issues[]
-  - id
-  - title/type/issueType
-  - description
-  - quantity
-  - itemTypeName
-  - status
-  - reportedAt
-  - reportedBy
+issuePanel
+  - issues[]
+  - canCreateIssue
+  - emptyText
 actions optional
-  - createIssue
-  - canCreateIssue legacy-compatible
+  - createIssue handler/descriptor from controller
 loading optional
 error optional
-emptyText optional
 ```
 
 ## Outputs
@@ -57,7 +52,7 @@ emptyText optional
 - Presentational issue panel.
 - Explicit issue list.
 - Empty/loading/error-safe states.
-- Optional action entry point when provided.
+- Optional action entry point when provided by policy/controller output.
 
 ## Rules
 
@@ -75,4 +70,4 @@ emptyText optional
 - Loading/error states render safely.
 - Action entry point appears only when provided by policy/controller props.
 - Component does not own issue domain logic.
-- FE-05 can wire policy/controller output without changing component boundary.
+- FE-05 can pass `IssuePanelProjection` without changing component boundary.
