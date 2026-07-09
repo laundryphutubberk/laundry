@@ -38,9 +38,9 @@ export function WorkSummaryCards({
 }: WorkSummaryCardsProps) {
   if (loading) {
     return (
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-busy="true">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-busy="true">
         {[0, 1, 2, 3].map((item) => (
-          <article key={item} className="rounded-2xl border bg-white p-5 shadow-sm">
+          <article key={item} className="rounded-[20px] border bg-white p-5 shadow-sm">
             <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
             <div className="mt-3 h-9 w-16 animate-pulse rounded bg-slate-100" />
             <div className="mt-3 h-3 w-32 animate-pulse rounded bg-slate-100" />
@@ -52,7 +52,7 @@ export function WorkSummaryCards({
 
   if (error) {
     return (
-      <section className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-800 shadow-sm">
+      <section className="rounded-[20px] border border-red-100 bg-red-50 p-4 text-sm text-red-800 shadow-sm">
         {error}
       </section>
     )
@@ -61,15 +61,15 @@ export function WorkSummaryCards({
   const safeItems = items.length ? items : fallbackItems
 
   return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="สรุปงานซัก">
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="สรุปงานซัก">
       {safeItems.map((item, index) => {
         const tone = toneClassName[item.tone || 'default'] || toneClassName.default
         const value = item.value ?? '-'
         return (
-          <article key={item.id || item.key || index} className={`rounded-2xl border p-5 shadow-sm ${tone}`}>
+          <article key={item.id || item.key || index} className={`rounded-[20px] border p-5 shadow-sm ${tone}`}>
             <p className="text-sm font-medium text-slate-500">{item.label}</p>
             <div className="mt-3 flex items-end justify-between gap-3">
-              <p className={item.tone === 'warning' || item.tone === 'danger' ? 'break-words text-3xl font-bold tracking-tight text-red-500' : 'break-words text-3xl font-bold tracking-tight text-blue-950'}>
+              <p className={item.tone === 'warning' || item.tone === 'danger' ? 'break-words text-[32px] font-bold leading-none tracking-tight text-red-500' : 'break-words text-[32px] font-bold leading-none tracking-tight text-blue-950'}>
                 {value}
               </p>
               {item.unit ? <span className="pb-1 text-sm font-medium text-slate-500">{item.unit}</span> : null}
