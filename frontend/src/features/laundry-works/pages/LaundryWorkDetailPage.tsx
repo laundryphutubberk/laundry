@@ -1,3 +1,4 @@
+import { BagPanel } from '../components/BagPanel'
 import { BottomActionBar } from '../components/BottomActionBar'
 import { CountTable } from '../components/CountTable'
 import { HistoryPanel } from '../components/HistoryPanel'
@@ -26,6 +27,7 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
             </aside>
             <div className="flex min-w-0 flex-col gap-5">
               <MainTaskPanel loading />
+              <BagPanel loading />
               <CountTable loading />
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
                 <IssuePanel loading />
@@ -83,6 +85,8 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
 
           <div className="flex min-w-0 flex-col gap-5">
             <MainTaskPanel mainTaskPanel={projection.mainTaskPanel} />
+
+            <BagPanel bags={projection.bags} actions={actions.bag} state={state} />
 
             <CountTable
               rows={projection.countRows}
