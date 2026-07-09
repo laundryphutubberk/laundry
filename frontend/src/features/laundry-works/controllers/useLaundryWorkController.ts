@@ -62,6 +62,7 @@ export function useLaundryWorkController() {
   const [requestId, setRequestId] = useState<string | undefined>()
   const [isContinuing, setIsContinuing] = useState(false)
   const [isCreatingBag, setIsCreatingBag] = useState(false)
+  const [isCreatingCountLine, setIsCreatingCountLine] = useState(false)
 
   const sessionContext = useMemo(() => getWorkspaceContext(), [])
 
@@ -198,6 +199,39 @@ export function useLaundryWorkController() {
     [loadDetail, policyActionModel.bag.createBag.allowed, sessionContext, workId],
   )
 
+  const createCountLine = useCallback(
+    async (input: { bagId?: string | number; itemTypeName: string; colorGroup?: string; quantity: number; note?: string }) => {
+      if (!policyActionModel.countLine.createCountLine.allowed) return
+
+      const meta = createRequestMeta('createLaundryCountLine', sessionContext)
+      setIsCreatingCountLine(true)
+      setError(null)
+      setRequestId(meta.requestId)
+
+      const result = await laundryWorkApi.createLaundryCountLine({
+        workId,
+        bagId: input.bagId,
+        itemTypeName: input.itemTypeName,
+        colorGroup: input.colorGroup,
+        quantity: input.quantity,
+        note: input.note,
+        meta,
+      })
+
+      setRequestId(result.meta.requestId)
+
+      if (!result.ok) {
+        setError(result.error)
+        setIsCreatingCountLine(false)
+        return
+      }
+
+      await loadDetail()
+      setIsCreatingCountLine(false)
+    },
+    [loadDetail, policyActionModel.countLine.createCountLine.allowed, sessionContext, workId],
+  )
+
   return {
     ...viewModel,
     actions: {
@@ -215,6 +249,14 @@ export function useLaundryWorkController() {
         },
         canCreateBag: policyActionModel.bag.createBag.allowed,
       },
+      countLine: {
+        createCountLine: {
+          ...toButtonAction(policyActionModel.countLine.createCountLine),
+          onCreate: createCountLine,
+          loading: isCreatingCountLine,
+        },
+        canCreateCountLine: policyActionModel.countLine.createCountLine.allowed,
+      },
       issue: {
         createIssue: toButtonAction(policyActionModel.issue.createIssue),
         canCreateIssue: policyActionModel.issue.createIssue.allowed,
@@ -226,9 +268,10 @@ export function useLaundryWorkController() {
     },
     state: {
       ...viewModel.state,
-      isBusy: loading || isContinuing || isCreatingBag,
+      isBusy: loading || isContinuing || isCreatingBag || isCreatingCountLine,
       isContinuing,
       isCreatingBag,
+      isCreatingCountLine,
     },
   }
 }
