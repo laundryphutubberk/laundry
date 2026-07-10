@@ -70,8 +70,12 @@ export type LaundryWorkBackendCapability = {
     resolve: false
   }
   image: {
-    list: false
-    upload: false
+    list: true
+    registerMetadata: true
+    update: true
+    setCover: true
+    softDelete: true
+    binaryUploadAdapter: false
   }
   history: {
     fromDetailStatusLogs: true
@@ -101,8 +105,12 @@ export const laundryWorkBackendCapability: LaundryWorkBackendCapability = {
     resolve: false,
   },
   image: {
-    list: false,
-    upload: false,
+    list: true,
+    registerMetadata: true,
+    update: true,
+    setCover: true,
+    softDelete: true,
+    binaryUploadAdapter: false,
   },
   history: {
     fromDetailStatusLogs: true,
@@ -159,6 +167,26 @@ export type IssueReportDTO = {
   reportedBy?: string
 }
 
+export type LaundryWorkImageDTO = {
+  id: string | number
+  workId: string | number
+  resortId: string | number
+  url: string
+  publicId?: string | null
+  provider: string
+  mimeType?: string | null
+  originalName?: string | null
+  sizeBytes?: number | null
+  caption?: string | null
+  displayOrder: number
+  isCover: boolean
+  uploadedById?: string | number | null
+  uploadedAt?: string | null
+  deletedAt?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
 export type WorkStatusLogDTO = {
   id: string | number
   toStatus: string
@@ -172,6 +200,7 @@ export type LaundryWorkDetailDTO = {
   bags: LaundryBagDTO[]
   countLines: LaundryCountLineDTO[]
   issues: IssueReportDTO[]
+  images?: LaundryWorkImageDTO[]
   statusLogs: WorkStatusLogDTO[]
 }
 
@@ -260,12 +289,11 @@ type BackendEnvelope<T> = {
   success?: boolean
   data?: T
   error?: {
+    code?: string
     message?: string
     statusCode?: number
-    code?: string
     details?: {
       fieldErrors?: Record<string, string[]>
-      formErrors?: string[]
     }
   }
   meta?: {
@@ -280,90 +308,51 @@ type BackendEnvelope<T> = {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-function buildMeta(requestId: string, source: 'backend' | 'client-normalized' = 'client-normalized', extra?: BackendEnvelope<unknown>['meta']) {
-  return {
-    requestId: extra?.requestId || requestId,
-    receivedAt: new Date().toISOString(),
-    source,
-    capability: laundryWorkBackendCapability,
-    ...(extra?.pagination ? { pagination: extra.pagination } : {}),
-  }
+function getToken(meta: LaundryWorkRequestMeta) {
+  return meta.token || window.localStorage.getItem('laundry.auth.token') || window.localStorage.getItem('authToken') || window.localStorage.getItem('token') || undefined
 }
 
-const createClientFailure = (requestId: string, code: string, message: string, status?: number): ApiFailure => ({
-  ok: false,
-  error: {
-    code,
-    message,
-    requestId,
-    status,
-    retryable: false,
-  },
-  meta: buildMeta(requestId),
-})
-
-function normalizeStatusToCode(status: number) {
-  if (status === 401) return 'UNAUTHORIZED'
-  if (status === 403) return 'FORBIDDEN'
-  if (status === 404) return 'NOT_FOUND'
-  if (status === 409) return 'CONFLICT'
-  if (status === 400 || status === 422) return 'VALIDATION_ERROR'
-  if (status >= 500) return 'SERVER_ERROR'
-  return 'UNKNOWN_ERROR'
-}
-
-function getAuthToken(meta: LaundryWorkRequestMeta) {
-  if (meta.token) return meta.token
-  if (typeof window === 'undefined') return undefined
-
-  return (
-    window.localStorage.getItem('laundry.auth.token') ||
-    window.localStorage.getItem('authToken') ||
-    window.localStorage.getItem('token') ||
-    undefined
-  )
-}
-
-async function requestBackend<T>(path: string, meta: LaundryWorkRequestMeta, init: RequestInit = {}): Promise<ApiResult<T>> {
+async function request<T>(path: string, meta: LaundryWorkRequestMeta, init: RequestInit = {}): Promise<ApiResult<T>> {
   try {
     const headers = new Headers(init.headers)
-    const token = getAuthToken(meta)
-
     headers.set('Content-Type', 'application/json')
     headers.set('X-Request-Id', meta.requestId)
     headers.set('X-Feature', meta.feature)
     headers.set('X-Action', meta.action)
+    const token = getToken(meta)
     if (token) headers.set('Authorization', `Bearer ${token}`)
     if (meta.workspaceType) headers.set('X-Workspace-Type', meta.workspaceType)
     if (meta.resortId) headers.set('X-Resort-Id', String(meta.resortId))
 
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...init,
-      headers,
-    })
-    const envelope = (await response.json().catch(() => ({}))) as BackendEnvelope<T>
+    const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+    const envelope = await response.json().catch(() => ({})) as BackendEnvelope<T>
+    const requestId = envelope.meta?.requestId || meta.requestId
 
     if (!response.ok || envelope.success === false) {
-      const status = envelope.error?.statusCode || response.status
-      const requestId = envelope.meta?.requestId || meta.requestId
       return {
         ok: false,
         error: {
-          code: envelope.error?.code || normalizeStatusToCode(status),
+          code: envelope.error?.code || 'LAUNDRY_WORK_REQUEST_FAILED',
           message: envelope.error?.message || response.statusText || 'Laundry Work request failed.',
-          status,
+          status: envelope.error?.statusCode || response.status,
           fieldErrors: envelope.error?.details?.fieldErrors,
           requestId,
-          retryable: status >= 500,
+          retryable: response.status >= 500,
         },
-        meta: buildMeta(requestId, 'backend', envelope.meta),
+        meta: { requestId, receivedAt: new Date().toISOString(), source: 'backend', capability: laundryWorkBackendCapability },
       }
     }
 
     return {
       ok: true,
       data: envelope.data as T,
-      meta: buildMeta(envelope.meta?.requestId || meta.requestId, 'backend', envelope.meta),
+      meta: {
+        requestId,
+        receivedAt: new Date().toISOString(),
+        source: 'backend',
+        capability: laundryWorkBackendCapability,
+        pagination: envelope.meta?.pagination,
+      },
     }
   } catch (error) {
     return {
@@ -374,217 +363,72 @@ async function requestBackend<T>(path: string, meta: LaundryWorkRequestMeta, ini
         requestId: meta.requestId,
         retryable: true,
       },
-      meta: buildMeta(meta.requestId),
+      meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized', capability: laundryWorkBackendCapability },
     }
   }
 }
 
-function normalizeWork(raw: any): LaundryWorkDTO {
+function missingIdResult<T>(code: string, message: string, meta: LaundryWorkRequestMeta): ApiResult<T> {
   return {
-    id: raw.id,
-    workNo: raw.workNo,
-    resortId: raw.resortId,
-    resortName: raw.resortName || raw.resort?.name || '-',
-    bagCount: raw.bagCount ?? raw._count?.bags ?? 0,
-    currentStatus: raw.currentStatus,
-    issueCount: raw.issueCount ?? raw._count?.issues ?? 0,
-    receivedDate: raw.receivedDate,
-    returnedAt: raw.returnedAt,
-    closedAt: raw.closedAt,
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt,
-    note: raw.note,
-  }
-}
-
-function normalizeBag(raw: any): LaundryBagDTO {
-  return {
-    id: raw.id,
-    bagNo: raw.bagNo,
-    status: raw.status,
-    note: raw.note,
-    receivedAt: raw.receivedAt,
-    openedAt: raw.openedAt,
-  }
-}
-
-function normalizeCountLine(raw: any): LaundryCountLineDTO {
-  return {
-    id: raw.id,
-    bagId: raw.bagId,
-    bagNo: raw.bagNo || raw.bag?.bagNo,
-    itemTypeName: raw.itemTypeName || raw.itemType?.name,
-    category: raw.category || raw.itemType?.category,
-    colorGroup: raw.colorGroup,
-    quantity: raw.quantity,
-    issueQuantity: raw.issueQuantity,
-    weight: raw.weight,
-    note: raw.note,
-  }
-}
-
-function normalizeDetail(raw: any): LaundryWorkDetailDTO {
-  return {
-    work: normalizeWork(raw),
-    bags: (raw.bags || []).map(normalizeBag),
-    countLines: (raw.countLines || []).map(normalizeCountLine),
-    issues: (raw.issues || []).map((issue: any) => ({
-      id: issue.id,
-      issueType: issue.issueType,
-      description: issue.description,
-      quantity: issue.quantity,
-      itemTypeName: issue.itemTypeName || issue.itemType?.name,
-      status: issue.status,
-      reportedAt: issue.reportedAt,
-      reportedBy: issue.reportedBy || issue.reportedByName,
-    })),
-    statusLogs: (raw.statusLogs || []).map((log: any) => ({
-      id: log.id,
-      toStatus: log.toStatus,
-      note: log.note,
-      changedAt: log.changedAt,
-      changedByName: log.changedByName,
-    })),
-  }
-}
-
-function mapResult<TInput, TOutput>(result: ApiResult<TInput>, mapper: (input: TInput) => TOutput): ApiResult<TOutput> {
-  if (!result.ok) return result
-  return {
-    ...result,
-    data: mapper(result.data),
+    ok: false,
+    error: { code, message, requestId: meta.requestId },
+    meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized', capability: laundryWorkBackendCapability },
   }
 }
 
 export const laundryWorkApi = {
   capability: laundryWorkBackendCapability,
 
-  async listLaundryWorks({ status, skip, take, meta }: ListLaundryWorksInput): Promise<ApiResult<LaundryWorkListResult>> {
-    const params = new URLSearchParams()
-    if (status) params.set('status', status)
-    if (skip !== undefined) params.set('skip', String(skip))
-    if (take !== undefined) params.set('take', String(take))
-
-    const result = await requestBackend<any[]>(`/laundry/works${params.toString() ? `?${params.toString()}` : ''}`, meta)
-    return mapResult(result, (items) => ({
-      items: (items || []).map(normalizeWork),
-      pagination: result.meta.pagination,
-    }))
+  list({ status, skip, take, meta }: ListLaundryWorksInput) {
+    const query = new URLSearchParams()
+    if (status) query.set('status', status)
+    if (skip !== undefined) query.set('skip', String(skip))
+    if (take !== undefined) query.set('take', String(take))
+    const suffix = query.size ? `?${query.toString()}` : ''
+    return request<LaundryWorkListResult>(`/laundry/works${suffix}`, meta)
   },
 
-  async createLaundryWork({ meta, ...input }: CreateLaundryWorkInput): Promise<ApiResult<LaundryWorkDTO>> {
-    if (!input.resortId) {
-      return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'resortId is required.', 400)
-    }
-
-    const result = await requestBackend<any>('/laundry/works', meta, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    })
-    return mapResult(result, normalizeWork)
+  detail({ workId, meta }: GetLaundryWorkDetailInput) {
+    if (!workId) return Promise.resolve(missingIdResult<LaundryWorkDetailDTO>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
+    return request<LaundryWorkDetailDTO>(`/laundry/works/${workId}`, meta)
   },
 
-  async getLaundryWorkDetail({ workId, meta }: GetLaundryWorkDetailInput): Promise<ApiResult<LaundryWorkDetailDTO>> {
-    if (!workId) {
-      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
-    }
-
-    const result = await requestBackend<any>(`/laundry/works/${workId}`, meta)
-    return mapResult(result, normalizeDetail)
+  create({ meta, ...input }: CreateLaundryWorkInput) {
+    return request<LaundryWorkDTO>('/laundry/works', meta, { method: 'POST', body: JSON.stringify(input) })
   },
 
-  async createLaundryBag({ workId, meta, ...input }: CreateLaundryBagInput): Promise<ApiResult<LaundryBagDTO>> {
-    if (!workId) {
-      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
-    }
-
-    if (!input.bagNo.trim()) {
-      return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'bagNo is required.', 400)
-    }
-
-    const result = await requestBackend<any>(`/laundry/works/${workId}/bags`, meta, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    })
-    return mapResult(result, normalizeBag)
+  createBag({ workId, meta, ...input }: CreateLaundryBagInput) {
+    if (!workId) return Promise.resolve(missingIdResult<LaundryBagDTO>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
+    return request<LaundryBagDTO>(`/laundry/works/${workId}/bags`, meta, { method: 'POST', body: JSON.stringify(input) })
   },
 
-  async listLaundryCountLines({ workId, bagId, skip, take, meta }: ListLaundryCountLinesInput): Promise<ApiResult<LaundryCountLineDTO[]>> {
-    if (!workId) {
-      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
-    }
-
-    const params = new URLSearchParams()
-    if (bagId !== undefined) params.set('bagId', String(bagId))
-    if (skip !== undefined) params.set('skip', String(skip))
-    if (take !== undefined) params.set('take', String(take))
-
-    const result = await requestBackend<any[]>(`/laundry/works/${workId}/count-lines${params.toString() ? `?${params.toString()}` : ''}`, meta)
-    return mapResult(result, (items) => (items || []).map(normalizeCountLine))
+  listCountLines({ workId, bagId, skip, take, meta }: ListLaundryCountLinesInput) {
+    if (!workId) return Promise.resolve(missingIdResult<LaundryCountLineDTO[]>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
+    const query = new URLSearchParams()
+    if (bagId !== undefined) query.set('bagId', String(bagId))
+    if (skip !== undefined) query.set('skip', String(skip))
+    if (take !== undefined) query.set('take', String(take))
+    const suffix = query.size ? `?${query.toString()}` : ''
+    return request<LaundryCountLineDTO[]>(`/laundry/works/${workId}/count-lines${suffix}`, meta)
   },
 
-  async createLaundryCountLine({ workId, meta, ...input }: CreateLaundryCountLineInput): Promise<ApiResult<LaundryCountLineDTO>> {
-    if (!workId) {
-      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
-    }
-
-    if (!input.itemTypeName.trim()) {
-      return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'itemTypeName is required.', 400)
-    }
-
-    if (!input.quantity || input.quantity <= 0) {
-      return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'quantity must be greater than zero.', 400)
-    }
-
-    const result = await requestBackend<any>(`/laundry/works/${workId}/count-lines`, meta, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    })
-    return mapResult(result, normalizeCountLine)
+  createCountLine({ workId, meta, ...input }: CreateLaundryCountLineInput) {
+    if (!workId) return Promise.resolve(missingIdResult<LaundryCountLineDTO>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
+    return request<LaundryCountLineDTO>(`/laundry/works/${workId}/count-lines`, meta, { method: 'POST', body: JSON.stringify(input) })
   },
 
-  async updateLaundryCountLine({ lineId, meta, ...input }: UpdateLaundryCountLineInput): Promise<ApiResult<LaundryCountLineDTO>> {
-    if (!lineId) {
-      return createClientFailure(meta.requestId, 'MISSING_COUNT_LINE_ID', 'Missing Laundry Count Line id.', 400)
-    }
-
-    const result = await requestBackend<any>(`/laundry/count-lines/${lineId}`, meta, {
-      method: 'PATCH',
-      body: JSON.stringify(input),
-    })
-    return mapResult(result, normalizeCountLine)
+  updateCountLine({ lineId, meta, ...input }: UpdateLaundryCountLineInput) {
+    if (!lineId) return Promise.resolve(missingIdResult<LaundryCountLineDTO>('MISSING_COUNT_LINE_ID', 'Missing Laundry Count Line id.', meta))
+    return request<LaundryCountLineDTO>(`/laundry/count-lines/${lineId}`, meta, { method: 'PATCH', body: JSON.stringify(input) })
   },
 
-  async deleteLaundryCountLine({ lineId, meta }: DeleteLaundryCountLineInput): Promise<ApiResult<{ deleted: true }>> {
-    if (!lineId) {
-      return createClientFailure(meta.requestId, 'MISSING_COUNT_LINE_ID', 'Missing Laundry Count Line id.', 400)
-    }
-
-    return requestBackend<{ deleted: true }>(`/laundry/count-lines/${lineId}`, meta, {
-      method: 'DELETE',
-    })
+  deleteCountLine({ lineId, meta }: DeleteLaundryCountLineInput) {
+    if (!lineId) return Promise.resolve(missingIdResult<{ id: string | number; deleted: boolean }>('MISSING_COUNT_LINE_ID', 'Missing Laundry Count Line id.', meta))
+    return request<{ id: string | number; deleted: boolean }>(`/laundry/count-lines/${lineId}`, meta, { method: 'DELETE' })
   },
 
-  async updateLaundryWorkStatus({
-    workId,
-    toStatus,
-    note,
-    changedById,
-    changedByName,
-    meta,
-  }: UpdateLaundryWorkStatusInput): Promise<ApiResult<LaundryWorkDTO>> {
-    if (!workId) {
-      return createClientFailure(meta.requestId, 'MISSING_WORK_ID', 'Missing Laundry Work id.', 400)
-    }
-
-    if (!toStatus) {
-      return createClientFailure(meta.requestId, 'VALIDATION_ERROR', 'toStatus is required.', 400)
-    }
-
-    const result = await requestBackend<any>(`/laundry/works/${workId}/status`, meta, {
-      method: 'PATCH',
-      body: JSON.stringify({ toStatus, note, changedById, changedByName }),
-    })
-    return mapResult(result, normalizeWork)
+  updateStatus({ workId, meta, ...input }: UpdateLaundryWorkStatusInput) {
+    if (!workId) return Promise.resolve(missingIdResult<LaundryWorkDTO>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
+    return request<LaundryWorkDTO>(`/laundry/works/${workId}/status`, meta, { method: 'PATCH', body: JSON.stringify(input) })
   },
 }
