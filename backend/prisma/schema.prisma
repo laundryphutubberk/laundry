@@ -215,6 +215,7 @@ model LaundryBag {
   note        String?
 
   countLines  LaundryCountLine[]
+  issues      IssueReport[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -245,6 +246,8 @@ model LaundryCountLine {
   quantity      Int             @default(0)
   issueQuantity Int             @default(0)
   note          String?
+
+  issues        IssueReport[]
 
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
@@ -318,6 +321,12 @@ model IssueReport {
   resortId      Int
   resort        Resort           @relation(fields: [resortId], references: [id])
 
+  bagId         Int?
+  bag           LaundryBag?      @relation(fields: [bagId], references: [id], onDelete: SetNull)
+
+  countLineId   Int?
+  countLine     LaundryCountLine? @relation(fields: [countLineId], references: [id], onDelete: SetNull)
+
   itemTypeId    Int?
   itemType      LaundryItemType? @relation(fields: [itemTypeId], references: [id])
 
@@ -338,6 +347,8 @@ model IssueReport {
 
   @@index([workId])
   @@index([resortId])
+  @@index([bagId])
+  @@index([countLineId])
   @@index([itemTypeId])
   @@index([colorGroup])
   @@index([status])
