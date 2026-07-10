@@ -120,6 +120,7 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
               columns={projection.countColumns}
               summaryItems={projection.countSummaryItems}
               remark={projection.countRemark}
+              emptyText="ยังไม่มีรายการนับผ้า เริ่มต้นด้วยการเลือกถุง ระบุประเภทผ้าและจำนวน แล้วกด “เพิ่มรายการ”"
               rowActions={{
                 canUpdate: actions.countLine.canUpdateCountLine,
                 canDelete: actions.countLine.canDeleteCountLine,
