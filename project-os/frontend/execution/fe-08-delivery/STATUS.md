@@ -29,29 +29,48 @@ Primary Feature Task:
 
 Current Task state:
 
-- `IMPLEMENTED_PENDING_RUN_EVIDENCE`
+- `AUTOMATED_VALIDATION_PASSED`
 
 Current FE-08 verdict:
 
-- `READY_WITH_BLOCKERS`
+- `READY_FOR_DELIVERY_REVIEW`
 
-Remaining evidence includes:
+Accepted evidence includes:
 
-- Count Line linkage
-- Unlink / Relink
-- Cancel Issue
-- Summary synchronization after Create / Resolve / Cancel
-- Terminal Work protection
-- Workspace isolation run
-- Permission run
-- Duplicate-submit run
+- Core create / list / update / resolve runtime evidence
+- Persistence and business audit evidence
+- Automated service contract verification
+- Automated HTTP contract verification
+- Workspace mutation denial
+- Terminal Work mutation denial
+- Invalid Bag / Count Line rejection
+- Cancelled Issue mutation protection
+- Relink / unlink service behavior
+- Count Line derivation behavior
+
+Remaining delivery evidence:
+
+- Fresh Prisma format / validate / generate / migrate deploy after schema alignment
 - Frontend lint
+- Count Line linkage controlled browser run
+- Linked Issue refresh persistence
+- Unlink / Relink controlled browser run
+- Cancel Issue controlled browser run
+- Summary synchronization controlled run
+- Terminal Work UI protection controlled run
+- Workspace isolation against real persisted data
+- Role / permission controlled run
+- Duplicate-submit controlled run
 - Final handoff
 
 ## Review
 
 - [ ] FE-08 Domain Review
-- [ ] Laundry Issue Delivery Review
+- [x] Laundry Issue Delivery Review
+
+Review artifact:
+
+- `reviews/LAUNDRY-ISSUE-DELIVERY-REVIEW.md`
 
 ## Handoff
 
@@ -61,8 +80,8 @@ Remaining evidence includes:
 
 ## Latest Progress
 
-FE-08 has been reactivated as the shared delivery authority for the Task-driven frontend workflow.
+Laundry Issue automated verification has passed and FE-08 has promoted the feature from `READY_WITH_BLOCKERS` to `READY_FOR_DELIVERY_REVIEW`.
 
 Next action:
 
-- Complete Laundry Issue run evidence and issue the FE-08 delivery verdict before another Feature Task is completed.
+- Collect the remaining controlled environment evidence, write the final handoff, then decide whether to issue `DELIVERY_APPROVED`.
