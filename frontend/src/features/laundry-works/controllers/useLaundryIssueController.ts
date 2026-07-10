@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import { getWorkspaceContext } from '../../auth/authSession'
 import { laundryIssueApi, type CreateLaundryIssueInput, type UpdateLaundryIssueInput } from '../api/laundryIssueApi'
-import type { ApiFailure, IssueReportDTO, LaundryWorkRequestMeta } from '../api/laundryWorkApi'
+import type { LaundryWorkRequestMeta } from '../api/laundryWorkApi'
 import { getLaundryIssuePolicy } from '../policies/laundryIssue.policy'
+import { useLaundryIssueStore } from '../stores/laundryIssue.store'
 
 const createRequestId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `li-${Date.now()}`)
 
@@ -21,10 +22,15 @@ const createMeta = (action: string, session: ReturnType<typeof getWorkspaceConte
 
 export function useLaundryIssueController({ workId, workStatus }: { workId?: string | number; workStatus?: string }) {
   const session = useMemo(() => getWorkspaceContext(), [])
-  const [issues, setIssues] = useState<IssueReportDTO[]>([])
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<ApiFailure['error'] | null>(null)
+  const issues = useLaundryIssueStore((state) => state.issues)
+  const loading = useLaundryIssueStore((state) => state.loading)
+  const busy = useLaundryIssueStore((state) => state.busy)
+  const error = useLaundryIssueStore((state) => state.error)
+  const setIssues = useLaundryIssueStore((state) => state.setIssues)
+  const setLoading = useLaundryIssueStore((state) => state.setLoading)
+  const setBusy = useLaundryIssueStore((state) => state.setBusy)
+  const setError = useLaundryIssueStore((state) => state.setError)
+  const reset = useLaundryIssueStore((state) => state.reset)
 
   const policy = useMemo(
     () => getLaundryIssuePolicy({ workspaceType: session.workspaceType, role: session.actorRole, workStatus, loading }),
@@ -39,56 +45,63 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
     if (result.ok) setIssues(result.data)
     else setError(result.error)
     setLoading(false)
-  }, [session, workId])
+  }, [session, setError, setIssues, setLoading, workId])
 
   useEffect(() => {
     void loadIssues()
-  }, [loadIssues])
+    return () => reset()
+  }, [loadIssues, reset])
 
   const createIssue = useCallback(async (input: Omit<CreateLaundryIssueInput, 'workId' | 'meta'>) => {
     if (!policy.canCreate) return false
     setBusy(true)
     setError(null)
-    const result = await laundryIssueApi.create({ ...input, workId, meta: createMeta('createLaundryIssue', session) })
-    if (!result.ok) {
-      setError(result.error)
+    try {
+      const result = await laundryIssueApi.create({ ...input, workId, meta: createMeta('createLaundryIssue', session) })
+      if (!result.ok) {
+        setError(result.error)
+        return false
+      }
+      await loadIssues()
+      return true
+    } finally {
       setBusy(false)
-      return false
     }
-    await loadIssues()
-    setBusy(false)
-    return true
-  }, [loadIssues, policy.canCreate, session, workId])
+  }, [loadIssues, policy.canCreate, session, setBusy, setError, workId])
 
   const updateIssue = useCallback(async (issueId: string | number, input: Omit<UpdateLaundryIssueInput, 'issueId' | 'meta'>) => {
     if (!policy.canUpdate) return false
     setBusy(true)
     setError(null)
-    const result = await laundryIssueApi.update({ ...input, issueId, meta: createMeta('updateLaundryIssue', session) })
-    if (!result.ok) {
-      setError(result.error)
+    try {
+      const result = await laundryIssueApi.update({ ...input, issueId, meta: createMeta('updateLaundryIssue', session) })
+      if (!result.ok) {
+        setError(result.error)
+        return false
+      }
+      await loadIssues()
+      return true
+    } finally {
       setBusy(false)
-      return false
     }
-    await loadIssues()
-    setBusy(false)
-    return true
-  }, [loadIssues, policy.canUpdate, session])
+  }, [loadIssues, policy.canUpdate, session, setBusy, setError])
 
   const resolveIssue = useCallback(async (issueId: string | number, resolutionNote: string) => {
     if (!policy.canResolve) return false
     setBusy(true)
     setError(null)
-    const result = await laundryIssueApi.resolve({ issueId, resolutionNote, meta: createMeta('resolveLaundryIssue', session) })
-    if (!result.ok) {
-      setError(result.error)
+    try {
+      const result = await laundryIssueApi.resolve({ issueId, resolutionNote, meta: createMeta('resolveLaundryIssue', session) })
+      if (!result.ok) {
+        setError(result.error)
+        return false
+      }
+      await loadIssues()
+      return true
+    } finally {
       setBusy(false)
-      return false
     }
-    await loadIssues()
-    setBusy(false)
-    return true
-  }, [loadIssues, policy.canResolve, session])
+  }, [loadIssues, policy.canResolve, session, setBusy, setError])
 
   return { issues, loading, busy, error, policy, createIssue, updateIssue, resolveIssue, reload: loadIssues }
 }
