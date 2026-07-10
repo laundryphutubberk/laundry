@@ -37,6 +37,7 @@ npm run verify:runtime
 npm run verify:policy
 npm run verify:service-policy
 npm run verify:http-policy
+npm run verify:laundry-issue
 npm run verify:be07
 ```
 
@@ -49,6 +50,39 @@ cd frontend
 npm install
 npm run build
 npm run lint
+```
+
+### Automated Laundry Issue Verification Scope
+
+`npm run verify:laundry-issue` provides repository-executable service-contract checks for:
+
+- Resort actor mutation rejection
+- Terminal Laundry Work mutation rejection
+- Invalid Bag / Count Line pair rejection
+- Count Line-derived item type and color mapping
+- Work issue summary synchronization call
+- Cancelled Issue edit rejection
+- Cancelled Issue resolve rejection
+
+This command does not replace database persistence, browser UI, HTTP response, workspace exposure, duplicate-submit, or controlled environment evidence.
+
+### Execution Attempt — 2026-07-10
+
+```text
+Environment: Assistant execution container
+Command: clone main → backend npm install → npm run verify:laundry-issue
+Actual result: Git clone failed before test execution
+Error: Could not resolve host: github.com
+Classification: ENVIRONMENT_NETWORK_BLOCKER
+Verification result: NOT_RUN
+PASS claimed: No
+```
+
+Recovery action:
+
+```text
+Run `npm run verify:laundry-issue` in a repository checkout with Node dependencies available.
+Record the complete command output and commit SHA here.
 ```
 
 ---
