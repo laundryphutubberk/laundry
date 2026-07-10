@@ -16,6 +16,13 @@ Status: IMPLEMENTED_PENDING_RUN_EVIDENCE
 - Refresh persistence
 - Business audit logging
 
+## Implementation Preflight
+
+- Duplicate-submit protection hardened with a synchronous in-flight mutation guard in `useLaundryIssueController`.
+- Create, Update, and Resolve now reject a second mutation before the next React/Zustand render can observe `busy=true`.
+- Runtime V8 duplicate-submit evidence is still required; this code review and implementation change is not counted as PASS evidence.
+- Related commit: `f2fa01c87393f79fd41cb25146f3ba9a2bac657d`
+
 ## Pending
 
 - Count Line linkage
