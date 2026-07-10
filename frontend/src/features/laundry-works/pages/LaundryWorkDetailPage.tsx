@@ -133,7 +133,12 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
             />
 
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
-              <LaundryIssueRuntimePanel workId={projection.work?.id} workStatus={projection.work?.currentStatus} />
+              <LaundryIssueRuntimePanel
+                workId={projection.work?.id}
+                workStatus={projection.work?.currentStatus}
+                bags={projection.bags}
+                countLines={projection.countRows}
+              />
               <ImagePanel images={projection.images} actions={actions.image} />
             </div>
 
