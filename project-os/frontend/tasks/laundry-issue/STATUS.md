@@ -27,11 +27,18 @@ Status: IMPLEMENTED_PENDING_RUN_EVIDENCE
 - Existing issues remain readable while Create/Edit/Resolve/Cancel controls follow the Laundry Issue policy boundary.
 - Runtime V6 terminal-work evidence and direct API rejection evidence are still required; this preflight is not counted as PASS.
 - Terminal UI guard commit: `bc46eb86f74e88706cde0568e7202a4760d86198`
+- Cancelled Issue is now terminal at the backend service boundary for both Edit and Resolve.
+- Cancelled Issue guard commit: `1640171442866fea8b564879d3a7c047acf7b24a`
+- Service-level Laundry Issue verification command added: `npm run verify:laundry-issue`.
+- HTTP-level Laundry Issue verification command added: `npm run verify:laundry-issue-http`.
+- Issue link schema is aligned with migration: `IssueReport.bagId` and `IssueReport.countLineId`, inverse relations, and indexes are now declared in `backend/prisma/schema.prisma`.
+- Schema alignment commit: `b4519394c9e6974a97819b6540694a92bb6b11b1`
 
 ## Pending
 
-- Resolve verified Prisma schema / migration drift for IssueReport `bagId` and `countLineId`
-- Re-run Prisma format / validate / generate / migrate deploy after schema alignment
+- Run Prisma format / validate / generate / migrate deploy after schema alignment
+- Run `npm run verify:laundry-issue`
+- Run `npm run verify:laundry-issue-http`
 - Count Line linkage controlled run
 - Invalid Bag / Count Line protection run
 - Unlink / Relink controlled run
@@ -43,19 +50,33 @@ Status: IMPLEMENTED_PENDING_RUN_EVIDENCE
 - Duplicate-submit run
 - Frontend lint
 
-## Verified Blocker
+## Resolved Blocker
 
-`backend/prisma/migrations/20260710_add_issue_links/migration.sql` and the active Laundry Issue runtime support `IssueReport.bagId` / `IssueReport.countLineId`, but `backend/prisma/schema.prisma` does not currently declare those fields and relations.
+The previous Prisma schema / migration drift for `IssueReport.bagId` and `IssueReport.countLineId` has been corrected in the schema source of truth.
+
+Migration reference:
+
+`backend/prisma/migrations/20260710_add_issue_links/migration.sql`
+
+Schema reference:
+
+`backend/prisma/schema.prisma`
+
+This is repository-level correction evidence only. Prisma format, validate, generate, and migrate deploy must still be executed and recorded before the gate can pass.
+
+## Environment Blocker
+
+The assistant execution container could not clone the repository because DNS resolution for `github.com` failed. Automated verification commands are therefore `NOT_RUN`, not PASS.
 
 Evidence:
 
-`validation/SCHEMA-MIGRATION-DRIFT.md`
+`validation/CONTROLLED-RUN.md`
 
 ## Completion Gate
 
 Change status to `COMPLETED` only after:
 
-1. Schema drift is resolved.
-2. Prisma validation/generation/deploy evidence is re-recorded.
+1. Prisma validation/generation/deploy evidence is re-recorded after schema alignment.
+2. Service and HTTP verification commands pass in a runnable checkout.
 3. All pending controlled-run evidence is recorded in `validation/`.
 4. The final handoff is written.
