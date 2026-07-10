@@ -176,6 +176,8 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
     await runtime.updateIssue(issueId, { status: 'CANCELLED' })
   }
 
+  const canRenderForm = editingIssueId ? runtime.policy.canUpdate : runtime.policy.canCreate
+
   return (
     <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="laundry-issue-title">
       <div className="flex items-start justify-between gap-4">
@@ -189,15 +191,15 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
             onClick={showForm ? closeForm : openCreateForm}
             disabled={runtime.busy}
             className="rounded-2xl bg-blue-900 px-4 py-2.5 text-sm font-bold text-white transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
-            aria-expanded={showForm}
+            aria-expanded={showForm && canRenderForm}
             aria-controls={ISSUE_FORM_ID}
           >
-            {showForm ? 'ปิดแบบฟอร์ม' : 'เพิ่มปัญหา'}
+            {showForm && canRenderForm ? 'ปิดแบบฟอร์ม' : 'เพิ่มปัญหา'}
           </button>
         ) : null}
       </div>
 
-      {showForm ? (
+      {showForm && canRenderForm ? (
         <form
           id={ISSUE_FORM_ID}
           className="mt-5 grid gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:grid-cols-2"
