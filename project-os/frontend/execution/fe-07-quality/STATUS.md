@@ -1,6 +1,6 @@
 # FE-07 Quality — STATUS
 
-Status: READY_FOR_LOCAL_VERIFICATION
+Status: READY_FOR_BROWSER_VERIFICATION
 
 ## Tracks
 
@@ -27,6 +27,8 @@ Completed review evidence:
 - Count Line runtime QA
 - Count Line edit/delete QA
 - Runtime boundary verification
+- Local frontend lint verification
+- Local frontend production build verification
 
 ## Handoff
 
@@ -35,13 +37,14 @@ Completed review evidence:
 Handoff condition:
 
 - FE-07 architecture/runtime quality work is ready.
-- Frontend build, lint, and browser manual QA are delegated to local verification by the project owner.
-- Local verification results should be recorded before production release or final freeze.
+- Local frontend lint passed on 2026-07-10.
+- Local frontend production build passed on 2026-07-10.
+- Browser manual QA remains before final release/freeze.
 
-## Remaining Local Verification
+## Local Verification
 
-- [ ] `npm run lint`
-- [ ] `npm run build`
+- [x] `npm run lint`
+- [x] `npm run build`
 - [ ] Browser manual QA: Count Line create
 - [ ] Browser manual QA: Count Line update
 - [ ] Browser manual QA: Count Line delete
