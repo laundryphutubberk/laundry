@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { getWorkspaceContext } from '../../auth/authSession'
 import { laundryWorkApi, type ApiFailure, type LaundryWorkDetailDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
+import type { MutationFeedbackModel } from '../components/MutationFeedbackBanner'
 import { getLaundryWorkActionModel, type LaundryWorkPolicyAction } from '../policies/laundryWork.policy'
 import { createLaundryWorkDetailProjection } from '../projections/laundryWorkProjection'
 import { useLaundryWorkStore } from '../stores/laundryWork.store'
@@ -48,6 +49,8 @@ const nextBackendStatusByCurrentStatus: Record<string, string> = {
   RETURNED: 'CLOSED',
 }
 
+type ControllerMutationFeedback = Omit<MutationFeedbackModel, 'onDismiss' | 'onRetry'>
+
 export function useLaundryWorkController() {
   const params = useParams()
   const navigate = useNavigate()
@@ -60,6 +63,7 @@ export function useLaundryWorkController() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiFailure['error'] | null>(null)
   const [requestId, setRequestId] = useState<string | undefined>()
+  const [mutationFeedback, setMutationFeedback] = useState<ControllerMutationFeedback | null>(null)
   const [isContinuing, setIsContinuing] = useState(false)
   const [isCreatingBag, setIsCreatingBag] = useState(false)
   const [isCreatingCountLine, setIsCreatingCountLine] = useState(false)
@@ -106,6 +110,13 @@ export function useLaundryWorkController() {
       resetLaundryWorkSelection()
     }
   }, [loadDetail, resetLaundryWorkSelection])
+
+  useEffect(() => {
+    if (mutationFeedback?.tone !== 'success') return
+
+    const timeoutId = window.setTimeout(() => setMutationFeedback(null), 3000)
+    return () => window.clearTimeout(timeoutId)
+  }, [mutationFeedback])
 
   useEffect(() => {
     const handleIssueChanged = (event: Event) => {
@@ -222,8 +233,7 @@ export function useLaundryWorkController() {
 
       const meta = createRequestMeta('createLaundryCountLine', sessionContext)
       setIsCreatingCountLine(true)
-      setError(null)
-      setRequestId(meta.requestId)
+      setMutationFeedback(null)
 
       try {
         const result = await laundryWorkApi.createLaundryCountLine({
@@ -236,14 +246,23 @@ export function useLaundryWorkController() {
           meta,
         })
 
-        setRequestId(result.meta.requestId)
-
         if (!result.ok) {
-          setError(result.error)
+          setMutationFeedback({
+            tone: 'error',
+            title: 'เพิ่มรายการนับผ้าไม่สำเร็จ',
+            message: result.error.message,
+            requestId: result.meta.requestId,
+          })
           return
         }
 
         await loadDetail()
+        setMutationFeedback({
+          tone: 'success',
+          title: 'เพิ่มรายการนับผ้าแล้ว',
+          message: `${input.itemTypeName} จำนวน ${input.quantity} ชิ้นถูกบันทึกเรียบร้อย`,
+          requestId: result.meta.requestId,
+        })
       } finally {
         setIsCreatingCountLine(false)
       }
@@ -260,8 +279,7 @@ export function useLaundryWorkController() {
 
       const meta = createRequestMeta('updateLaundryCountLine', sessionContext)
       setIsUpdatingCountLine(true)
-      setError(null)
-      setRequestId(meta.requestId)
+      setMutationFeedback(null)
 
       try {
         const result = await laundryWorkApi.updateLaundryCountLine({
@@ -270,14 +288,23 @@ export function useLaundryWorkController() {
           meta,
         })
 
-        setRequestId(result.meta.requestId)
-
         if (!result.ok) {
-          setError(result.error)
+          setMutationFeedback({
+            tone: 'error',
+            title: 'แก้ไขรายการนับผ้าไม่สำเร็จ',
+            message: result.error.message,
+            requestId: result.meta.requestId,
+          })
           return
         }
 
         await loadDetail()
+        setMutationFeedback({
+          tone: 'success',
+          title: 'แก้ไขรายการนับผ้าแล้ว',
+          message: 'ข้อมูลรายการนับผ้าถูกอัปเดตเรียบร้อย',
+          requestId: result.meta.requestId,
+        })
       } finally {
         setIsUpdatingCountLine(false)
       }
@@ -291,8 +318,7 @@ export function useLaundryWorkController() {
 
       const meta = createRequestMeta('deleteLaundryCountLine', sessionContext)
       setIsDeletingCountLine(true)
-      setError(null)
-      setRequestId(meta.requestId)
+      setMutationFeedback(null)
 
       try {
         const result = await laundryWorkApi.deleteLaundryCountLine({
@@ -300,14 +326,23 @@ export function useLaundryWorkController() {
           meta,
         })
 
-        setRequestId(result.meta.requestId)
-
         if (!result.ok) {
-          setError(result.error)
+          setMutationFeedback({
+            tone: 'error',
+            title: 'ลบรายการนับผ้าไม่สำเร็จ',
+            message: result.error.message,
+            requestId: result.meta.requestId,
+          })
           return
         }
 
         await loadDetail()
+        setMutationFeedback({
+          tone: 'success',
+          title: 'ลบรายการนับผ้าแล้ว',
+          message: 'รายการถูกนำออกจากงานเรียบร้อย',
+          requestId: result.meta.requestId,
+        })
       } finally {
         setIsDeletingCountLine(false)
       }
@@ -317,6 +352,12 @@ export function useLaundryWorkController() {
 
   return {
     ...viewModel,
+    feedback: mutationFeedback
+      ? {
+          ...mutationFeedback,
+          onDismiss: () => setMutationFeedback(null),
+        }
+      : null,
     actions: {
       work: {
         back: toButtonAction(policyActionModel.work.back, () => navigate(-1)),
