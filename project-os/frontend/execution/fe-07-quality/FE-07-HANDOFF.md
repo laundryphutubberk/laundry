@@ -1,7 +1,7 @@
 # FE-07 Quality — Handoff
 
-Status: READY_FOR_LOCAL_VERIFICATION
-Handoff Target: FE-08 / Project Owner Local Verification
+Status: READY_FOR_BROWSER_VERIFICATION
+Handoff Target: FE-08 / Project Owner Browser Verification
 
 ---
 
@@ -18,6 +18,8 @@ Handoff Target: FE-08 / Project Owner Local Verification
 - Count Line delete confirmation added.
 - Loading, empty, error, permission, policy, projection, and workspace isolation reviewed.
 - Visual components do not call API/store directly.
+- Local frontend lint completed successfully.
+- Local frontend production build completed successfully.
 
 ## Quality Result
 
@@ -25,16 +27,31 @@ Handoff Target: FE-08 / Project Owner Local Verification
 PASS_WITH_NOTES
 ```
 
-## Local Verification Required
+## Local Verification Evidence
 
-Run from `frontend/`:
+Executed from:
 
-```bash
-npm run lint
-npm run build
+```text
+D:\laundry\frontend
 ```
 
-Manual browser scenario:
+Verified:
+
+```text
+npm run lint  → PASS
+npm run build → PASS
+```
+
+Build evidence:
+
+```text
+vite v8.1.3
+59 modules transformed
+Production bundle generated successfully
+Built in 583ms
+```
+
+## Browser Verification Remaining
 
 1. Login as `LAUNDRY_MANAGER`.
 2. Open Laundry Work with intake bags.
@@ -51,9 +68,10 @@ Manual browser scenario:
 - Image Upload capability remains disabled.
 - Inventory/Movement is not implemented in this FE-07 scope.
 - Resort owner view and reporting remain future work.
+- GitHub CI automation/status checks are not configured for this flow.
 
 ## Handoff Decision
 
-FE-07 quality/runtime work is ready for local verification and subsequent FE-08 planning.
+FE-07 lint/build gates have passed and the feature is ready for browser runtime verification.
 
-Production release/freeze must wait for successful local lint, build, and browser verification evidence.
+Final production release/freeze should wait for successful browser create/update/delete and refresh-persistence evidence.
