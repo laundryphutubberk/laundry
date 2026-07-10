@@ -6,6 +6,7 @@ import { HistoryPanel } from '../components/HistoryPanel'
 import { ImagePanel } from '../components/ImagePanel'
 import { IssuePanel } from '../components/IssuePanel'
 import { MainTaskPanel } from '../components/MainTaskPanel'
+import { MutationFeedbackBanner } from '../components/MutationFeedbackBanner'
 import { WorkHeader } from '../components/WorkHeader'
 import { WorkSummaryCards } from '../components/WorkSummaryCards'
 import { WorkTimeline } from '../components/WorkTimeline'
@@ -21,7 +22,7 @@ const toPositiveQuantity = (value: CountTableRow['quantity']) => {
   return Number.isFinite(quantity) && quantity > 0 ? quantity : undefined
 }
 
-function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId }: LaundryWorkRuntimeHostRenderProps) {
+function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId, feedback }: LaundryWorkRuntimeHostRenderProps) {
   const handleUpdateCountLine = async (row: CountTableRow) => {
     if (!row.id) return
 
@@ -103,6 +104,8 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
         <WorkHeader work={projection.work} status={projection.status} workspace={projection.workspace} meta={projection.meta} />
 
         <WorkSummaryCards items={projection.summaryCards} />
+
+        <MutationFeedbackBanner feedback={feedback} />
 
         <div className={detailGridClassName}>
           <aside className="xl:sticky xl:top-25 xl:self-start">
