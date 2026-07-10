@@ -22,6 +22,7 @@ const clearRuntimeModules = () => {
     '../src/app',
     '../src/routes',
     '../src/routes/laundryWorks.routes',
+    '../src/routes/laundryIssues.routes',
     '../src/controllers/laundryIssues.controller',
     '../src/services/laundryIssues.service',
   ].forEach(clearModule);
@@ -148,11 +149,11 @@ const resortToken = createToken({
   active: true,
 });
 
-const validCreateBody = Object.freeze({
+const validCreateBody = {
   issueType: 'DAMAGED',
   quantity: 1,
   description: 'HTTP contract verification issue',
-});
+};
 
 const runResortMutationDeniedTest = async () => {
   await withMockedModules(
