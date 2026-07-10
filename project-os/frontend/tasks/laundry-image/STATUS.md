@@ -16,69 +16,103 @@ Upload → View → Caption → Cover → Soft Delete → Refresh Persistence
 
 ## Current Phase
 
-Detail-image read integration and backend mutation contract definition.
+Frontend API/runtime integration after backend metadata mutation boundary implementation.
 
 ## Completed Inspection
 
 - Confirmed `LaundryWorkImage` domain model supports the required flow.
 - Confirmed migration `20260709070000_add_laundry_work_image` exists with work/resort foreign keys and required indexes.
-- Confirmed no dedicated Laundry Image router/controller/service/repository/validation/upload adapter is registered in the active backend route graph.
-- Confirmed backend currently has no multipart dependency or established upload transport contract.
-- Confirmed frontend Laundry Work capability still reports image list/upload as unavailable.
-- Confirmed `LaundryWorkDetailDTO`, normalization, and projection do not yet carry persisted images.
-- Confirmed `ImagePanel` currently lacks caption, cover, and soft-delete action boundaries.
+- Confirmed backend has no approved multipart or binary storage provider contract.
+- Confirmed `ImagePanel` is presentation-only and must remain free of API/store access.
 - Recorded findings in `artifacts/ARCHITECTURE-INSPECTION.md`.
+- Locked the provider-neutral feature contract in `CONTRACT.md`.
 
-## Implemented This Phase
+## Implemented Backend Boundary
 
-- Laundry Work Detail repository now includes only active images where `deletedAt = null`.
-- Image ordering is deterministic: cover first, then `displayOrder`, then `uploadedAt`.
-- Related commit: `1f884efe0243414e0a9d993141dc0a155d2bddc6`.
+- Active image list by Laundry Work.
+- Metadata registration after an upload adapter returns a URL.
+- Caption and display-order update.
+- Atomic single-cover selection per Work.
+- Soft delete through `deletedAt`.
+- Resort-scoped read isolation.
+- Laundry-staff-only mutation policy.
+- Closed/Cancelled Work mutation protection.
+- Nested and direct REST routes exposed through the authenticated route graph.
 
-This implementation establishes the backend read source only. It is not runtime PASS evidence yet.
+Backend files:
+
+```text
+backend/src/repositories/laundryWorkImages.repository.js
+backend/src/services/laundryWorkImages.service.js
+backend/src/validators/laundryWorkImages.validator.js
+backend/src/controllers/laundryWorkImages.controller.js
+backend/src/routes/laundryWorkImages.routes.js
+backend/src/routes/index.js
+```
+
+Related commits:
+
+```text
+02d988ae4519cb835f7e8b343188746fce126b6e
+9e336b0ea1a1e2292b4d148ab7bd552193bd4b19
+c847da90370aaba7504adbc7c69c4220e54658a2
+1fd5193b9c02267a80618cca377ae91d0ff59dfe
+f9495a22e5970e5adb9a4e85ccd524ee188bcbab
+e3aa7a25326e7a41d1e8d715267092df1c4618f6
+```
+
+Repository implementation is not runtime PASS evidence yet.
+
+## API Contract
+
+```text
+GET    /api/laundry/works/:workId/images
+POST   /api/laundry/works/:workId/images
+PATCH  /api/laundry/images/:imageId
+PATCH  /api/laundry/images/:imageId/cover
+DELETE /api/laundry/images/:imageId
+```
+
+`POST` accepts provider-neutral image metadata. It does not upload binary content itself.
 
 ## Next Required Actions
 
-- Add image DTO and detail normalization to the frontend API boundary.
-- Project normalized image evidence into `ImagePanel`.
-- Keep upload/caption/cover/delete capabilities disabled until backend mutation endpoints are implemented.
-- Define backend mutation contracts for upload, caption, cover, and soft delete within the Laundry Image Task boundary.
-- Define workspace isolation, role permission, terminal-work, validation, storage adapter, and audit behavior before exposing mutations.
-- Preserve presentational component boundaries and avoid direct API/store access in `ImagePanel`.
+- Add Laundry Image DTO and capability contract to frontend API boundary.
+- Normalize images from Laundry Work Detail and dedicated list endpoint.
+- Implement dedicated image API methods.
+- Implement image policy, controller, projection, and duplicate-submit guard.
+- Extend ImagePanel action models for caption, cover, and soft delete without direct API/store access.
+- Refresh the active image list after every mutation.
+- Add backend service/HTTP verification and frontend build/lint evidence.
 
-## Confirmed Blocker
+## Remaining Contract Gap
 
-The image mutation contract does not currently exist.
+A concrete binary upload adapter is not approved yet.
 
-Missing contracts:
+Supported handoff shape:
 
-- Upload endpoint and transport format
-- Caption update endpoint
-- Set-cover endpoint and atomic single-cover rule
-- Soft-delete endpoint
-- Storage/provider adapter
-- File validation limits
-- Workspace and permission enforcement
-- Terminal-work mutation behavior
-- Business audit events
+```text
+Upload Adapter → { url, publicId?, provider, mimeType?, originalName?, sizeBytes? }
+              → POST image metadata endpoint
+```
 
-Frontend mutation implementation must not guess these contracts.
+LOCAL, Cloudinary, S3, or another provider must remain behind this adapter and must not change UI/component boundaries.
 
 ## Known Frontend Gaps
 
-- No image DTO in Laundry Work Detail contract.
-- No image normalization in the detail API boundary.
-- Projection currently emits an empty image list.
-- Image capability is disabled.
-- No frontend caption, cover, soft-delete, or duplicate-submit orchestration.
+- Frontend image capabilities are still disabled.
+- No dedicated image API methods.
+- No image controller/policy/projection implementation.
+- ImagePanel has no caption, cover, or soft-delete actions.
+- No duplicate-submit orchestration.
 
 ## Evidence
 
 - `artifacts/ARCHITECTURE-INSPECTION.md`
+- `CONTRACT.md`
 - Architecture inspection commit: `8cf26243b58ed5faa7e8a8360df1f447567eb9f4`
-- Backend detail read-path commit: `1f884efe0243414e0a9d993141dc0a155d2bddc6`
-- Backend contract inspection update: `ab2136776b78e6137da9d64e56e65063ac2b2c78`
+- Provider-neutral contract commit: `ae9554e562fc9c48d99145b6e24bfa2dd4d7d583`
 
 ## Completion Gate
 
-Do not mark `COMPLETED` until upload, list, caption, cover, soft delete, refresh persistence, workspace isolation, build, lint, and runtime evidence all pass and final handoff is written.
+Do not mark `COMPLETED` until upload adapter integration, list, caption, cover, soft delete, refresh persistence, workspace isolation, build, lint, backend verification, frontend verification, and final handoff all pass.
