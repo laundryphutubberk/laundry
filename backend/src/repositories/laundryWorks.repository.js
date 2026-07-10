@@ -54,6 +54,16 @@ const findLaundryWorkById = async ({ workId, where, client } = {}) => {
       bags: true,
       countLines: true,
       issues: true,
+      images: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: [
+          { isCover: 'desc' },
+          { displayOrder: 'asc' },
+          { uploadedAt: 'asc' },
+        ],
+      },
       movements: true,
       statusLogs: {
         orderBy: {
