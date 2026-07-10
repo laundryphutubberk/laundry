@@ -27,6 +27,9 @@ export type CountEntryPanelProps = {
   error?: string | null
 }
 
+const fieldClassName =
+  'h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400'
+
 export function CountEntryPanel({ bags = [], action, loading = false, error = null }: CountEntryPanelProps) {
   const [bagId, setBagId] = useState('')
   const [itemTypeName, setItemTypeName] = useState('')
@@ -58,7 +61,7 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
     return (
       <section className="rounded-[28px] border bg-white p-5 shadow-sm" aria-busy="true">
         <div className="h-5 w-36 animate-pulse rounded bg-slate-100" />
-        <div className="mt-4 grid gap-3 md:grid-cols-4">
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {[0, 1, 2, 3].map((item) => (
             <div key={item} className="h-11 animate-pulse rounded-xl bg-slate-100" />
           ))}
@@ -78,19 +81,19 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
 
   return (
     <section className="rounded-[28px] border bg-white p-5 shadow-sm">
-      <div className="mb-4">
+      <div className="mb-5">
         <h2 className="text-base font-semibold text-slate-950">เพิ่มรายการนับผ้า</h2>
         <p className="mt-1 text-sm text-slate-500">บันทึกจำนวนผ้าที่นับได้จริง แยกตามถุง ประเภท และสี</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid gap-3 md:grid-cols-[160px_minmax(0,1fr)_160px_120px]">
-        <label className="grid gap-1 text-sm">
+      <form onSubmit={handleSubmit} className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-4 md:grid-cols-2 xl:grid-cols-12">
+        <label className="grid min-w-0 gap-1.5 text-sm xl:col-span-3">
           <span className="font-medium text-slate-600">ถุง</span>
           <select
             value={bagId}
             onChange={(event) => setBagId(event.target.value)}
             disabled={action?.disabled || action?.loading}
-            className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-200"
+            className={fieldClassName}
           >
             <option value="">ไม่ระบุถุง</option>
             {bags.map((bag) => (
@@ -101,29 +104,29 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
           </select>
         </label>
 
-        <label className="grid gap-1 text-sm">
+        <label className="grid min-w-0 gap-1.5 text-sm xl:col-span-4">
           <span className="font-medium text-slate-600">ประเภทผ้า</span>
           <input
             value={itemTypeName}
             onChange={(event) => setItemTypeName(event.target.value)}
             disabled={action?.disabled || action?.loading}
             placeholder="เช่น ผ้าเช็ดตัว"
-            className="h-11 rounded-xl border px-3 text-sm outline-none focus:ring-2 focus:ring-slate-200"
+            className={fieldClassName}
           />
         </label>
 
-        <label className="grid gap-1 text-sm">
+        <label className="grid min-w-0 gap-1.5 text-sm xl:col-span-3">
           <span className="font-medium text-slate-600">สี</span>
           <input
             value={colorGroup}
             onChange={(event) => setColorGroup(event.target.value)}
             disabled={action?.disabled || action?.loading}
             placeholder="เช่น ขาว"
-            className="h-11 rounded-xl border px-3 text-sm outline-none focus:ring-2 focus:ring-slate-200"
+            className={fieldClassName}
           />
         </label>
 
-        <label className="grid gap-1 text-sm">
+        <label className="grid min-w-0 gap-1.5 text-sm xl:col-span-2">
           <span className="font-medium text-slate-600">จำนวน</span>
           <input
             type="number"
@@ -132,26 +135,26 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
             onChange={(event) => setQuantity(event.target.value)}
             disabled={action?.disabled || action?.loading}
             placeholder="0"
-            className="h-11 rounded-xl border px-3 text-sm outline-none focus:ring-2 focus:ring-slate-200"
+            className={fieldClassName}
           />
         </label>
 
-        <label className="grid gap-1 text-sm md:col-span-3">
+        <label className="grid min-w-0 gap-1.5 text-sm md:col-span-2 xl:col-span-9">
           <span className="font-medium text-slate-600">หมายเหตุ</span>
           <input
             value={note}
             onChange={(event) => setNote(event.target.value)}
             disabled={action?.disabled || action?.loading}
             placeholder="หมายเหตุเพิ่มเติม"
-            className="h-11 rounded-xl border px-3 text-sm outline-none focus:ring-2 focus:ring-slate-200"
+            className={fieldClassName}
           />
         </label>
 
-        <div className="flex items-end">
+        <div className="flex min-w-0 items-end md:col-span-2 xl:col-span-3">
           <button
             type="submit"
             disabled={!canSubmit}
-            className="h-11 w-full rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-11 w-full rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {action?.loading ? 'กำลังบันทึก...' : action?.label || 'เพิ่มรายการ'}
           </button>
