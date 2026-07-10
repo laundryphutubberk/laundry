@@ -131,7 +131,7 @@ const updateWorkIssueCount = async ({ workId, resortId, client } = {}) => {
       workId: Number(workId),
       resortId: Number(resortId),
       status: {
-        not: 'CANCELLED',
+        in: ['OPEN', 'REVIEWING'],
       },
     },
   });
