@@ -16,14 +16,14 @@ Upload → View → Caption → Cover → Soft Delete → Refresh Persistence
 
 ## Current Phase
 
-Frontend API/runtime integration after backend metadata mutation boundary implementation.
+Frontend mutation integration and validation preparation.
 
 ## Completed Inspection
 
 - Confirmed `LaundryWorkImage` domain model supports the required flow.
 - Confirmed migration `20260709070000_add_laundry_work_image` exists with work/resort foreign keys and required indexes.
 - Confirmed backend has no approved multipart or binary storage provider contract.
-- Confirmed `ImagePanel` is presentation-only and must remain free of API/store access.
+- Confirmed `ImagePanel` remains presentation-only and free of API/store access.
 - Recorded findings in `artifacts/ARCHITECTURE-INSPECTION.md`.
 - Locked the provider-neutral feature contract in `CONTRACT.md`.
 
@@ -50,15 +50,36 @@ backend/src/routes/laundryWorkImages.routes.js
 backend/src/routes/index.js
 ```
 
-Related commits:
+Repository implementation is not runtime PASS evidence yet.
+
+## Implemented Frontend Boundary
+
+- Dedicated Laundry Image DTO and API boundary.
+- Active image list normalization.
+- Provider-neutral metadata registration method.
+- Caption/display-order update method.
+- Cover selection method.
+- Soft-delete method.
+- Laundry Image Zustand state boundary.
+- Laundry Image policy for workspace, role, loading, and terminal Work protection.
+- Laundry Image controller with refresh-after-mutation behavior.
+- Synchronous duplicate-submit lock at the controller boundary.
+- Laundry Image display projection.
+- Presentation-only per-image action models for caption, cover, and soft delete.
+- Laundry Work Detail runtime integration.
+- `workStatus` is passed from Work Detail into Laundry Image policy so `CLOSED` and `CANCELLED` works cannot expose mutation actions.
+
+Frontend files:
 
 ```text
-02d988ae4519cb835f7e8b343188746fce126b6e
-9e336b0ea1a1e2292b4d148ab7bd552193bd4b19
-c847da90370aaba7504adbc7c69c4220e54658a2
-1fd5193b9c02267a80618cca377ae91d0ff59dfe
-f9495a22e5970e5adb9a4e85ccd524ee188bcbab
-e3aa7a25326e7a41d1e8d715267092df1c4618f6
+frontend/src/features/laundry-works/api/laundryImageApi.ts
+frontend/src/features/laundry-works/stores/laundryImage.store.ts
+frontend/src/features/laundry-works/policies/laundryImage.policy.ts
+frontend/src/features/laundry-works/controllers/useLaundryImageController.ts
+frontend/src/features/laundry-works/projections/laundryImageProjection.ts
+frontend/src/features/laundry-works/components/ImagePanel.tsx
+frontend/src/features/laundry-works/runtime/LaundryImageRuntimePanel.tsx
+frontend/src/features/laundry-works/pages/LaundryWorkDetailPage.tsx
 ```
 
 Repository implementation is not runtime PASS evidence yet.
@@ -75,16 +96,6 @@ DELETE /api/laundry/images/:imageId
 
 `POST` accepts provider-neutral image metadata. It does not upload binary content itself.
 
-## Next Required Actions
-
-- Add Laundry Image DTO and capability contract to frontend API boundary.
-- Normalize images from Laundry Work Detail and dedicated list endpoint.
-- Implement dedicated image API methods.
-- Implement image policy, controller, projection, and duplicate-submit guard.
-- Extend ImagePanel action models for caption, cover, and soft delete without direct API/store access.
-- Refresh the active image list after every mutation.
-- Add backend service/HTTP verification and frontend build/lint evidence.
-
 ## Remaining Contract Gap
 
 A concrete binary upload adapter is not approved yet.
@@ -98,13 +109,18 @@ Upload Adapter → { url, publicId?, provider, mimeType?, originalName?, sizeByt
 
 LOCAL, Cloudinary, S3, or another provider must remain behind this adapter and must not change UI/component boundaries.
 
-## Known Frontend Gaps
+Current frontend registration uses a temporary URL-entry interaction to exercise the provider-neutral metadata boundary. It is not the final binary upload UX.
 
-- Frontend image capabilities are still disabled.
-- No dedicated image API methods.
-- No image controller/policy/projection implementation.
-- ImagePanel has no caption, cover, or soft-delete actions.
-- No duplicate-submit orchestration.
+## Next Required Actions
+
+- Approve or implement a concrete binary upload adapter behind the existing provider-neutral contract.
+- Replace the temporary URL-entry interaction with the approved upload adapter UI without moving API logic into components.
+- Add backend service verification for list/register/update/cover/soft-delete and policy protections.
+- Add backend HTTP verification for routes, validation, workspace isolation, permission, and terminal Work protection.
+- Run frontend lint and production build.
+- Run browser validation for list, caption, cover uniqueness, soft delete, refresh persistence, duplicate-submit, and terminal Work UI protection.
+- Record workspace/resort read-isolation evidence.
+- Write final handoff and update `TASK-INDEX.md` only after all gates pass.
 
 ## Evidence
 
@@ -112,6 +128,7 @@ LOCAL, Cloudinary, S3, or another provider must remain behind this adapter and m
 - `CONTRACT.md`
 - Architecture inspection commit: `8cf26243b58ed5faa7e8a8360df1f447567eb9f4`
 - Provider-neutral contract commit: `ae9554e562fc9c48d99145b6e24bfa2dd4d7d583`
+- Terminal Work status wiring commit: `ed002f749b027b1d244247e03baace23843bb793`
 
 ## Completion Gate
 
