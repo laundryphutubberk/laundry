@@ -1,26 +1,12 @@
-import type { ApiResult, LaundryWorkRequestMeta } from './laundryWorkApi'
+import type { ApiResult, LaundryWorkImageDTO, LaundryWorkRequestMeta } from './laundryWorkApi'
 
-export type LaundryWorkImageDTO = {
-  id: string | number
-  workId: string | number
-  resortId: string | number
-  url: string
-  publicId?: string | null
-  provider?: string
-  mimeType?: string | null
-  originalName?: string | null
-  sizeBytes?: number | null
-  caption?: string | null
-  displayOrder: number
-  isCover: boolean
-  uploadedById?: string | number | null
-  uploadedAt?: string
-  deletedAt?: string | null
-  createdAt?: string
-  updatedAt?: string
+export type { LaundryWorkImageDTO } from './laundryWorkApi'
+
+export type ListLaundryWorkImagesInput = {
+  workId?: string | number
+  meta: LaundryWorkRequestMeta
 }
 
-export type ListLaundryWorkImagesInput = { workId?: string | number; meta: LaundryWorkRequestMeta }
 export type RegisterLaundryWorkImageInput = {
   workId?: string | number
   url: string
@@ -39,10 +25,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const capability = {
   list: true,
-  upload: true,
-  updateCaption: true,
+  registerMetadata: true,
+  update: true,
   setCover: true,
   softDelete: true,
+  binaryUploadAdapter: false,
 } as const
 
 function buildMeta(requestId: string, source: 'backend' | 'client-normalized' = 'client-normalized') {
@@ -52,7 +39,10 @@ function buildMeta(requestId: string, source: 'backend' | 'client-normalized' = 
 function getAuthToken(meta: LaundryWorkRequestMeta) {
   if (meta.token) return meta.token
   if (typeof window === 'undefined') return undefined
-  return window.localStorage.getItem('laundry.auth.token') || window.localStorage.getItem('authToken') || window.localStorage.getItem('token') || undefined
+  return window.localStorage.getItem('laundry.auth.token')
+    || window.localStorage.getItem('authToken')
+    || window.localStorage.getItem('token')
+    || undefined
 }
 
 function normalizeImage(raw: any): LaundryWorkImageDTO {
@@ -62,10 +52,10 @@ function normalizeImage(raw: any): LaundryWorkImageDTO {
     resortId: raw.resortId,
     url: raw.url,
     publicId: raw.publicId,
-    provider: raw.provider,
+    provider: raw.provider || 'UNKNOWN',
     mimeType: raw.mimeType,
     originalName: raw.originalName,
-    sizeBytes: raw.sizeBytes,
+    sizeBytes: raw.sizeBytes == null ? null : Number(raw.sizeBytes),
     caption: raw.caption,
     displayOrder: Number(raw.displayOrder || 0),
     isCover: Boolean(raw.isCover),
@@ -123,31 +113,63 @@ async function request<T>(path: string, meta: LaundryWorkRequestMeta, init: Requ
   }
 }
 
+function missingIdResult<T>(code: string, message: string, meta: LaundryWorkRequestMeta): ApiResult<T> {
+  return {
+    ok: false,
+    error: { code, message, requestId: meta.requestId },
+    meta: buildMeta(meta.requestId),
+  }
+}
+
 export const laundryImageApi = {
   capability,
 
   async list({ workId, meta }: ListLaundryWorkImagesInput): Promise<ApiResult<LaundryWorkImageDTO[]>> {
-    if (!workId) return request('/laundry/works/0/images', meta)
+    if (!workId) return missingIdResult('MISSING_WORK_ID', 'Missing Laundry Work id.', meta)
+
     const result = await request<any[]>(`/laundry/works/${workId}/images`, meta)
-    return result.ok ? { ...result, data: (result.data || []).filter((image) => !image?.deletedAt).map(normalizeImage) } : result
+    return result.ok
+      ? { ...result, data: (result.data || []).filter((image) => !image?.deletedAt).map(normalizeImage) }
+      : result
   },
 
   async register({ workId, meta, ...input }: RegisterLaundryWorkImageInput): Promise<ApiResult<LaundryWorkImageDTO>> {
-    const result = await request<any>(`/laundry/works/${workId}/images`, meta, { method: 'POST', body: JSON.stringify(input) })
+    if (!workId) return missingIdResult('MISSING_WORK_ID', 'Missing Laundry Work id.', meta)
+
+    const result = await request<any>(`/laundry/works/${workId}/images`, meta, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
     return result.ok ? { ...result, data: normalizeImage(result.data) } : result
   },
 
-  async update(imageId: string | number, input: { caption?: string | null; displayOrder?: number }, meta: LaundryWorkRequestMeta): Promise<ApiResult<LaundryWorkImageDTO>> {
-    const result = await request<any>(`/laundry/images/${imageId}`, meta, { method: 'PATCH', body: JSON.stringify(input) })
+  async update(
+    imageId: string | number,
+    input: { caption?: string | null; displayOrder?: number },
+    meta: LaundryWorkRequestMeta,
+  ): Promise<ApiResult<LaundryWorkImageDTO>> {
+    if (!imageId) return missingIdResult('MISSING_IMAGE_ID', 'Missing Laundry Image id.', meta)
+
+    const result = await request<any>(`/laundry/images/${imageId}`, meta, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    })
     return result.ok ? { ...result, data: normalizeImage(result.data) } : result
   },
 
   async setCover(imageId: string | number, meta: LaundryWorkRequestMeta): Promise<ApiResult<LaundryWorkImageDTO>> {
-    const result = await request<any>(`/laundry/images/${imageId}/cover`, meta, { method: 'PATCH', body: '{}' })
+    if (!imageId) return missingIdResult('MISSING_IMAGE_ID', 'Missing Laundry Image id.', meta)
+
+    const result = await request<any>(`/laundry/images/${imageId}/cover`, meta, {
+      method: 'PATCH',
+      body: '{}',
+    })
     return result.ok ? { ...result, data: normalizeImage(result.data) } : result
   },
 
   async softDelete(imageId: string | number, meta: LaundryWorkRequestMeta): Promise<ApiResult<{ deleted: true }>> {
+    if (!imageId) return missingIdResult('MISSING_IMAGE_ID', 'Missing Laundry Image id.', meta)
+
     return request(`/laundry/images/${imageId}`, meta, { method: 'DELETE' })
   },
 }
