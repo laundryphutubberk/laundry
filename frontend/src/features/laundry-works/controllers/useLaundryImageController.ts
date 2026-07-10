@@ -7,6 +7,7 @@ import { getLaundryImagePolicy } from '../policies/laundryImage.policy'
 import { useLaundryImageStore } from '../stores/laundryImage.store'
 
 const createRequestId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `li-img-${Date.now()}`)
+const REGISTER_PENDING_KEY = '__REGISTER_IMAGE__'
 
 const createMeta = (action: string, session: ReturnType<typeof getWorkspaceContext>): LaundryWorkRequestMeta => ({
   requestId: createRequestId(),
@@ -79,7 +80,7 @@ export function useLaundryImageController({ workId, workStatus }: { workId?: str
     const url = window.prompt('วาง URL รูปภาพจาก Storage Adapter')?.trim()
     if (!url) return
     const caption = window.prompt('คำอธิบายรูปภาพ (ไม่บังคับ)')?.trim() || undefined
-    void runMutation(null, async () => {
+    void runMutation(REGISTER_PENDING_KEY, async () => {
       const result = await laundryImageApi.register({ workId, url, caption, provider: 'EXTERNAL', meta: createMeta('registerLaundryWorkImage', session) })
       if (!result.ok) setError(result.error)
       return result.ok
@@ -123,6 +124,7 @@ export function useLaundryImageController({ workId, workStatus }: { workId?: str
     capability: laundryImageApi.capability,
     policy,
     pendingImageId,
+    registerPending: pendingImageId === REGISTER_PENDING_KEY,
     actions: {
       registerByUrl,
       editCaption,
