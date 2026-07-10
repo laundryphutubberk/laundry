@@ -32,7 +32,7 @@ export function LaundryImageRuntimePanel({ workId, workStatus }: { workId?: stri
           label: 'เพิ่มรูป',
           onClick: runtime.actions.registerByUrl,
           disabled: !runtime.policy.canRegister,
-          loading: runtime.pendingImageId === null && runtime.loading,
+          loading: runtime.registerPending,
         },
         canUploadImage: runtime.policy.canRegister,
       }}
