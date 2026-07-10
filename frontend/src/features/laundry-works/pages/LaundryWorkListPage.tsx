@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getWorkspaceContext } from '../../auth/authSession'
 import { laundryWorkApi, type ApiFailure, type LaundryWorkDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
 import { removeLaundryWork } from '../api/laundryWorkManagementApi'
+import { MutationFeedbackBanner, type MutationFeedbackModel } from '../components/MutationFeedbackBanner'
 import { presentLaundryStatus } from '../presenters/laundryStatus.presenter'
 
 const createRequestId = () => {
@@ -125,6 +126,22 @@ export function LaundryWorkListPage() {
   }
 
   const pendingIsDraft = isDraftWork(pendingRemoval)
+  const feedback: MutationFeedbackModel | null = successMessage
+    ? {
+        tone: 'success',
+        title: successMessage,
+        onDismiss: () => setSuccessMessage(null),
+      }
+    : error
+      ? {
+          tone: 'error',
+          title: 'ไม่สามารถดำเนินการกับรายการงานซักได้',
+          message: error.message,
+          requestId,
+          onRetry: () => void loadItems(),
+          onDismiss: () => setError(null),
+        }
+      : null
 
   return (
     <div className="min-h-screen bg-slate-100/70">
@@ -144,26 +161,11 @@ export function LaundryWorkListPage() {
           </div>
         </section>
 
-        {successMessage ? (
-          <section className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-emerald-800 shadow-sm" role="status">
-            <p className="text-sm font-bold">✓ {successMessage}</p>
-            <button type="button" onClick={() => setSuccessMessage(null)} className="text-sm font-black text-emerald-700" aria-label="ปิดข้อความสำเร็จ">
-              ×
-            </button>
-          </section>
-        ) : null}
+        <MutationFeedbackBanner feedback={feedback} />
 
         {loading ? (
-          <section className="rounded-[28px] border border-white/70 bg-white p-6 shadow-sm">
+          <section className="rounded-[28px] border border-white/70 bg-white p-6 shadow-sm" aria-busy="true">
             <p className="text-sm font-semibold text-slate-500">กำลังโหลดรายการงานซัก...</p>
-          </section>
-        ) : null}
-
-        {error ? (
-          <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
-            <p className="text-base font-semibold">ไม่สามารถดำเนินการกับรายการงานซักได้</p>
-            <p className="mt-2 text-sm">{error.message}</p>
-            {requestId ? <p className="mt-3 text-xs text-red-600">requestId: {requestId}</p> : null}
           </section>
         ) : null}
 
