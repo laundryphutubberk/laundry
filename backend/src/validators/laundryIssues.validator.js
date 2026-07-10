@@ -16,6 +16,8 @@ const listLaundryIssuesQuerySchema = z.object({
 });
 
 const createLaundryIssueBodySchema = z.object({
+  bagId: z.coerce.number().int().positive().optional(),
+  countLineId: z.coerce.number().int().positive().optional(),
   itemTypeId: z.coerce.number().int().positive().optional(),
   colorGroup: z.string().trim().min(1).optional(),
   issueType: z.enum(issueTypes),
@@ -24,6 +26,8 @@ const createLaundryIssueBodySchema = z.object({
 });
 
 const updateLaundryIssueBodySchema = z.object({
+  bagId: z.coerce.number().int().positive().nullable().optional(),
+  countLineId: z.coerce.number().int().positive().nullable().optional(),
   itemTypeId: z.coerce.number().int().positive().nullable().optional(),
   colorGroup: z.string().trim().min(1).nullable().optional(),
   issueType: z.enum(issueTypes).optional(),
