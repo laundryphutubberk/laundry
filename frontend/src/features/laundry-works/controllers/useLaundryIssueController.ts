@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { getWorkspaceContext } from '../../auth/authSession'
 import { laundryIssueApi, type CreateLaundryIssueInput, type UpdateLaundryIssueInput } from '../api/laundryIssueApi'
@@ -30,6 +30,7 @@ const notifyLaundryWorkIssueChanged = (workId?: string | number) => {
 
 export function useLaundryIssueController({ workId, workStatus }: { workId?: string | number; workStatus?: string }) {
   const session = useMemo(() => getWorkspaceContext(), [])
+  const mutationInFlightRef = useRef(false)
   const issues = useLaundryIssueStore((state) => state.issues)
   const loading = useLaundryIssueStore((state) => state.loading)
   const busy = useLaundryIssueStore((state) => state.busy)
@@ -61,7 +62,8 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
   }, [loadIssues, reset])
 
   const createIssue = useCallback(async (input: Omit<CreateLaundryIssueInput, 'workId' | 'meta'>) => {
-    if (!policy.canCreate || busy) return false
+    if (!policy.canCreate || busy || mutationInFlightRef.current) return false
+    mutationInFlightRef.current = true
     setBusy(true)
     setError(null)
     try {
@@ -74,12 +76,14 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
       notifyLaundryWorkIssueChanged(workId)
       return true
     } finally {
+      mutationInFlightRef.current = false
       setBusy(false)
     }
   }, [busy, loadIssues, policy.canCreate, session, setBusy, setError, workId])
 
   const updateIssue = useCallback(async (issueId: string | number, input: Omit<UpdateLaundryIssueInput, 'issueId' | 'meta'>) => {
-    if (!policy.canUpdate || busy) return false
+    if (!policy.canUpdate || busy || mutationInFlightRef.current) return false
+    mutationInFlightRef.current = true
     setBusy(true)
     setError(null)
     try {
@@ -92,12 +96,14 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
       notifyLaundryWorkIssueChanged(workId)
       return true
     } finally {
+      mutationInFlightRef.current = false
       setBusy(false)
     }
   }, [busy, loadIssues, policy.canUpdate, session, setBusy, setError, workId])
 
   const resolveIssue = useCallback(async (issueId: string | number, resolutionNote: string) => {
-    if (!policy.canResolve || busy) return false
+    if (!policy.canResolve || busy || mutationInFlightRef.current) return false
+    mutationInFlightRef.current = true
     setBusy(true)
     setError(null)
     try {
@@ -110,6 +116,7 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
       notifyLaundryWorkIssueChanged(workId)
       return true
     } finally {
+      mutationInFlightRef.current = false
       setBusy(false)
     }
   }, [busy, loadIssues, policy.canResolve, session, setBusy, setError, workId])
