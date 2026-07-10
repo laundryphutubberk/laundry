@@ -5,6 +5,7 @@ const {
   getLaundryWorkById,
   createLaundryWork,
   updateLaundryWorkStatus,
+  deleteOrCancelLaundryWork,
 } = require('../services/laundryWorks.service');
 const {
   parseRequest,
@@ -13,6 +14,7 @@ const {
   getLaundryWorkQuerySchema,
   createLaundryWorkBodySchema,
   updateLaundryWorkStatusBodySchema,
+  deleteLaundryWorkBodySchema,
 } = require('../validators/laundryWorks.validator');
 
 const listLaundryWorksController = async (req, res, next) => {
@@ -57,9 +59,21 @@ const updateLaundryWorkStatusController = async (req, res, next) => {
   }
 };
 
+const deleteLaundryWorkController = async (req, res, next) => {
+  try {
+    const params = parseRequest(workIdParamSchema, req.params);
+    const body = parseRequest(deleteLaundryWorkBodySchema, req.body);
+    const result = await deleteOrCancelLaundryWork(params.workId, body, getRequestPolicyContext(req));
+    return sendSuccess(res, result);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   listLaundryWorksController,
   getLaundryWorkController,
   createLaundryWorkController,
   updateLaundryWorkStatusController,
+  deleteLaundryWorkController,
 };
