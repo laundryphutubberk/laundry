@@ -4,7 +4,7 @@ Feature ownership layer for Laundry Work image evidence.
 
 This task consumes shared standards from FE-02 through FE-08.
 
-Status: NOT_STARTED
+Status: IN_PROGRESS
 
 Primary flow:
 
