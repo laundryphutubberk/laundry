@@ -9,6 +9,7 @@ const laundryWorksRoutes = require('./laundryWorks.routes');
 const laundryBagsRoutes = require('./laundryBags.routes');
 const laundryCountLinesRoutes = require('./laundryCountLines.routes');
 const laundryIssuesRoutes = require('./laundryIssues.routes');
+const laundryWorkImagesRoutes = require('./laundryWorkImages.routes');
 const {
   updateLaundryCountLineController,
   deleteLaundryCountLineController,
@@ -17,6 +18,11 @@ const {
   updateLaundryIssueController,
   resolveLaundryIssueController,
 } = require('../controllers/laundryIssues.controller');
+const {
+  updateLaundryWorkImageController,
+  setLaundryWorkImageCoverController,
+  softDeleteLaundryWorkImageController,
+} = require('../controllers/laundryWorkImages.controller');
 
 const router = express.Router();
 
@@ -34,10 +40,14 @@ router.use('/resorts', authActorMiddleware, resortsRoutes);
 router.use('/laundry/works/:workId/bags', authActorMiddleware, laundryBagsRoutes);
 router.use('/laundry/works/:workId/count-lines', authActorMiddleware, laundryCountLinesRoutes);
 router.use('/laundry/works/:workId/issues', authActorMiddleware, laundryIssuesRoutes);
+router.use('/laundry/works/:workId/images', authActorMiddleware, laundryWorkImagesRoutes);
 router.patch('/laundry/count-lines/:lineId', authActorMiddleware, updateLaundryCountLineController);
 router.delete('/laundry/count-lines/:lineId', authActorMiddleware, deleteLaundryCountLineController);
 router.patch('/laundry/issues/:issueId', authActorMiddleware, updateLaundryIssueController);
 router.patch('/laundry/issues/:issueId/resolve', authActorMiddleware, resolveLaundryIssueController);
+router.patch('/laundry/images/:imageId', authActorMiddleware, updateLaundryWorkImageController);
+router.patch('/laundry/images/:imageId/cover', authActorMiddleware, setLaundryWorkImageCoverController);
+router.delete('/laundry/images/:imageId', authActorMiddleware, softDeleteLaundryWorkImageController);
 router.use('/laundry/works', authActorMiddleware, laundryWorksRoutes);
 
 module.exports = router;
