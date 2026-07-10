@@ -105,7 +105,7 @@ COMPLETED
 |---|---|---|---|---|---|---|
 | Laundry Work | `tasks/laundry-work/` | Laundry Work host flow | `COMPLETED_BASELINE` | Completed baseline | Reopen only for verified regression or downstream host-contract need | Preserve as host baseline |
 | Laundry Issue | `tasks/laundry-issue/` | Issue create, link, update, cancel, resolve | `COMPLETED` | Completed | Validation and handoff complete | Preserve completion evidence |
-| Laundry Image | `tasks/laundry-image/` | Laundry Work evidence images | `NOT_STARTED` | Not started | Laundry Issue completion gate passed | Open architecture and contract inspection |
+| Laundry Image | `tasks/laundry-image/` | Laundry Work evidence images | `IN_PROGRESS` | Architecture and contract inspection | Laundry Issue completion gate passed | Inspect domain, backend, frontend, and evidence gaps |
 | Inventory | `tasks/inventory/` | Resort linen movement and stock visibility | `NOT_STARTED` | Not started | Requires stable Count Line semantics and master-data decision | Define source-of-truth and movement contract before implementation |
 | Packing | `tasks/packing/` | Packing preparation and quantity verification | `NOT_STARTED` | Not started | Depends on inventory/count truth | Keep closed until upstream contract is ready |
 | Delivery | `tasks/delivery/` | Dispatch, return confirmation, work closure | `NOT_STARTED` | Not started | Depends on packing and movement truth | Keep closed until upstream flow is ready |
@@ -130,7 +130,7 @@ Laundry Image
 Current gate:
 
 ```text
-READY_TO_OPEN
+IN_PROGRESS — ARCHITECTURE_AND_CONTRACT_INSPECTION
 ```
 
 Next planned Task after completion:
