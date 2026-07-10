@@ -37,7 +37,8 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
   const [quantity, setQuantity] = useState('')
   const [note, setNote] = useState('')
 
-  const canSubmit = Boolean(action?.onCreate && itemTypeName.trim() && Number(quantity) > 0 && !action?.disabled && !action?.loading)
+  const hasRequiredValues = Boolean(itemTypeName.trim() && Number(quantity) > 0)
+  const canSubmit = Boolean(action?.onCreate && hasRequiredValues && !action?.disabled && !action?.loading)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -95,22 +96,28 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
             disabled={action?.disabled || action?.loading}
             className={fieldClassName}
           >
-            <option value="">ไม่ระบุถุง</option>
+            <option value="" disabled>
+              เลือกถุง
+            </option>
             {bags.map((bag) => (
               <option key={bag.id} value={bag.id}>
                 {bag.label || bag.bagNo || `ถุง ${bag.id}`}
               </option>
             ))}
+            <option value="">ไม่ระบุถุง</option>
           </select>
         </label>
 
         <label className="grid min-w-0 gap-1.5 text-sm xl:col-span-4">
-          <span className="font-medium text-slate-600">ประเภทผ้า</span>
+          <span className="font-medium text-slate-600">
+            ประเภทผ้า <span className="text-red-500" aria-hidden="true">*</span>
+          </span>
           <input
             value={itemTypeName}
             onChange={(event) => setItemTypeName(event.target.value)}
             disabled={action?.disabled || action?.loading}
             placeholder="เช่น ผ้าเช็ดตัว"
+            aria-required="true"
             className={fieldClassName}
           />
         </label>
@@ -127,43 +134,53 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
         </label>
 
         <label className="grid min-w-0 gap-1.5 text-sm xl:col-span-2">
-          <span className="font-medium text-slate-600">จำนวน</span>
+          <span className="font-medium text-slate-600">
+            จำนวน <span className="text-red-500" aria-hidden="true">*</span>
+          </span>
           <input
             type="number"
             min="1"
+            inputMode="numeric"
             value={quantity}
             onChange={(event) => setQuantity(event.target.value)}
             disabled={action?.disabled || action?.loading}
-            placeholder="0"
-            className={fieldClassName}
+            placeholder="1"
+            aria-required="true"
+            className={`${fieldClassName} text-right tabular-nums`}
           />
         </label>
 
-        <label className="grid min-w-0 gap-1.5 text-sm md:col-span-2 xl:col-span-9">
+        <label className="grid min-w-0 gap-1.5 text-sm md:col-span-2 xl:col-span-10">
           <span className="font-medium text-slate-600">หมายเหตุ</span>
           <input
             value={note}
             onChange={(event) => setNote(event.target.value)}
             disabled={action?.disabled || action?.loading}
-            placeholder="หมายเหตุเพิ่มเติม"
+            placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
             className={fieldClassName}
           />
         </label>
 
-        <div className="flex min-w-0 items-end md:col-span-2 xl:col-span-3">
+        <div className="flex min-w-0 items-end md:col-span-2 xl:col-span-2">
           <button
             type="submit"
             disabled={!canSubmit}
-            className="h-11 w-full rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-11 w-full rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
           >
-            {action?.loading ? 'กำลังบันทึก...' : action?.label || 'เพิ่มรายการ'}
+            {action?.loading ? 'กำลังบันทึก...' : `+ ${action?.label || 'เพิ่มรายการ'}`}
           </button>
         </div>
       </form>
 
-      {action?.disabled && action?.label ? (
-        <p className="mt-3 text-xs text-slate-500">Action ถูกปิดตาม runtime policy</p>
-      ) : null}
+      {action?.disabled ? (
+        <p className="mt-3 text-xs font-medium text-amber-700">ยังไม่สามารถเพิ่มรายการในสถานะงานปัจจุบันได้</p>
+      ) : !hasRequiredValues ? (
+        <p className="mt-3 text-xs text-slate-500">
+          กรอกประเภทผ้าและจำนวนอย่างน้อย 1 ชิ้นก่อนเพิ่มรายการ <span className="text-red-500">*</span> คือข้อมูลที่จำเป็น
+        </p>
+      ) : (
+        <p className="mt-3 text-xs text-slate-500">กด Enter หรือปุ่ม “เพิ่มรายการ” เพื่อบันทึกข้อมูล</p>
+      )}
     </section>
   )
 }
