@@ -34,6 +34,12 @@ export function LaundryIssueRuntimePanel({ workId, workStatus }: { workId?: stri
     }
   }
 
+  const editIssue = async (issueId: string | number, currentDescription?: string | null) => {
+    const nextDescription = window.prompt('แก้ไขรายละเอียดปัญหา', currentDescription || '')?.trim()
+    if (!nextDescription || nextDescription === currentDescription) return
+    await runtime.updateIssue(issueId, { description: nextDescription })
+  }
+
   const resolveIssue = async (issueId: string | number) => {
     const resolutionNote = window.prompt('ระบุรายละเอียดการแก้ไขปัญหา')?.trim()
     if (!resolutionNote) return
@@ -90,10 +96,19 @@ export function LaundryIssueRuntimePanel({ workId, workStatus }: { workId?: stri
                   <p className="mt-1 text-sm text-slate-600">{issue.description}</p>
                   <p className="mt-2 text-xs text-slate-500">จำนวน {issue.quantity ?? 0} · สถานะ {issue.status}</p>
                 </div>
-                {issue.status !== 'RESOLVED' && runtime.policy.canResolve ? (
-                  <button type="button" onClick={() => void resolveIssue(issue.id)} disabled={runtime.busy} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 disabled:opacity-50">
-                    แก้ไขแล้ว
-                  </button>
+                {issue.status !== 'RESOLVED' ? (
+                  <div className="flex shrink-0 gap-2">
+                    {runtime.policy.canUpdate ? (
+                      <button type="button" onClick={() => void editIssue(issue.id, issue.description)} disabled={runtime.busy} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 disabled:opacity-50">
+                        แก้ไข
+                      </button>
+                    ) : null}
+                    {runtime.policy.canResolve ? (
+                      <button type="button" onClick={() => void resolveIssue(issue.id)} disabled={runtime.busy} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 disabled:opacity-50">
+                        แก้ไขแล้ว
+                      </button>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </article>
