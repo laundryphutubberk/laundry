@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 
+import { MutationFeedbackBanner } from '../components/MutationFeedbackBanner'
 import { useLaundryIssueController } from '../controllers/useLaundryIssueController'
 
 const issueTypeOptions = [
@@ -321,9 +322,13 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
         </form>
       ) : null}
 
-      {runtime.error ? (
+      {runtime.mutationFeedback ? (
+        <div className="mt-4">
+          <MutationFeedbackBanner feedback={runtime.mutationFeedback} />
+        </div>
+      ) : runtime.error ? (
         <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-          <p className="font-bold">ไม่สามารถดำเนินการกับปัญหาได้</p>
+          <p className="font-bold">ไม่สามารถโหลดข้อมูลปัญหาได้</p>
           <p className="mt-1">{runtime.error.message}</p>
           {runtime.error.requestId ? <p className="mt-2 break-all text-xs">รหัสอ้างอิง: {runtime.error.requestId}</p> : null}
         </div>
