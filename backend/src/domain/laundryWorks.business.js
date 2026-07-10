@@ -48,8 +48,31 @@ const assertWorkStatusTransition = (currentStatus, nextStatus) => {
   }
 };
 
-const buildCreateWorkData = (payload) => ({
-  workNo: payload.workNo || `LW-${Date.now()}`,
+const formatBangkokDate = (date = new Date()) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}${values.month}${values.day}`;
+};
+
+const buildWorkNoPrefix = (date = new Date()) => `LW-${formatBangkokDate(date)}-`;
+
+const buildNextWorkNo = ({ prefix, latestWorkNo } = {}) => {
+  const latestSequence = latestWorkNo?.startsWith(prefix)
+    ? Number(latestWorkNo.slice(prefix.length))
+    : 0;
+  const nextSequence = Number.isInteger(latestSequence) ? latestSequence + 1 : 1;
+
+  return `${prefix}${String(nextSequence).padStart(3, '0')}`;
+};
+
+const buildCreateWorkData = (payload, generatedWorkNo) => ({
+  workNo: payload.workNo || generatedWorkNo,
   resortId: Number(payload.resortId),
   bagCount: payload.bagCount ? Number(payload.bagCount) : 0,
   receivedDate: payload.receivedDate ? new Date(payload.receivedDate) : null,
@@ -71,6 +94,8 @@ module.exports = {
   assertUniqueWorkNo,
   assertInitialWorkStatus,
   assertWorkStatusTransition,
+  buildWorkNoPrefix,
+  buildNextWorkNo,
   buildCreateWorkData,
   buildStatusLogData,
 };
