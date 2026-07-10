@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 
-import { getAuthSession } from '../../auth/authSession'
+import { clearAuthSession, getAuthSession } from '../../auth/authSession'
 
 export type LaundryWorkspaceShellProps = {
   children: ReactNode
@@ -25,6 +25,11 @@ const roleLabels: Record<string, string> = {
   LAUNDRY_STAFF: 'พนักงานโรงซัก',
   RESORT_OWNER: 'เจ้าของรีสอร์ต',
   RESORT_STAFF: 'พนักงานรีสอร์ต',
+}
+
+const workspaceLabels: Record<string, string> = {
+  LAUNDRY: 'Laundry Workspace',
+  RESORT: 'Resort Workspace',
 }
 
 function LaundryBrandMark() {
@@ -53,11 +58,19 @@ function iconClassName(active?: boolean) {
 }
 
 export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) {
+  const navigate = useNavigate()
   const session = getAuthSession()
   const displayName = session?.user?.displayName?.trim() || session?.user?.email || 'ผู้ใช้งาน'
   const role = session?.actor?.role || session?.user?.role || ''
+  const workspaceType = session?.actor?.workspaceType || session?.user?.workspaceType || ''
   const roleLabel = roleLabels[role] || role || 'ผู้ใช้งานระบบ'
+  const workspaceLabel = workspaceLabels[workspaceType] || workspaceType || 'Workspace'
   const avatarLabel = Array.from(displayName)[0]?.toUpperCase() || 'ผ'
+
+  const handleLogout = () => {
+    clearAuthSession()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-[16px] lg:pl-[280px]">
@@ -93,16 +106,14 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
 
       <div className="min-w-0">
         <header className="sticky top-0 z-30 hidden h-[72px] items-center justify-end border-b border-white/10 bg-gradient-to-r from-blue-950 via-blue-950 to-slate-950 px-6 shadow-lg shadow-blue-950/10 lg:flex">
-          <div className="flex items-center gap-3 text-blue-50">
-            <button type="button" className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-lg text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/15">
-              ♫
-              <span className="absolute -right-1 -top-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">12</span>
-            </button>
-            <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-base font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/15">
-              ?
-            </button>
-            <span className="mx-1 h-8 w-px bg-white/15" aria-hidden="true" />
-            <div className="flex items-center gap-3 pl-1">
+          <div className="flex items-center gap-4 text-blue-50">
+            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-blue-100">
+              {workspaceLabel}
+            </span>
+
+            <span className="h-8 w-px bg-white/15" aria-hidden="true" />
+
+            <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 text-lg font-black text-white shadow-sm">
                 {avatarLabel}
               </div>
@@ -110,8 +121,15 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
                 <p className="truncate text-base font-black leading-tight text-white">{displayName}</p>
                 <p className="mt-0.5 truncate text-xs font-semibold text-blue-100/75">{roleLabel}</p>
               </div>
-              <span className="text-base text-blue-100/75">⌄</span>
             </div>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/20"
+            >
+              ออกจากระบบ
+            </button>
           </div>
         </header>
 
