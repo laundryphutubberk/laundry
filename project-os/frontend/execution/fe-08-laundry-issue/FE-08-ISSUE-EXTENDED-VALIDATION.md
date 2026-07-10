@@ -1,6 +1,6 @@
 # FE-08 Laundry Issue — Extended Validation
 
-Status: READY_FOR_RUN_VALIDATION
+Status: READY_FOR_CONTROLLED_RUN_VALIDATION
 Feature Domain: Laundry Workspace
 Mission: Laundry Issue Flow Hardening
 
@@ -8,7 +8,7 @@ Mission: Laundry Issue Flow Hardening
 
 Validate the Laundry Issue flow beyond the core create/update/resolve path.
 
-This validation confirms summary consistency, Count Line linkage, unlink/relink behavior, cancellation, terminal-work protection, workspace isolation, and duplicate-submit protection.
+This validation confirms summary consistency, Count Line linkage, unlink/relink behavior, cancellation, terminal-work protection, workspace isolation, duplicate-submit protection, build readiness, and refresh persistence.
 
 ## Runtime Contract
 
@@ -32,6 +32,23 @@ After a successful issue mutation, the runtime must reload:
 
 1. Laundry Issue list
 2. Laundry Work detail and summary
+
+## Repository Evidence Gate
+
+Repository-level implementation evidence is present for:
+
+- Issue database linkage through `bagId` and `countLineId` migration.
+- Backend validation, repository, service, controller, and route layers.
+- Frontend Issue API, Store, Policy, Controller, Runtime Panel, and Work Detail integration.
+- Active issue summary counting for `OPEN` and `REVIEWING` only.
+- Work-detail refresh after successful Issue mutations.
+- Duplicate mutation protection through controller busy state.
+- Removal of duplicate experimental Issue runtime paths.
+
+Repository evidence confirms that FE-08 is implemented and ready for controlled runtime validation.
+
+Repository evidence does not replace actual environment evidence.
+FE-08 must not be locked as Completed until the Run Evidence Gate passes.
 
 ## Issue Count Definition
 
@@ -77,6 +94,8 @@ Cancel issue            → issueCount -1
 - Resolve reloads both surfaces.
 - Summary count decreases after `RESOLVED`.
 
+Repository Evidence: PRESENT
+Run Evidence: REQUIRED
 Status: PENDING_RUN
 
 ---
@@ -105,6 +124,8 @@ Status: PENDING_RUN
 - Item type and color may be derived from the selected Count Line.
 - Refresh preserves the linkage.
 
+Repository Evidence: PRESENT
+Run Evidence: REQUIRED
 Status: PENDING_RUN
 
 ---
@@ -122,6 +143,8 @@ Status: PENDING_RUN
 - No Issue is created or updated with inconsistent links.
 - Workspace data remains unchanged.
 
+Repository Evidence: PRESENT
+Run Evidence: REQUIRED
 Status: PENDING_RUN
 
 ---
@@ -144,6 +167,8 @@ Status: PENDING_RUN
 - Invalid cross-Bag linkage is blocked.
 - Persistence survives refresh.
 
+Repository Evidence: PRESENT
+Run Evidence: REQUIRED
 Status: PENDING_RUN
 
 ---
@@ -166,6 +191,8 @@ Status: PENDING_RUN
 - Active issue summary count decreases.
 - Refresh preserves `CANCELLED`.
 
+Repository Evidence: PRESENT
+Run Evidence: REQUIRED
 Status: PENDING_RUN
 
 ---
@@ -191,6 +218,8 @@ Status: PENDING_RUN
 - Backend independently rejects Create, Update, and Resolve.
 - No mutation succeeds by bypassing UI policy.
 
+Repository Evidence: PRESENT
+Run Evidence: REQUIRED
 Status: PENDING_RUN
 
 ---
@@ -218,6 +247,8 @@ Status: PENDING_RUN
 - Cross-scope Work/Bag/Count Line access is rejected.
 - No foreign data is exposed in response payloads.
 
+Repository Evidence: PRESENT
+Run Evidence: REQUIRED
 Status: PENDING_RUN
 
 ---
@@ -237,6 +268,8 @@ Status: PENDING_RUN
 - UI button remains disabled while request is active.
 - Only one Issue or one status transition is persisted.
 
+Repository Evidence: PRESENT
+Run Evidence: REQUIRED
 Status: PENDING_RUN
 
 ---
@@ -265,9 +298,67 @@ Current resolution detail remains recorded in the Issue description and `resolve
 
 A dedicated Issue Status Log / resolution fields may be introduced in a later audit-focused task if stronger immutable history is required.
 
+Repository Evidence: PRESENT
+Run Evidence: REQUIRED
 Status: PARTIALLY_VERIFIED
 
 ---
+
+## V10 — Build and Runtime Readiness
+
+### Required Commands
+
+Backend:
+
+```bash
+cd backend
+npm install
+npx prisma migrate deploy
+npx prisma generate
+npm run verify:runtime
+npm run lint
+npm run test
+```
+
+Use only scripts that exist in the repository. Missing optional scripts must be recorded as `NOT_AVAILABLE`, not treated as passed.
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run build
+npm run lint
+```
+
+### Expected
+
+- Migration deploy completes successfully.
+- Prisma client generation completes successfully.
+- Backend runtime verification passes.
+- Frontend production build passes.
+- Available lint and test gates pass.
+- No schema/runtime mismatch remains.
+
+Status: PENDING_RUN
+
+---
+
+## Controlled Run Evidence Format
+
+Each validation item must record:
+
+- Date and environment
+- Actor/workspace used
+- Work ID and relevant Bag/Count Line IDs
+- Action performed
+- Expected result
+- Actual result
+- PASS or FAIL
+- Screenshot, request/response, log, or command output reference
+- Related commit SHA
+
+Conversation confirmation alone is not completion evidence.
 
 ## Completion Contract
 
@@ -282,15 +373,44 @@ Extended validation passes when:
 - [ ] Workspace and permission isolation are verified.
 - [ ] Duplicate submissions do not create duplicate mutations.
 - [ ] Business log evidence is captured.
+- [ ] Database migration and Prisma generation pass.
+- [ ] Backend runtime verification passes.
+- [ ] Frontend build passes.
+- [ ] Available lint/test gates pass.
 
 ## Current Implementation Changes
 
-- Active `issueCount` now counts only `OPEN` and `REVIEWING`.
+- Active `issueCount` counts only `OPEN` and `REVIEWING`.
 - Successful Issue mutations notify Laundry Work runtime to reload detail and summary.
 - Issue controller blocks mutation calls while another Issue mutation is busy.
+- Bag and Count Line linkage is represented across database, backend, and frontend layers.
+- Workspace and terminal-work protection exist at backend and frontend policy boundaries.
+
+## Gate Decision
+
+Current decision:
+
+```text
+FE_08_IMPLEMENTED_PENDING_RUN_EVIDENCE
+```
+
+Allowed next action:
+
+```text
+EXECUTE_CONTROLLED_RUN_VALIDATION
+```
+
+Blocked next action:
+
+```text
+OPEN_FE_09_IMPLEMENTATION
+```
+
+FE-09 implementation may begin only after FE-08 records all required run evidence and is explicitly locked as Completed.
 
 ## Final Status
 
-Core FE-08 flow remains completed.
+Core FE-08 flow remains completed at implementation level.
 
-Extended hardening is ready for run validation.
+Extended hardening is repository-verified and ready for controlled run validation.
+FE-08 is not yet locked as Completed.
