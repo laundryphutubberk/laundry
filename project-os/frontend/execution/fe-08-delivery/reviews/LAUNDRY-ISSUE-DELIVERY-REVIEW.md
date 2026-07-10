@@ -1,74 +1,70 @@
 # FE-08 Delivery Review — Laundry Issue
 
-Status: READY_FOR_DELIVERY_REVIEW
+Status: DELIVERY_APPROVED
 Feature Task: `project-os/frontend/tasks/laundry-issue/`
 Review Authority: FE-08 Delivery
+Date: 2026-07-10
 
 ## Verdict
 
-`READY_FOR_DELIVERY_REVIEW`
+`DELIVERY_APPROVED`
 
-Laundry Issue has passed automated service and HTTP contract verification and is ready for final controlled environment evidence collection.
-
-It is not yet `DELIVERY_APPROVED` because required manual/browser evidence, frontend lint, fresh Prisma validation, and final handoff remain incomplete.
+Laundry Issue has completed the required delivery evidence, controlled environment validation, build and quality checks, final handoff, and Task Registry transition.
 
 ## Evidence Accepted
 
-- Prisma migration deploy evidence from the implementation run
-- Prisma Client generation evidence from the implementation run
+- Prisma format / validate / generate / migrate deploy
 - Backend runtime startup
+- Backend runtime and policy verification
+- Laundry Issue service verification
+- Laundry Issue HTTP verification
 - Frontend production build
+- Frontend lint
 - Create Issue
 - Bag linkage
+- Count Line linkage
+- Invalid Bag / Count Line protection
 - Issue list reload
 - Update Issue
+- Unlink / Relink
+- Cancel Issue
 - Resolve Issue
-- Refresh persistence for the core flow
+- Summary synchronization after Create / Resolve / Cancel
+- Terminal Laundry Work UI and API protection
+- Workspace isolation
+- Role / permission behavior
+- Duplicate-submit protection
+- Refresh persistence
 - Business audit logging
-- Automated service contract verification
-- Automated HTTP contract verification
-- Resort Workspace mutation rejection
-- Terminal Laundry Work mutation rejection
-- Invalid Bag / Count Line pair rejection
-- Cancelled Issue update rejection
-- Cancelled Issue resolve rejection
-- Relink and unlink service behavior
-- Count Line derivation behavior
-- Summary synchronization service call
 
-Primary automated evidence:
+## Evidence Records
 
 - `project-os/frontend/tasks/laundry-issue/validation/AUTOMATED-RUN-2026-07-10.md`
+- `project-os/frontend/tasks/laundry-issue/validation/CONTROLLED-RUN.md`
+- `project-os/frontend/tasks/laundry-issue/validation/MANUAL-RUN-CONFIRMATION-2026-07-10.md`
+- `project-os/frontend/tasks/laundry-issue/handoff/FINAL-HANDOFF.md`
 
-## Remaining Delivery Evidence
+## Delivered Contract
 
-The following evidence is still required before `DELIVERY_APPROVED`:
+- Laundry Issue API boundary
+- Laundry Issue controller orchestration
+- Laundry Issue policy boundary
+- Laundry Issue state/store boundary
+- Laundry Work Detail integration
+- Active Issue summary definition: `OPEN` and `REVIEWING`
+- Bag and Count Line linkage
+- Terminal Issue rules for `RESOLVED` and `CANCELLED`
+- Terminal Laundry Work protection for `CLOSED` and `CANCELLED`
 
-1. Fresh Prisma format / validate / generate / migrate deploy evidence after schema alignment.
-2. Frontend lint PASS.
-3. Controlled browser run for Count Line linkage.
-4. Refresh persistence for a Count Line-linked Issue.
-5. Controlled browser run for unlink / relink.
-6. Controlled browser run for Cancel Issue.
-7. Summary synchronization after Create / Resolve / Cancel against persisted data.
-8. Terminal Laundry Work UI protection controlled run.
-9. Workspace isolation against real persisted data.
-10. Role / permission controlled run.
-11. Duplicate-submit controlled run while a request remains in flight.
-12. Final Feature Task handoff.
+## Known Non-Blocking Gap
 
-## Delivery Boundary
+A dedicated immutable Issue Status Log may be introduced later if stronger audit history is required.
 
-FE-08 does not reopen implementation merely because evidence is missing.
+This gap does not block the current delivery approval.
 
-Implementation changes are required only when a controlled run reveals a verified defect or contract mismatch.
+## Handoff Decision
 
-## Promotion Rule
-
-Promote to `DELIVERY_APPROVED` only when:
-
-- All mandatory remaining evidence is recorded.
-- No unresolved delivery blocker remains.
-- `project-os/frontend/tasks/laundry-issue/STATUS.md` is promoted to `COMPLETED`.
-- `project-os/frontend/tasks/TASK-INDEX.md` is updated in the same completion transition.
-- Final handoff is written.
+```text
+LAUNDRY_ISSUE_DELIVERY_APPROVED
+NEXT_TASK_ALLOWED: LAUNDRY_IMAGE
+```
