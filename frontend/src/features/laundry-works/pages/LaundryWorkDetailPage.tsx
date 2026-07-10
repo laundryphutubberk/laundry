@@ -9,6 +9,7 @@ import { MainTaskPanel } from '../components/MainTaskPanel'
 import { WorkHeader } from '../components/WorkHeader'
 import { WorkSummaryCards } from '../components/WorkSummaryCards'
 import { WorkTimeline } from '../components/WorkTimeline'
+import { LaundryIssueRuntimePanel } from '../runtime/LaundryIssueRuntimePanel'
 import { LaundryWorkRuntimeHost, type LaundryWorkRuntimeHostRenderProps } from '../runtime/LaundryWorkRuntimeHost'
 
 const pageClassName = 'min-h-screen bg-slate-100/70'
@@ -132,7 +133,7 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
             />
 
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
-              <IssuePanel issues={projection.issues} actions={actions.issue} />
+              <LaundryIssueRuntimePanel workId={projection.work?.id} workStatus={projection.work?.currentStatus} />
               <ImagePanel images={projection.images} actions={actions.image} />
             </div>
 
