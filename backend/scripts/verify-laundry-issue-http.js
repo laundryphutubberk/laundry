@@ -1,6 +1,7 @@
 const assert = require('assert/strict');
 const http = require('http');
 const Module = require('module');
+const path = require('path');
 const jwt = require('jsonwebtoken');
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'test';
@@ -12,20 +13,12 @@ const { USER_ROLES, WORKSPACE_TYPES } = require('../src/core/actor');
 
 const createToken = (payload) => jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5m' });
 
-const clearModule = (relativePath) => {
-  const resolved = require.resolve(relativePath);
-  delete require.cache[resolved];
-};
+const srcRoot = `${path.resolve(__dirname, '../src')}${path.sep}`;
 
 const clearRuntimeModules = () => {
-  [
-    '../src/app',
-    '../src/routes',
-    '../src/routes/laundryWorks.routes',
-    '../src/routes/laundryIssues.routes',
-    '../src/controllers/laundryIssues.controller',
-    '../src/services/laundryIssues.service',
-  ].forEach(clearModule);
+  Object.keys(require.cache).forEach((resolvedPath) => {
+    if (resolvedPath.startsWith(srcRoot)) delete require.cache[resolvedPath];
+  });
 };
 
 const withMockedModules = async (mocks, callback) => {
@@ -46,7 +39,7 @@ const withMockedModules = async (mocks, callback) => {
   }
 };
 
-const requestJson = (server, { method = 'GET', path, token, body } = {}) => {
+const requestJson = (server, { method = 'GET', path: requestPath, token, body } = {}) => {
   const payload = body === undefined ? null : JSON.stringify(body);
   const address = server.address();
 
@@ -55,7 +48,7 @@ const requestJson = (server, { method = 'GET', path, token, body } = {}) => {
       {
         hostname: '127.0.0.1',
         port: address.port,
-        path,
+        path: requestPath,
         method,
         headers: {
           Accept: 'application/json',
@@ -243,7 +236,7 @@ const runCancelledIssueMutationBlockedTest = async () => {
       try {
         const updateResponse = await requestJson(server, {
           method: 'PATCH',
-          path: '/api/laundry/works/issues/300',
+          path: '/api/laundry/issues/300',
           token: laundryToken,
           body: { description: 'must not update' },
         });
@@ -252,7 +245,7 @@ const runCancelledIssueMutationBlockedTest = async () => {
 
         const resolveResponse = await requestJson(server, {
           method: 'PATCH',
-          path: '/api/laundry/works/issues/300/resolve',
+          path: '/api/laundry/issues/300/resolve',
           token: laundryToken,
           body: { resolutionNote: 'must not resolve' },
         });
