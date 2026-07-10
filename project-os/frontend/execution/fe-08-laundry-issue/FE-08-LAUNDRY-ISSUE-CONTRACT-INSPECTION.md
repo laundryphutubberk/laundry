@@ -1,15 +1,14 @@
-# FE-08 Laundry Issue — Backend Contract Inspection
+# FE-08 Laundry Issue — Contract and Implementation Status
 
-Status: BLOCKED_BY_BACKEND_CONTRACT
+Status: IMPLEMENTED_PENDING_RUN_VALIDATION
 Feature Domain: Laundry Workspace
 Mission: Laundry Issue Flow
-Phase: 1 — Backend Contract Inspection
 
 ## Objective
 
-Verify whether the backend contracts required by FE-08 Laundry Issue already exist and are safe to consume before frontend runtime wiring begins.
+Support the complete Laundry Issue flow across database, backend, frontend runtime, and UI while preserving workspace isolation and runtime boundaries.
 
-Required contracts:
+## Implemented Contract
 
 ```text
 GET   /api/laundry/works/:workId/issues
@@ -18,182 +17,123 @@ PATCH /api/laundry/issues/:issueId
 PATCH /api/laundry/issues/:issueId/resolve
 ```
 
-## Evidence Inspected
+## Database
 
-- `backend/src/routes/laundryWorks.routes.js`
-- `backend/prisma/schema.prisma`
-- `frontend/src/features/laundry-works/api/laundryWorkApi.ts`
-- `frontend/src/features/laundry-works/controllers/useLaundryWorkController.ts`
-- `frontend/src/features/laundry-works/components/IssuePanel.tsx`
-- `frontend/src/features/laundry-works/pages/LaundryWorkDetailPage.tsx`
+Implemented migration:
 
-## Backend Route Result
+- `backend/prisma/migrations/20260710_add_issue_links/migration.sql`
 
-Current Laundry Work routes expose:
-
-```text
-GET    /api/laundry/works
-GET    /api/laundry/works/:workId
-POST   /api/laundry/works
-PATCH  /api/laundry/works/:workId/status
-DELETE /api/laundry/works/:workId
-```
-
-No dedicated Laundry Issue list, create, update, or resolve route is currently present in the inspected route file.
-
-## Schema Result
-
-The database schema already contains:
-
-- `IssueType`
-  - `DAMAGED`
-  - `MISSING`
-  - `COUNT_MISMATCH`
-  - `RETURN_MISMATCH`
-  - `OTHER`
-- `IssueStatus`
-  - `OPEN`
-  - `REVIEWING`
-  - `RESOLVED`
-  - `CANCELLED`
-- `IssueReport`
-  - `workId`
-  - `resortId`
-  - `itemTypeId?`
-  - `colorGroup?`
-  - `issueType`
-  - `quantity`
-  - `description?`
-  - `status`
-  - `reportedById?`
-  - `reportedAt`
-  - `resolvedAt?`
-
-## Contract Gap
-
-The FE-08 handoff expects issue links at Work / Bag / Count Line level.
-
-The current `IssueReport` schema has:
-
-- `workId`
-- optional `itemTypeId`
-- optional `colorGroup`
-
-The inspected schema does not currently expose:
+The migration adds optional Issue links:
 
 - `bagId`
 - `countLineId`
 
-Therefore the requested minimum issue model from the handoff is not fully supported by the current schema.
+Both links use `ON DELETE SET NULL` and have dedicated indexes.
 
-## Existing Frontend Readiness
+## Backend
 
-The frontend already has partial presentation and runtime placeholders:
+Implemented layers:
 
-- Work detail projection carries `issues` from the Laundry Work detail response.
-- `IssuePanel` can render issue rows and loading/error/empty states.
-- Laundry Work controller exposes a placeholder `createIssue` action.
-- The component does not call API or Store directly.
+- `backend/src/validators/laundryIssues.validator.js`
+- `backend/src/repositories/laundryIssues.repository.js`
+- `backend/src/services/laundryIssues.service.js`
+- `backend/src/controllers/laundryIssues.controller.js`
+- `backend/src/routes/laundryIssues.routes.js`
+- `backend/src/routes/index.js`
 
-This preserves the required frontend boundary:
+Backend behavior includes:
 
-```text
-UI
-↓
-Controller
-↓
-Projection
-↓
-Store
-↓
-API
-↓
-Backend
-```
+- List issues by Laundry Work
+- Create issue linked to Work, Bag, or Count Line
+- Update issue
+- Resolve issue
+- Validate Bag and Count Line ownership against the selected Laundry Work and resort
+- Prevent mutation on CLOSED or CANCELLED work
+- Maintain `LaundryWork.issueCount`
+- Emit business logs for create, update, and resolve
 
-## Frontend Capability Evidence
+## Frontend
 
-`laundryWorkApi.ts` currently declares:
+Implemented layers:
 
-```text
-issue.list    = false
-issue.create  = false
-issue.resolve = false
-```
+- `frontend/src/features/laundry-works/api/laundryIssueApi.ts`
+- `frontend/src/features/laundry-works/stores/laundryIssue.store.ts`
+- `frontend/src/features/laundry-works/policies/laundryIssue.policy.ts`
+- `frontend/src/features/laundry-works/controllers/useLaundryIssueController.ts`
+- `frontend/src/features/laundry-works/runtime/LaundryIssueRuntimePanel.tsx`
+- `frontend/src/features/laundry-works/pages/LaundryWorkDetailPage.tsx`
 
-No issue mutation API methods are currently implemented.
-
-## Decision
-
-Do not implement FE-08 Laundry Issue runtime or UI mutation wiring yet.
-
-Backend-first contract establishment is required before frontend implementation.
-
-## Required Backend Decisions
-
-Before FE-08 proceeds, confirm:
-
-1. Whether an Issue may link to:
-   - Work only
-   - Work + Bag
-   - Work + Count Line
-2. Whether `bagId` and `countLineId` must be added to `IssueReport`.
-3. Exact create/update/resolve request bodies.
-4. Exact response DTO shape.
-5. Permission rules for Owner, Manager, Staff, and Resort users.
-6. Workspace/resort scoping rules.
-7. Whether resolving an issue creates:
-   - status/audit log
-   - business log
-   - inventory movement
-8. Whether issue quantity updates `LaundryWork.issueCount` or Count Line `issueQuantity` transactionally.
-
-## Required Backend Contract
-
-Recommended contract surface:
+Frontend flow:
 
 ```text
-GET   /api/laundry/works/:workId/issues
-POST  /api/laundry/works/:workId/issues
-PATCH /api/laundry/issues/:issueId
-PATCH /api/laundry/issues/:issueId/resolve
+LaundryWorkDetailPage
+↓
+LaundryIssueRuntimePanel
+↓
+useLaundryIssueController
+↓
+Laundry Issue Policy
+↓
+Laundry Issue Store
+↓
+laundryIssueApi
+↓
+Backend Issue Contract
 ```
 
-Minimum create payload candidate:
+## Runtime Capabilities
 
-```json
-{
-  "bagId": null,
-  "countLineId": null,
-  "itemTypeId": null,
-  "colorGroup": null,
-  "issueType": "DAMAGED",
-  "quantity": 1,
-  "description": ""
-}
+The user can:
+
+- Open a Laundry Work
+- Create an Issue
+- Link the Issue to Work / Bag / Count Line
+- View the Issue list
+- Update an Issue
+- Resolve an Issue
+- Refresh and reload persisted Issue data
+
+## Architecture Verification
+
+- Presentation surfaces do not call backend APIs directly.
+- Business mutations flow through the Issue controller.
+- Runtime state is isolated in the Issue store.
+- Action permission is derived from Issue policy.
+- Backend validates workspace/resort scope.
+- Backend validates Bag and Count Line ownership.
+- Mutations preserve business logging.
+- Duplicate experimental Issue runtime files were removed to keep one authoritative runtime path.
+
+## Remaining Validation
+
+Actual environment validation is still required:
+
+```bash
+cd backend
+npm install
+npx prisma migrate deploy
+npm run lint        # if available
+npm run test        # if available
+
+cd ../frontend
+npm install
+npm run build
+npm run lint
 ```
 
-This payload is a contract candidate only and must not be treated as implemented until backend approval and implementation are complete.
+## Known Blocker
 
-## Blocker
+The current assistant execution environment cannot resolve `github.com`, so local checkout and build execution cannot be completed here.
 
-FE-08 Laundry Issue is blocked because:
+Prisma schema synchronization should be verified after migration deployment so future Prisma schema generation does not drift from the applied `bagId` and `countLineId` columns.
 
-- Dedicated issue endpoints are not present.
-- Frontend capability is explicitly disabled.
-- Bag/Count Line issue linkage is not fully represented in the inspected schema.
+## Completion Assessment
 
-## Next Safe Step
+Cross-layer implementation is complete at repository level.
 
-Backend should establish and verify the Issue contract first.
+Final FE-08 completion remains pending:
 
-After backend completion, FE-08 may proceed in this order:
-
-1. `laundryIssueApi`
-2. Issue DTO normalization / Projection
-3. Issue Policy
-4. Issue Store if durable shared state is required
-5. Controller orchestration
-6. Issue Entry Panel
-7. Issue List and Summary
-8. Runtime / Workspace / Refresh / Regression verification
+- Migration deployment evidence
+- Frontend build/lint evidence
+- Backend runtime/API verification
+- Refresh persistence and workspace isolation regression evidence
