@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 
+import { getAuthSession } from '../../auth/authSession'
+
 export type LaundryWorkspaceShellProps = {
   children: ReactNode
 }
@@ -16,6 +18,14 @@ const navItems = [
   { label: 'แจ้งปัญหา', icon: '!' },
   { label: 'ตั้งค่า', icon: '⚙' },
 ]
+
+const roleLabels: Record<string, string> = {
+  LAUNDRY_OWNER: 'เจ้าของโรงซัก',
+  LAUNDRY_MANAGER: 'ผู้จัดการโรงซัก',
+  LAUNDRY_STAFF: 'พนักงานโรงซัก',
+  RESORT_OWNER: 'เจ้าของรีสอร์ต',
+  RESORT_STAFF: 'พนักงานรีสอร์ต',
+}
 
 function LaundryBrandMark() {
   return (
@@ -43,6 +53,12 @@ function iconClassName(active?: boolean) {
 }
 
 export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) {
+  const session = getAuthSession()
+  const displayName = session?.user?.displayName?.trim() || session?.user?.email || 'ผู้ใช้งาน'
+  const role = session?.actor?.role || session?.user?.role || ''
+  const roleLabel = roleLabels[role] || role || 'ผู้ใช้งานระบบ'
+  const avatarLabel = Array.from(displayName)[0]?.toUpperCase() || 'ผ'
+
   return (
     <div className="min-h-screen bg-slate-100/70 text-[16px] lg:pl-[280px]">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] overflow-y-auto bg-gradient-to-b from-blue-950 via-blue-950 to-slate-950 text-white shadow-2xl shadow-blue-950/20 lg:block">
@@ -87,10 +103,12 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
             </button>
             <span className="mx-1 h-8 w-px bg-white/15" aria-hidden="true" />
             <div className="flex items-center gap-3 pl-1">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 text-lg font-black text-white shadow-sm">ส</div>
-              <div className="text-right">
-                <p className="text-base font-black leading-tight text-white">สมชาย</p>
-                <p className="mt-0.5 text-xs font-semibold text-blue-100/75">ผู้จัดการโรงซัก</p>
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 text-lg font-black text-white shadow-sm">
+                {avatarLabel}
+              </div>
+              <div className="max-w-52 text-right">
+                <p className="truncate text-base font-black leading-tight text-white">{displayName}</p>
+                <p className="mt-0.5 truncate text-xs font-semibold text-blue-100/75">{roleLabel}</p>
               </div>
               <span className="text-base text-blue-100/75">⌄</span>
             </div>
