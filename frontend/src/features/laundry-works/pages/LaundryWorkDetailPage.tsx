@@ -10,6 +10,7 @@ import { MutationFeedbackBanner } from '../components/MutationFeedbackBanner'
 import { WorkHeader } from '../components/WorkHeader'
 import { WorkSummaryCards } from '../components/WorkSummaryCards'
 import { WorkTimeline } from '../components/WorkTimeline'
+import { LaundryImageRuntimePanel } from '../runtime/LaundryImageRuntimePanel'
 import { LaundryIssueRuntimePanel } from '../runtime/LaundryIssueRuntimePanel'
 import { LaundryWorkRuntimeHost, type LaundryWorkRuntimeHostRenderProps } from '../runtime/LaundryWorkRuntimeHost'
 
@@ -142,7 +143,7 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
                 bags={projection.bags}
                 countLines={projection.countRows}
               />
-              <ImagePanel images={projection.images} actions={actions.image} />
+              <LaundryImageRuntimePanel workId={projection.work?.id} />
             </div>
 
             <HistoryPanel events={projection.history} />
