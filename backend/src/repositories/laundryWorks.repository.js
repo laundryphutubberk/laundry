@@ -81,6 +81,7 @@ const findLaundryWorkByIdForUpdate = async ({ workId, where, client } = {}) => {
       ...where,
       id: Number(workId),
     },
+    include: buildWorkInclude(),
   });
 };
 
@@ -111,6 +112,19 @@ const updateLaundryWorkStatus = async ({ workId, where, expectedStatus, toStatus
   });
 };
 
+const deleteLaundryWork = async ({ workId, where, client } = {}) => {
+  const db = getClient(client);
+  const deleteResult = await db.laundryWork.deleteMany({
+    where: {
+      ...where,
+      id: Number(workId),
+      currentStatus: 'DRAFT',
+    },
+  });
+
+  return deleteResult.count > 0;
+};
+
 const createWorkStatusLog = async ({ data, client } = {}) => {
   const db = getClient(client);
 
@@ -127,6 +141,7 @@ module.exports = {
   createLaundryWork,
   findLaundryWorkByIdForUpdate,
   updateLaundryWorkStatus,
+  deleteLaundryWork,
   createWorkStatusLog,
   transaction,
 };
