@@ -1,7 +1,22 @@
 import type { ApiResult, IssueReportDTO, LaundryWorkRequestMeta } from './laundryWorkApi'
 
+export type LaundryIssueDTO = IssueReportDTO & {
+  workId?: string | number
+  resortId?: string | number
+  bagId?: string | number | null
+  countLineId?: string | number | null
+  itemType?: {
+    id?: string | number
+    name?: string
+    category?: string | null
+  } | null
+  resolvedAt?: string | null
+}
+
 export type CreateLaundryIssueInput = {
   workId?: string | number
+  bagId?: string | number
+  countLineId?: string | number
   itemTypeId?: string | number
   colorGroup?: string
   issueType: 'DAMAGED' | 'MISSING' | 'COUNT_MISMATCH' | 'RETURN_MISMATCH' | 'OTHER'
@@ -12,6 +27,8 @@ export type CreateLaundryIssueInput = {
 
 export type UpdateLaundryIssueInput = Partial<Omit<CreateLaundryIssueInput, 'workId' | 'meta'>> & {
   issueId?: string | number
+  bagId?: string | number | null
+  countLineId?: string | number | null
   status?: 'OPEN' | 'REVIEWING' | 'CANCELLED'
   meta: LaundryWorkRequestMeta
 }
@@ -87,22 +104,22 @@ export const laundryIssueApi = {
   } as const,
 
   list({ workId, meta }: { workId?: string | number; meta: LaundryWorkRequestMeta }) {
-    if (!workId) return Promise.resolve({ ok: false, error: { code: 'MISSING_WORK_ID', message: 'Missing Laundry Work id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<IssueReportDTO[]>)
-    return request<IssueReportDTO[]>(`/laundry/works/${workId}/issues`, meta)
+    if (!workId) return Promise.resolve({ ok: false, error: { code: 'MISSING_WORK_ID', message: 'Missing Laundry Work id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<LaundryIssueDTO[]>)
+    return request<LaundryIssueDTO[]>(`/laundry/works/${workId}/issues`, meta)
   },
 
   create({ workId, meta, ...input }: CreateLaundryIssueInput) {
-    if (!workId) return Promise.resolve({ ok: false, error: { code: 'MISSING_WORK_ID', message: 'Missing Laundry Work id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<IssueReportDTO>)
-    return request<IssueReportDTO>(`/laundry/works/${workId}/issues`, meta, { method: 'POST', body: JSON.stringify(input) })
+    if (!workId) return Promise.resolve({ ok: false, error: { code: 'MISSING_WORK_ID', message: 'Missing Laundry Work id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<LaundryIssueDTO>)
+    return request<LaundryIssueDTO>(`/laundry/works/${workId}/issues`, meta, { method: 'POST', body: JSON.stringify(input) })
   },
 
   update({ issueId, meta, ...input }: UpdateLaundryIssueInput) {
-    if (!issueId) return Promise.resolve({ ok: false, error: { code: 'MISSING_ISSUE_ID', message: 'Missing Laundry Issue id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<IssueReportDTO>)
-    return request<IssueReportDTO>(`/laundry/issues/${issueId}`, meta, { method: 'PATCH', body: JSON.stringify(input) })
+    if (!issueId) return Promise.resolve({ ok: false, error: { code: 'MISSING_ISSUE_ID', message: 'Missing Laundry Issue id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<LaundryIssueDTO>)
+    return request<LaundryIssueDTO>(`/laundry/issues/${issueId}`, meta, { method: 'PATCH', body: JSON.stringify(input) })
   },
 
   resolve({ issueId, meta, resolutionNote }: ResolveLaundryIssueInput) {
-    if (!issueId) return Promise.resolve({ ok: false, error: { code: 'MISSING_ISSUE_ID', message: 'Missing Laundry Issue id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<IssueReportDTO>)
-    return request<IssueReportDTO>(`/laundry/issues/${issueId}/resolve`, meta, { method: 'PATCH', body: JSON.stringify({ resolutionNote }) })
+    if (!issueId) return Promise.resolve({ ok: false, error: { code: 'MISSING_ISSUE_ID', message: 'Missing Laundry Issue id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<LaundryIssueDTO>)
+    return request<LaundryIssueDTO>(`/laundry/issues/${issueId}/resolve`, meta, { method: 'PATCH', body: JSON.stringify({ resolutionNote }) })
   },
 }
