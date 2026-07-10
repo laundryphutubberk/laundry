@@ -4,6 +4,10 @@ export type BagPanelBag = {
   id: string | number
   bagNo: string
   status: string
+  statusLabel?: string
+  statusTone?: string
+  statusDescription?: string
+  statusBadgeClassName?: string
   note?: string | null
   receivedAt?: string | null
 }
@@ -30,6 +34,7 @@ const PANEL_TITLE_ID = 'bag-panel-title'
 const BAG_NO_INPUT_ID = 'bag-panel-bag-no'
 const BAG_NOTE_INPUT_ID = 'bag-panel-note'
 const BAG_FORM_HELP_ID = 'bag-panel-form-help'
+const fallbackBadgeClassName = 'border-slate-200 bg-slate-50 text-slate-700'
 
 function formatDate(value?: string | null) {
   if (!value) return '-'
@@ -121,6 +126,9 @@ export function BagPanel({ bags = [], actions, loading = false, error = null, st
             {bags.map((bag, index) => {
               const displayName = bagDisplayName(bag, index)
               const formattedReceivedAt = formatDate(bag.receivedAt)
+              const statusLabel = bag.statusLabel || bag.status || 'ไม่ระบุสถานะ'
+              const statusDescription = bag.statusDescription || `สถานะ ${statusLabel}`
+              const badgeClassName = bag.statusBadgeClassName || fallbackBadgeClassName
 
               return (
                 <li key={bag.id}>
@@ -130,9 +138,12 @@ export function BagPanel({ bags = [], actions, loading = false, error = null, st
                         <h3 className="truncate text-base font-black text-slate-950">{displayName}</h3>
                         <p className="mt-1 truncate text-xs font-semibold text-slate-400">รหัสระบบ: {bag.bagNo}</p>
                       </div>
-                      <span className="w-fit shrink-0 rounded-xl bg-blue-100 px-3 py-1 text-xs font-black text-blue-700">
+                      <span
+                        className={`w-fit shrink-0 rounded-xl border px-3 py-1 text-xs font-black ${badgeClassName}`}
+                        title={statusDescription}
+                      >
                         <span className="sr-only">สถานะ </span>
-                        {bag.status}
+                        {statusLabel}
                       </span>
                     </div>
                     <div className="mt-2 grid gap-1 text-sm font-medium text-slate-500 sm:grid-cols-2">
