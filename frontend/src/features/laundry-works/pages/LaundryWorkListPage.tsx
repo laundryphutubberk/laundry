@@ -102,16 +102,11 @@ export function LaundryWorkListPage() {
               <h1 className="text-3xl font-black text-slate-950">Laundry Work</h1>
               <p className="mt-1 text-sm font-medium text-slate-500">รายการงานซักทั้งหมดใน workspace ที่ actor มีสิทธิ์เห็น</p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">
-                {sessionContext.workspaceType || 'No workspace'}{sessionContext.resortId ? ` · Resort ${sessionContext.resortId}` : ''}
-              </div>
-              {canCreate ? (
-                <Link to="/workspace/laundry/works/new" className="rounded-2xl bg-blue-700 px-4 py-2 text-center text-sm font-black text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800">
-                  + สร้างงานซัก
-                </Link>
-              ) : null}
-            </div>
+            {canCreate ? (
+              <Link to="/workspace/laundry/works/new" className="rounded-2xl bg-blue-700 px-4 py-2 text-center text-sm font-black text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800">
+                + สร้างงานซัก
+              </Link>
+            ) : null}
           </div>
         </section>
 
