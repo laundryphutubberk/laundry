@@ -59,6 +59,8 @@ function statusLabel(status?: string) {
   return labels[status || ''] || status || 'ไม่ระบุสถานะ'
 }
 
+const isDraftWork = (work?: LaundryWorkDTO | null) => work?.currentStatus === 'DRAFT'
+
 export function LaundryWorkListPage() {
   const sessionContext = useMemo(() => getWorkspaceContext(), [])
   const [items, setItems] = useState<LaundryWorkDTO[]>([])
@@ -68,6 +70,7 @@ export function LaundryWorkListPage() {
   const [pendingRemoval, setPendingRemoval] = useState<LaundryWorkDTO | null>(null)
   const [removalReason, setRemovalReason] = useState('')
   const [removing, setRemoving] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const canCreate = sessionContext.workspaceType === 'LAUNDRY'
   const canManage = ['LAUNDRY_OWNER', 'LAUNDRY_MANAGER'].includes(sessionContext.actorRole || '')
 
@@ -95,6 +98,13 @@ export function LaundryWorkListPage() {
     void loadItems()
   }, [loadItems])
 
+  useEffect(() => {
+    if (!successMessage) return
+
+    const timeoutId = window.setTimeout(() => setSuccessMessage(null), 3000)
+    return () => window.clearTimeout(timeoutId)
+  }, [successMessage])
+
   const closeRemovalDialog = () => {
     if (removing) return
     setPendingRemoval(null)
@@ -107,6 +117,7 @@ export function LaundryWorkListPage() {
     const meta = createRequestMeta(sessionContext, 'deleteOrCancelLaundryWork')
     setRemoving(true)
     setError(null)
+    setSuccessMessage(null)
     setRequestId(meta.requestId)
 
     const result = await removeLaundryWork({
@@ -123,11 +134,14 @@ export function LaundryWorkListPage() {
       return
     }
 
+    setSuccessMessage(result.data.action === 'DELETED' ? `ลบงาน ${pendingRemoval.workNo} สำเร็จ` : `ยกเลิกงาน ${pendingRemoval.workNo} เรียบร้อย`)
     setPendingRemoval(null)
     setRemovalReason('')
     await loadItems()
     setRemoving(false)
   }
+
+  const pendingIsDraft = isDraftWork(pendingRemoval)
 
   return (
     <div className="min-h-screen bg-slate-100/70">
@@ -146,6 +160,15 @@ export function LaundryWorkListPage() {
             ) : null}
           </div>
         </section>
+
+        {successMessage ? (
+          <section className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-emerald-800 shadow-sm" role="status">
+            <p className="text-sm font-bold">✓ {successMessage}</p>
+            <button type="button" onClick={() => setSuccessMessage(null)} className="text-sm font-black text-emerald-700" aria-label="ปิดข้อความสำเร็จ">
+              ×
+            </button>
+          </section>
+        ) : null}
 
         {loading ? (
           <section className="rounded-[28px] border border-white/70 bg-white p-6 shadow-sm">
@@ -194,7 +217,7 @@ export function LaundryWorkListPage() {
                       onClick={() => setPendingRemoval(work)}
                       className="justify-self-start rounded-xl border border-red-100 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 lg:justify-self-end"
                     >
-                      {work.currentStatus === 'DRAFT' ? 'ลบ/ยกเลิก' : 'ยกเลิก'}
+                      {isDraftWork(work) ? 'ลบงาน' : 'ยกเลิกงาน'}
                     </button>
                   ) : null}
                 </div>
@@ -205,13 +228,15 @@ export function LaundryWorkListPage() {
       </main>
 
       {pendingRemoval ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4" role="dialog" aria-modal="true" aria-labelledby="remove-work-title">
           <section className="w-full max-w-lg rounded-[28px] bg-white p-6 shadow-2xl">
-            <h2 className="text-xl font-black text-slate-950">
-              {pendingRemoval.currentStatus === 'DRAFT' ? 'ลบหรือยกเลิกงาน' : 'ยกเลิกงาน'} {pendingRemoval.workNo}
+            <h2 id="remove-work-title" className="text-xl font-black text-slate-950">
+              {pendingIsDraft ? 'ลบงาน' : 'ยกเลิกงาน'} {pendingRemoval.workNo}
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              งาน DRAFT ที่ยังไม่มีข้อมูลลูกจะถูกลบถาวร ส่วนงานที่เริ่มดำเนินการแล้วจะเปลี่ยนสถานะเป็น CANCELLED และเก็บประวัติไว้
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {pendingIsDraft
+                ? 'งานนี้ยังอยู่ในสถานะร่าง หากยังไม่มีข้อมูลการดำเนินงาน ระบบจะลบออกถาวร หากมีข้อมูลที่ต้องเก็บเป็นประวัติ Backend จะยกเลิกงานอย่างปลอดภัยแทน'
+                : 'งานนี้เริ่มดำเนินการแล้ว ระบบจะเปลี่ยนสถานะเป็น CANCELLED และเก็บประวัติการทำงานไว้'}
             </p>
             <label className="mt-5 block text-sm font-bold text-slate-700">
               เหตุผล
@@ -220,7 +245,7 @@ export function LaundryWorkListPage() {
                 onChange={(event) => setRemovalReason(event.target.value)}
                 disabled={removing}
                 rows={4}
-                placeholder="เช่น ผู้ใช้กรอกรายการผิด"
+                placeholder={pendingIsDraft ? 'เช่น สร้างรายการซ้ำหรือกรอกข้อมูลผิด' : 'เช่น ลูกค้ายกเลิกงานหรือรับรายการผิด'}
                 className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               />
             </label>
@@ -234,7 +259,7 @@ export function LaundryWorkListPage() {
                 disabled={removing || !removalReason.trim()}
                 className="rounded-xl bg-red-700 px-4 py-2 text-sm font-black text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {removing ? 'กำลังดำเนินการ...' : 'ยืนยัน'}
+                {removing ? 'กำลังดำเนินการ...' : pendingIsDraft ? 'ยืนยันลบงาน' : 'ยืนยันยกเลิกงาน'}
               </button>
             </div>
           </section>
