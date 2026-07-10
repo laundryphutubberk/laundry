@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getWorkspaceContext } from '../../auth/authSession'
 import { laundryWorkApi, type ApiFailure, type LaundryWorkDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
 import { removeLaundryWork } from '../api/laundryWorkManagementApi'
+import { presentLaundryStatus } from '../presenters/laundryStatus.presenter'
 
 const createRequestId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -39,24 +40,6 @@ function formatDate(value?: string | null) {
     month: 'short',
     day: 'numeric',
   })
-}
-
-function statusLabel(status?: string) {
-  const labels: Record<string, string> = {
-    DRAFT: 'ร่างงาน',
-    BAG_RECEIVED: 'รับถุงแล้ว',
-    FACTORY_RECEIVED: 'โรงซักรับแล้ว',
-    BAG_OPENED: 'เปิดถุงแล้ว',
-    ITEM_COUNTED: 'นับชิ้นแล้ว',
-    TYPE_SORTED: 'แยกประเภทแล้ว',
-    COLOR_SORTED: 'แยกสีแล้ว',
-    DATA_RECORDED: 'บันทึกข้อมูลแล้ว',
-    RETURNED: 'ส่งกลับแล้ว',
-    CLOSED: 'ปิดงานแล้ว',
-    CANCELLED: 'ยกเลิก',
-  }
-
-  return labels[status || ''] || status || 'ไม่ระบุสถานะ'
 }
 
 const isDraftWork = (work?: LaundryWorkDTO | null) => work?.currentStatus === 'DRAFT'
@@ -202,26 +185,38 @@ export function LaundryWorkListPage() {
             </div>
 
             <div className="divide-y divide-slate-100">
-              {items.map((work) => (
-                <div key={work.id} className={`grid gap-3 px-5 py-4 transition hover:bg-blue-50/70 lg:items-center ${canManage ? 'lg:grid-cols-[minmax(0,1.3fr)_160px_140px_140px_100px]' : 'lg:grid-cols-[minmax(0,1.3fr)_160px_140px_140px]'}`}>
-                  <Link to={`/workspace/laundry/works/${work.id}`} className="min-w-0">
-                    <p className="truncate text-base font-black text-slate-950">{work.workNo}</p>
-                    <p className="mt-1 truncate text-sm font-medium text-slate-500">{work.resortName}</p>
-                  </Link>
-                  <p className="text-sm font-bold text-blue-700">{statusLabel(work.currentStatus)}</p>
-                  <p className="text-sm font-semibold text-slate-600">{work.bagCount}</p>
-                  <p className="text-sm font-semibold text-slate-500">{formatDate(work.updatedAt)}</p>
-                  {canManage && !['CLOSED', 'CANCELLED'].includes(work.currentStatus) ? (
-                    <button
-                      type="button"
-                      onClick={() => setPendingRemoval(work)}
-                      className="justify-self-start rounded-xl border border-red-100 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 lg:justify-self-end"
-                    >
-                      {isDraftWork(work) ? 'ลบงาน' : 'ยกเลิกงาน'}
-                    </button>
-                  ) : null}
-                </div>
-              ))}
+              {items.map((work) => {
+                const statusPresentation = presentLaundryStatus(work.currentStatus)
+
+                return (
+                  <div key={work.id} className={`grid gap-3 px-5 py-4 transition hover:bg-blue-50/70 lg:items-center ${canManage ? 'lg:grid-cols-[minmax(0,1.3fr)_160px_140px_140px_100px]' : 'lg:grid-cols-[minmax(0,1.3fr)_160px_140px_140px]'}`}>
+                    <Link to={`/workspace/laundry/works/${work.id}`} className="min-w-0">
+                      <p className="truncate text-base font-black text-slate-950">{work.workNo}</p>
+                      <p className="mt-1 truncate text-sm font-medium text-slate-500">{work.resortName}</p>
+                    </Link>
+                    <div>
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusPresentation.badgeClassName}`}
+                        title={statusPresentation.description}
+                      >
+                        <span className="sr-only">สถานะงาน </span>
+                        {statusPresentation.label}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-600">{work.bagCount}</p>
+                    <p className="text-sm font-semibold text-slate-500">{formatDate(work.updatedAt)}</p>
+                    {canManage && !['CLOSED', 'CANCELLED'].includes(statusPresentation.code) ? (
+                      <button
+                        type="button"
+                        onClick={() => setPendingRemoval(work)}
+                        className="justify-self-start rounded-xl border border-red-100 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 lg:justify-self-end"
+                      >
+                        {isDraftWork(work) ? 'ลบงาน' : 'ยกเลิกงาน'}
+                      </button>
+                    ) : null}
+                  </div>
+                )
+              })}
             </div>
           </section>
         ) : null}
