@@ -19,24 +19,27 @@ const issueInclude = {
   },
 };
 
-const getIssueLinks = async ({ issueIds, client } = {}) => {
-  if (!issueIds?.length) return new Map();
+const getIssueLink = async ({ issueId, client } = {}) => {
   const db = getClient(client);
   const rows = await db.$queryRaw`
     SELECT "id", "bagId", "countLineId"
     FROM "IssueReport"
-    WHERE "id" = ANY(${issueIds.map(Number)}::int[])
+    WHERE "id" = ${Number(issueId)}
+    LIMIT 1
   `;
-  return new Map(rows.map((row) => [Number(row.id), {
+  const row = rows[0];
+  return row ? {
     bagId: row.bagId,
     countLineId: row.countLineId,
-  }]));
+  } : {};
 };
 
 const attachIssueLinks = async (issues, client) => {
   const items = Array.isArray(issues) ? issues : [issues];
-  const links = await getIssueLinks({ issueIds: items.map((issue) => issue.id), client });
-  const mapped = items.map((issue) => ({ ...issue, ...(links.get(Number(issue.id)) || {}) }));
+  const mapped = await Promise.all(items.map(async (issue) => ({
+    ...issue,
+    ...(await getIssueLink({ issueId: issue.id, client })),
+  })));
   return Array.isArray(issues) ? mapped : mapped[0];
 };
 
