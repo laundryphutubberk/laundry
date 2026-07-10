@@ -1,5 +1,6 @@
 import type { ApiFailure, LaundryWorkDetailDTO } from '../api/laundryWorkApi'
 import type { LaundryWorkPolicyAction, LaundryWorkPolicyActionModel } from '../policies/laundryWork.policy'
+import { presentLaundryStatus } from '../presenters/laundryStatus.presenter'
 
 export type LaundryWorkDetailProjectionInput = {
   detail?: LaundryWorkDetailDTO | null
@@ -7,20 +8,6 @@ export type LaundryWorkDetailProjectionInput = {
   loading?: boolean
   error?: ApiFailure['error'] | null
   requestId?: string
-}
-
-const statusLabels: Record<string, string> = {
-  DRAFT: 'ร่างงาน',
-  BAG_RECEIVED: 'รับถุงแล้ว',
-  FACTORY_RECEIVED: 'โรงซักรับแล้ว',
-  BAG_OPENED: 'เปิดถุงแล้ว',
-  ITEM_COUNTED: 'นับชิ้นแล้ว',
-  TYPE_SORTED: 'แยกประเภทแล้ว',
-  COLOR_SORTED: 'แยกสีแล้ว',
-  DATA_RECORDED: 'บันทึกข้อมูลแล้ว',
-  RETURNED: 'ส่งกลับแล้ว',
-  CLOSED: 'ปิดงานแล้ว',
-  CANCELLED: 'ยกเลิก',
 }
 
 const workflowSteps = [
@@ -54,26 +41,30 @@ const toNumber = (value: unknown) => {
 const buildTimeline = (currentStatus?: string) => {
   const currentIndex = workflowSteps.findIndex((step) => step.backendStatus === currentStatus)
 
-  return workflowSteps.map((step, index) => ({
-    id: step.key,
-    key: step.key,
-    label: step.label,
-    state: currentStatus === 'CANCELLED'
-      ? 'cancelled'
-      : currentIndex === -1
-        ? 'pending'
-        : index < currentIndex
-          ? 'completed'
-          : index === currentIndex
-            ? 'current'
-            : 'pending',
-    description: statusLabels[step.backendStatus] || step.backendStatus,
-  }))
+  return workflowSteps.map((step, index) => {
+    const stepStatus = presentLaundryStatus(step.backendStatus)
+
+    return {
+      id: step.key,
+      key: step.key,
+      label: step.label,
+      state: currentStatus === 'CANCELLED'
+        ? 'cancelled'
+        : currentIndex === -1
+          ? 'pending'
+          : index < currentIndex
+            ? 'completed'
+            : index === currentIndex
+              ? 'current'
+              : 'pending',
+      description: stepStatus.description,
+    }
+  })
 }
 
 const buildMainTaskPanel = (currentStatus?: string, continueAction?: LaundryWorkPolicyAction, errorMessage?: string | null) => {
   const currentStep = workflowSteps.find((step) => step.backendStatus === currentStatus)
-  const statusLabel = statusLabels[currentStatus || ''] || currentStatus
+  const currentPresentation = presentLaundryStatus(currentStatus)
 
   if (errorMessage) {
     return {
@@ -88,8 +79,8 @@ const buildMainTaskPanel = (currentStatus?: string, continueAction?: LaundryWork
   if (!currentStep) {
     return {
       activeStepKey: undefined,
-      title: statusLabel ? `สถานะปัจจุบัน: ${statusLabel}` : 'ยังไม่มีขั้นตอนปัจจุบัน',
-      description: 'ระบบยังไม่มีข้อมูลขั้นตอนหลักสำหรับงานนี้',
+      title: `สถานะปัจจุบัน: ${currentPresentation.label}`,
+      description: currentPresentation.description,
       mode: 'read-only' as const,
     }
   }
@@ -98,7 +89,7 @@ const buildMainTaskPanel = (currentStatus?: string, continueAction?: LaundryWork
     return {
       activeStepKey: currentStep.key,
       title: currentStep.label,
-      description: `ขั้นตอนปัจจุบันของงานนี้คือ ${statusLabels[currentStep.backendStatus] || currentStep.backendStatus}`,
+      description: currentPresentation.description,
       mode: continueAction.message ? 'blocked' as const : 'read-only' as const,
       blockerReason: continueAction.message,
     }
@@ -107,7 +98,7 @@ const buildMainTaskPanel = (currentStatus?: string, continueAction?: LaundryWork
   return {
     activeStepKey: currentStep.key,
     title: currentStep.label,
-    description: `ขั้นตอนปัจจุบันของงานนี้คือ ${statusLabels[currentStep.backendStatus] || currentStep.backendStatus}`,
+    description: currentPresentation.description,
     mode: 'interactive' as const,
   }
 }
@@ -122,7 +113,7 @@ export function createLaundryWorkDetailProjection({
   const work = detail?.work
   const bags = detail?.bags || []
   const bagNoById = new Map(bags.map((bag) => [String(bag.id), bag.bagNo]))
-  const statusLabel = statusLabels[work?.currentStatus || ''] || work?.currentStatus || 'ไม่ระบุสถานะ'
+  const workStatus = presentLaundryStatus(work?.currentStatus)
   const issueCount = detail?.issues?.length ?? work?.issueCount ?? 0
   const countRows = (detail?.countLines || []).map((line) => ({
     id: line.id,
@@ -157,7 +148,10 @@ export function createLaundryWorkDetailProjection({
           }
         : null,
       status: {
-        label: statusLabel,
+        code: workStatus.code,
+        label: workStatus.label,
+        tone: workStatus.tone,
+        description: workStatus.description,
       },
       workspace: {
         resortName: work?.resortName,
@@ -168,21 +162,29 @@ export function createLaundryWorkDetailProjection({
         updatedAt: formatDate(work?.updatedAt),
       },
       timeline: buildTimeline(work?.currentStatus),
-      nextHint: work ? `สถานะปัจจุบัน: ${statusLabel}` : undefined,
+      nextHint: work ? `สถานะปัจจุบัน: ${workStatus.label}` : undefined,
       mainTaskPanel: buildMainTaskPanel(work?.currentStatus, actionModel?.work.continue, error?.message || null),
       summaryCards: [
         { key: 'bag-count', label: 'จำนวนถุง', value: bags.length || work?.bagCount || '-', unit: 'ถุง' },
         { key: 'count-lines', label: 'รายการที่นับ', value: detail?.countLines?.length ?? '-', unit: 'รายการ' },
         { key: 'issue-count', label: 'ปัญหา', value: issueCount, unit: 'รายการ', tone: issueCount > 0 ? 'warning' : 'success' },
-        { key: 'status', label: 'สถานะ', value: statusLabel },
+        { key: 'status', label: 'สถานะ', value: workStatus.label, description: workStatus.description },
       ],
-      bags: bags.map((bag) => ({
-        id: bag.id,
-        bagNo: bag.bagNo,
-        status: bag.status,
-        note: bag.note,
-        receivedAt: bag.receivedAt,
-      })),
+      bags: bags.map((bag) => {
+        const bagStatus = presentLaundryStatus(bag.status)
+
+        return {
+          id: bag.id,
+          bagNo: bag.bagNo,
+          status: bag.status,
+          statusLabel: bagStatus.label,
+          statusTone: bagStatus.tone,
+          statusDescription: bagStatus.description,
+          statusBadgeClassName: bagStatus.badgeClassName,
+          note: bag.note,
+          receivedAt: bag.receivedAt,
+        }
+      }),
       countColumns: [
         { key: 'type', label: 'ประเภทผ้า' },
         { key: 'category', label: 'หมวดหมู่' },
@@ -210,7 +212,7 @@ export function createLaundryWorkDetailProjection({
       images: [],
       history: (detail?.statusLogs || []).map((event) => ({
         id: event.id,
-        eventLabel: statusLabels[event.toStatus] || event.toStatus,
+        eventLabel: presentLaundryStatus(event.toStatus).label,
         note: event.note || undefined,
         timestamp: formatDate(event.changedAt),
         actorName: event.changedByName,
