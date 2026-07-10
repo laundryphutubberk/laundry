@@ -40,6 +40,47 @@ const assertWorkExists = async ({ workId, actor, client }) => {
   return work;
 };
 
+const assertIssueLinks = async ({ work, bagId, countLineId, client }) => {
+  let bag = null;
+  let countLine = null;
+
+  if (bagId) {
+    bag = await laundryIssuesRepository.findScopedBag({
+      bagId,
+      workId: work.id,
+      resortId: work.resortId,
+      client,
+    });
+    if (!bag) {
+      const error = new Error('Laundry Bag does not belong to this Laundry Work');
+      error.statusCode = 409;
+      throw error;
+    }
+  }
+
+  if (countLineId) {
+    countLine = await laundryIssuesRepository.findScopedCountLine({
+      countLineId,
+      workId: work.id,
+      resortId: work.resortId,
+      client,
+    });
+    if (!countLine) {
+      const error = new Error('Laundry Count Line does not belong to this Laundry Work');
+      error.statusCode = 409;
+      throw error;
+    }
+  }
+
+  if (bag && countLine?.bagId && Number(countLine.bagId) !== Number(bag.id)) {
+    const error = new Error('Laundry Count Line does not belong to the selected Laundry Bag');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  return { bag, countLine };
+};
+
 const listLaundryIssues = async (workId, query = {}, context = {}) => {
   const actor = assertLaundryStaffActor(context.actor);
   await assertWorkExists({ workId, actor });
@@ -54,12 +95,18 @@ const createLaundryIssue = async (workId, payload = {}, context = {}) => {
 
   const issue = await laundryIssuesRepository.transaction(async (tx) => {
     const work = await assertWorkExists({ workId, actor, client: tx });
+    const { countLine } = await assertIssueLinks({
+      work,
+      bagId: payload.bagId,
+      countLineId: payload.countLineId,
+      client: tx,
+    });
     const created = await laundryIssuesRepository.createLaundryIssue({
       data: {
         workId: work.id,
         resortId: work.resortId,
-        itemTypeId: payload.itemTypeId,
-        colorGroup: payload.colorGroup,
+        itemTypeId: payload.itemTypeId || countLine?.itemTypeId,
+        colorGroup: payload.colorGroup || countLine?.colorGroup,
         issueType: payload.issueType,
         quantity: payload.quantity || 0,
         description: payload.description,
@@ -69,13 +116,24 @@ const createLaundryIssue = async (workId, payload = {}, context = {}) => {
       client: tx,
     });
 
+    await laundryIssuesRepository.updateLaundryIssueLinks({
+      issueId: created.id,
+      bagId: payload.bagId || countLine?.bagId || null,
+      countLineId: payload.countLineId || null,
+      client: tx,
+    });
+
     await laundryIssuesRepository.updateWorkIssueCount({
       workId: work.id,
       resortId: work.resortId,
       client: tx,
     });
 
-    return created;
+    return laundryIssuesRepository.findLaundryIssueById({
+      issueId: created.id,
+      where: buildIssueWhere({ actor, workId: work.id }),
+      client: tx,
+    });
   });
 
   logger.business('laundry.issue.created', {
@@ -83,6 +141,8 @@ const createLaundryIssue = async (workId, payload = {}, context = {}) => {
     issueId: issue.id,
     workId: issue.workId,
     resortId: issue.resortId,
+    bagId: issue.bagId,
+    countLineId: issue.countLineId,
     issueType: issue.issueType,
     quantity: issue.quantity,
   });
@@ -108,10 +168,36 @@ const updateLaundryIssue = async (issueId, payload = {}, context = {}) => {
       throw error;
     }
 
-    const updated = await laundryIssuesRepository.updateLaundryIssue({
+    const work = await assertWorkExists({ workId: current.workId, actor, client: tx });
+    const nextBagId = payload.bagId === undefined ? current.bagId : payload.bagId;
+    const nextCountLineId = payload.countLineId === undefined ? current.countLineId : payload.countLineId;
+    const { countLine } = await assertIssueLinks({
+      work,
+      bagId: nextBagId,
+      countLineId: nextCountLineId,
+      client: tx,
+    });
+
+    const {
+      bagId: _bagId,
+      countLineId: _countLineId,
+      ...issueData
+    } = payload;
+
+    if (countLine && issueData.itemTypeId === undefined) issueData.itemTypeId = countLine.itemTypeId;
+    if (countLine && issueData.colorGroup === undefined) issueData.colorGroup = countLine.colorGroup;
+
+    await laundryIssuesRepository.updateLaundryIssue({
       issueId,
       where,
-      data: payload,
+      data: issueData,
+      client: tx,
+    });
+
+    await laundryIssuesRepository.updateLaundryIssueLinks({
+      issueId,
+      bagId: nextBagId || null,
+      countLineId: nextCountLineId || null,
       client: tx,
     });
 
@@ -121,7 +207,7 @@ const updateLaundryIssue = async (issueId, payload = {}, context = {}) => {
       client: tx,
     });
 
-    return updated;
+    return laundryIssuesRepository.findLaundryIssueById({ issueId, where, client: tx });
   });
 
   logger.business('laundry.issue.updated', {
@@ -129,6 +215,8 @@ const updateLaundryIssue = async (issueId, payload = {}, context = {}) => {
     issueId: issue.id,
     workId: issue.workId,
     resortId: issue.resortId,
+    bagId: issue.bagId,
+    countLineId: issue.countLineId,
     status: issue.status,
   });
 
