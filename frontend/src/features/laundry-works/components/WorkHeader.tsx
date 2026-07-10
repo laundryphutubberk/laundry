@@ -1,6 +1,8 @@
 export type WorkHeaderStatus = {
+  code?: string
   label?: string
   tone?: string
+  description?: string
 }
 
 export type WorkHeaderMeta = {
@@ -50,10 +52,12 @@ export type WorkHeaderProps = {
 }
 
 const statusToneClassName: Record<string, string> = {
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  neutral: 'border-slate-200 bg-slate-50 text-slate-700',
+  info: 'border-blue-200 bg-blue-50 text-blue-700',
   warning: 'border-amber-200 bg-amber-50 text-amber-700',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   danger: 'border-red-200 bg-red-50 text-red-700',
-  default: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  default: 'border-slate-200 bg-slate-50 text-slate-700',
 }
 
 export function WorkHeader({ work, status, workspace, meta, actions = [], loading = false, error = null }: WorkHeaderProps) {
@@ -62,6 +66,7 @@ export function WorkHeader({ work, status, workspace, meta, actions = [], loadin
   const statusLabel = status?.label || work?.currentStatus || work?.status || 'ไม่ระบุสถานะ'
   const subtitle = work?.description || work?.note || 'ภาพรวมงานซักและสถานะปัจจุบัน'
   const statusTone = statusToneClassName[status?.tone || 'default'] || statusToneClassName.default
+  const statusDescription = status?.description || `สถานะปัจจุบัน: ${statusLabel}`
   const safeActions = actions.length
     ? actions
     : [
@@ -71,7 +76,8 @@ export function WorkHeader({ work, status, workspace, meta, actions = [], loadin
 
   if (loading) {
     return (
-      <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-sm" aria-busy="true">
+      <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-sm" aria-busy="true" aria-label="กำลังโหลดข้อมูลงานซัก">
+        <span className="sr-only">กำลังโหลดข้อมูลงานซัก กรุณารอสักครู่</span>
         <div className="animate-pulse space-y-5">
           <div className="h-4 w-44 rounded bg-slate-100" />
           <div className="h-12 w-96 max-w-full rounded bg-slate-100" />
@@ -89,7 +95,7 @@ export function WorkHeader({ work, status, workspace, meta, actions = [], loadin
 
   if (error) {
     return (
-      <section className="rounded-[30px] border border-red-100 bg-red-50 p-7 text-red-800 shadow-sm">
+      <section className="rounded-[30px] border border-red-100 bg-red-50 p-7 text-red-800 shadow-sm" role="alert">
         <p className="text-base font-black">ไม่สามารถแสดงข้อมูลงานซักได้</p>
         <p className="mt-2 text-sm">{error}</p>
       </section>
@@ -104,7 +110,10 @@ export function WorkHeader({ work, status, workspace, meta, actions = [], loadin
             <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-700">
               {workspace?.workspaceLabel || 'Laundry Workspace'}
             </p>
-            <span className={`rounded-full border px-3 py-1 text-xs font-black ${statusTone}`}>{statusLabel}</span>
+            <span className={`rounded-full border px-3 py-1 text-xs font-black ${statusTone}`} title={statusDescription}>
+              <span className="sr-only">สถานะปัจจุบัน </span>
+              {statusLabel}
+            </span>
           </div>
 
           <div className="space-y-2">
@@ -141,8 +150,8 @@ export function WorkHeader({ work, status, workspace, meta, actions = [], loadin
                 disabled={action.disabled}
                 className={
                   primary
-                    ? 'rounded-2xl bg-blue-900 px-6 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/15 hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50'
-                    : 'rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50'
+                    ? 'rounded-2xl bg-blue-900 px-6 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/15 hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50'
+                    : 'rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-50'
                 }
               >
                 {action.label || 'ดำเนินการ'}
