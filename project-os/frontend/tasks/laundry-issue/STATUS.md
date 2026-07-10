@@ -21,8 +21,12 @@ Status: IMPLEMENTED_PENDING_RUN_EVIDENCE
 - Duplicate-submit protection hardened with a synchronous in-flight mutation guard in `useLaundryIssueController`.
 - Create, Update, and Resolve now reject a second mutation before the next React/Zustand render can observe `busy=true`.
 - Runtime V8 duplicate-submit evidence is still required; this code review and implementation change is not counted as PASS evidence.
-- Related commit: `f2fa01c87393f79fd41cb25146f3ba9a2bac657d`
+- Duplicate-submit guard commit: `f2fa01c87393f79fd41cb25146f3ba9a2bac657d`
 - Laundry Issue relink/unlink/cancel UI implementation is present, but controlled-run evidence is still required.
+- Terminal Work UI protection was hardened so an already-open Create/Edit form is no longer rendered after policy changes to deny mutation.
+- Existing issues remain readable while Create/Edit/Resolve/Cancel controls follow the Laundry Issue policy boundary.
+- Runtime V6 terminal-work evidence and direct API rejection evidence are still required; this preflight is not counted as PASS.
+- Terminal UI guard commit: `bc46eb86f74e88706cde0568e7202a4760d86198`
 
 ## Pending
 
@@ -33,7 +37,7 @@ Status: IMPLEMENTED_PENDING_RUN_EVIDENCE
 - Unlink / Relink controlled run
 - Cancel Issue controlled run
 - Summary synchronization after Create / Resolve / Cancel
-- Terminal Work protection
+- Terminal Work protection controlled run
 - Workspace isolation run
 - Permission run
 - Duplicate-submit run
