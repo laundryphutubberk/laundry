@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 export type CountTableColumn = {
   key: string
@@ -62,9 +62,17 @@ const alignClassName: Record<string, string> = {
   center: 'text-center',
 }
 
+const rowButtonClassName =
+  'rounded-xl border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50'
+
 const toEditableValue = (value: string | number | null | undefined) => {
   if (value === null || value === undefined || value === '-') return ''
   return String(value)
+}
+
+const getRowLabel = (row: CountTableRow, index: number) => {
+  const type = typeof row.type === 'string' && row.type.trim() ? row.type.trim() : `รายการที่ ${index + 1}`
+  return type
 }
 
 export function CountTable({
@@ -85,6 +93,8 @@ export function CountTable({
   const [editingRowId, setEditingRowId] = useState<string | number | null>(null)
   const [confirmingDeleteRowId, setConfirmingDeleteRowId] = useState<string | number | null>(null)
   const [editDraft, setEditDraft] = useState<CountTableRow>({})
+  const titleId = useId()
+  const descriptionId = useId()
 
   const startEdit = (row: CountTableRow) => {
     if (!row.id) return
@@ -131,7 +141,12 @@ export function CountTable({
 
   if (loading) {
     return (
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm" aria-busy="true">
+      <section
+        className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
+        aria-busy="true"
+        aria-label={`กำลังโหลด${title}`}
+      >
+        <span className="sr-only" role="status">กำลังโหลดข้อมูลรายการผ้าที่นับแล้ว</span>
         <div className="border-b border-slate-100 p-6">
           <div className="h-5 w-40 animate-pulse rounded bg-slate-100" />
         </div>
@@ -146,7 +161,7 @@ export function CountTable({
 
   if (error) {
     return (
-      <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
+      <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm" role="alert">
         <h2 className="text-lg font-bold">{title}</h2>
         <p className="mt-2 text-sm">{error}</p>
       </section>
@@ -155,26 +170,30 @@ export function CountTable({
 
   if (!rows.length) {
     return (
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-950">{title}</h2>
+      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby={titleId}>
+        <h2 id={titleId} className="text-lg font-bold text-slate-950">{title}</h2>
         <p className="mt-3 rounded-2xl border border-dashed p-4 text-sm text-slate-500">{emptyText}</p>
       </section>
     )
   }
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+    <section
+      className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+    >
       <div className="flex flex-col gap-4 border-b border-slate-100 p-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-950">{title}</h2>
-          <p className="mt-1 text-sm text-slate-500">{description}</p>
+          <h2 id={titleId} className="text-xl font-bold text-slate-950">{title}</h2>
+          <p id={descriptionId} className="mt-1 text-sm text-slate-500">{description}</p>
         </div>
         {action ? (
           <button
             type="button"
             onClick={action.onClick}
             disabled={action.disabled || action.loading}
-            className="w-fit rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-fit rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {action.loading ? 'กำลังโหลด...' : action.label || 'ดูรายละเอียด'}
           </button>
@@ -183,20 +202,22 @@ export function CountTable({
 
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-left text-sm">
+          <caption className="sr-only">{description} มีทั้งหมด {rows.length} รายการ</caption>
           <thead className="bg-slate-50 text-xs text-slate-500">
             <tr>
               {tableColumns.map((column) => (
-                <th key={column.key} className={`px-6 py-4 font-semibold ${alignClassName[column.align || 'left']}`}>
+                <th scope="col" key={column.key} className={`px-6 py-4 font-semibold ${alignClassName[column.align || 'left']}`}>
                   {column.label}
                 </th>
               ))}
-              {hasRowActions ? <th className="px-6 py-4 text-right font-semibold">จัดการ</th> : null}
+              {hasRowActions ? <th scope="col" className="px-6 py-4 text-right font-semibold">จัดการ</th> : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rows.map((row, index) => {
               const isEditing = Boolean(row.id && editingRowId === row.id)
               const isConfirmingDelete = Boolean(row.id && confirmingDeleteRowId === row.id)
+              const rowLabel = getRowLabel(row, index)
 
               return (
                 <tr key={row.id || index} className="text-slate-700 hover:bg-slate-50/80">
@@ -206,9 +227,11 @@ export function CountTable({
                         <input
                           type={column.key === 'quantity' ? 'number' : 'text'}
                           min={column.key === 'quantity' ? 1 : undefined}
+                          inputMode={column.key === 'quantity' ? 'numeric' : undefined}
                           value={toEditableValue(editDraft[column.key])}
                           onChange={(event) => updateDraft(column.key, event.target.value)}
-                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200"
+                          aria-label={`แก้ไข${column.label}ของ${rowLabel}`}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-100"
                         />
                       ) : (
                         row[column.key] ?? '-'
@@ -217,14 +240,15 @@ export function CountTable({
                   ))}
                   {hasRowActions ? (
                     <td className="px-6 py-[18px] text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2" aria-live="polite">
                         {isEditing ? (
                           <>
                             <button
                               type="button"
                               onClick={submitEdit}
                               disabled={rowActions?.updating}
-                              className="rounded-xl border border-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`บันทึกการแก้ไข ${rowLabel}`}
+                              className={`${rowButtonClassName} border-blue-100 text-blue-700 hover:bg-blue-50`}
                             >
                               บันทึก
                             </button>
@@ -232,19 +256,21 @@ export function CountTable({
                               type="button"
                               onClick={cancelEdit}
                               disabled={rowActions?.updating}
-                              className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`ยกเลิกการแก้ไข ${rowLabel}`}
+                              className={`${rowButtonClassName} border-slate-200 text-slate-700 hover:bg-slate-50`}
                             >
                               ยกเลิก
                             </button>
                           </>
                         ) : isConfirmingDelete ? (
                           <>
-                            <span className="self-center text-xs font-semibold text-red-700">ยืนยันลบ?</span>
+                            <span className="self-center text-xs font-semibold text-red-700" role="status">ยืนยันลบ {rowLabel}?</span>
                             <button
                               type="button"
                               onClick={() => confirmDelete(row)}
                               disabled={rowActions?.deleting}
-                              className="rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`ยืนยันลบ ${rowLabel}`}
+                              className={`${rowButtonClassName} border-red-100 bg-red-50 text-red-700 hover:bg-red-100`}
                             >
                               ยืนยัน
                             </button>
@@ -252,7 +278,8 @@ export function CountTable({
                               type="button"
                               onClick={cancelDelete}
                               disabled={rowActions?.deleting}
-                              className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`ยกเลิกการลบ ${rowLabel}`}
+                              className={`${rowButtonClassName} border-slate-200 text-slate-700 hover:bg-slate-50`}
                             >
                               ยกเลิก
                             </button>
@@ -264,7 +291,8 @@ export function CountTable({
                                 type="button"
                                 onClick={() => startEdit(row)}
                                 disabled={rowActions.updating}
-                                className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                aria-label={`แก้ไข ${rowLabel}`}
+                                className={`${rowButtonClassName} border-slate-200 text-slate-700 hover:bg-slate-50`}
                               >
                                 แก้ไข
                               </button>
@@ -274,7 +302,8 @@ export function CountTable({
                                 type="button"
                                 onClick={() => requestDelete(row)}
                                 disabled={rowActions.deleting}
-                                className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                aria-label={`ลบ ${rowLabel}`}
+                                className={`${rowButtonClassName} border-red-100 text-red-700 hover:bg-red-50`}
                               >
                                 ลบ
                               </button>
@@ -291,13 +320,14 @@ export function CountTable({
         </table>
       </div>
 
-      <div className="grid gap-3 p-4 md:hidden">
+      <div className="grid gap-3 p-4 md:hidden" role="list" aria-label={`${title} ${rows.length} รายการ`}>
         {rows.map((row, index) => {
           const isEditing = Boolean(row.id && editingRowId === row.id)
           const isConfirmingDelete = Boolean(row.id && confirmingDeleteRowId === row.id)
+          const rowLabel = getRowLabel(row, index)
 
           return (
-            <article key={row.id || index} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <article key={row.id || index} className="rounded-2xl border border-slate-200 bg-slate-50 p-4" role="listitem">
               {tableColumns.map((column) => (
                 <div key={column.key} className="flex justify-between gap-3 py-1.5 text-sm">
                   <span className="text-slate-500">{column.label}</span>
@@ -305,9 +335,11 @@ export function CountTable({
                     <input
                       type={column.key === 'quantity' ? 'number' : 'text'}
                       min={column.key === 'quantity' ? 1 : undefined}
+                      inputMode={column.key === 'quantity' ? 'numeric' : undefined}
                       value={toEditableValue(editDraft[column.key])}
                       onChange={(event) => updateDraft(column.key, event.target.value)}
-                      className="w-40 rounded-xl border border-slate-200 px-3 py-2 text-right text-sm outline-none focus:ring-2 focus:ring-slate-200"
+                      aria-label={`แก้ไข${column.label}ของ${rowLabel}`}
+                      className="w-40 rounded-xl border border-slate-200 px-3 py-2 text-right text-sm outline-none transition focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-100"
                     />
                   ) : (
                     <span className="text-right font-semibold text-slate-800">{row[column.key] ?? '-'}</span>
@@ -315,14 +347,15 @@ export function CountTable({
                 </div>
               ))}
               {hasRowActions ? (
-                <div className="mt-3 flex justify-end gap-2 border-t border-slate-200 pt-3">
+                <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-3" aria-live="polite">
                   {isEditing ? (
                     <>
                       <button
                         type="button"
                         onClick={submitEdit}
                         disabled={rowActions?.updating}
-                        className="rounded-xl border border-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label={`บันทึกการแก้ไข ${rowLabel}`}
+                        className={`${rowButtonClassName} border-blue-100 text-blue-700`}
                       >
                         บันทึก
                       </button>
@@ -330,19 +363,21 @@ export function CountTable({
                         type="button"
                         onClick={cancelEdit}
                         disabled={rowActions?.updating}
-                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label={`ยกเลิกการแก้ไข ${rowLabel}`}
+                        className={`${rowButtonClassName} border-slate-200 text-slate-700`}
                       >
                         ยกเลิก
                       </button>
                     </>
                   ) : isConfirmingDelete ? (
                     <>
-                      <span className="self-center text-xs font-semibold text-red-700">ยืนยันลบ?</span>
+                      <span className="self-center text-xs font-semibold text-red-700" role="status">ยืนยันลบ {rowLabel}?</span>
                       <button
                         type="button"
                         onClick={() => confirmDelete(row)}
                         disabled={rowActions?.deleting}
-                        className="rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label={`ยืนยันลบ ${rowLabel}`}
+                        className={`${rowButtonClassName} border-red-100 bg-red-50 text-red-700`}
                       >
                         ยืนยัน
                       </button>
@@ -350,7 +385,8 @@ export function CountTable({
                         type="button"
                         onClick={cancelDelete}
                         disabled={rowActions?.deleting}
-                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label={`ยกเลิกการลบ ${rowLabel}`}
+                        className={`${rowButtonClassName} border-slate-200 text-slate-700`}
                       >
                         ยกเลิก
                       </button>
@@ -362,7 +398,8 @@ export function CountTable({
                           type="button"
                           onClick={() => startEdit(row)}
                           disabled={rowActions.updating}
-                          className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label={`แก้ไข ${rowLabel}`}
+                          className={`${rowButtonClassName} border-slate-200 text-slate-700`}
                         >
                           แก้ไข
                         </button>
@@ -372,7 +409,8 @@ export function CountTable({
                           type="button"
                           onClick={() => requestDelete(row)}
                           disabled={rowActions.deleting}
-                          className="rounded-xl border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label={`ลบ ${rowLabel}`}
+                          className={`${rowButtonClassName} border-red-100 text-red-700`}
                         >
                           ลบ
                         </button>
@@ -387,7 +425,7 @@ export function CountTable({
       </div>
 
       {summaryItems.length || remark ? (
-        <div className="grid gap-3 border-t border-slate-100 bg-slate-50/80 p-5 md:grid-cols-3">
+        <div className="grid gap-3 border-t border-slate-100 bg-slate-50/80 p-5 md:grid-cols-3" aria-label="สรุปรายการนับผ้า">
           {summaryItems.map((item, index) => (
             <div key={item.key || index} className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
               <p className="text-xs font-semibold text-slate-400">{item.label}</p>
