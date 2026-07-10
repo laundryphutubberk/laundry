@@ -5,6 +5,7 @@ Store real run evidence here.
 ## Start Here
 
 - `CONTROLLED-RUN-CHECKLIST.md` — execution-ready checklist for the remaining completion gate
+- `V2-COUNT-LINE-LINKAGE-RUN.md` — focused real-runtime run sheet for valid linkage, invalid cross-bag protection, refresh persistence, relink, and unlink preparation
 - `project-os/frontend/execution/fe-08-laundry-issue/FE-08-ISSUE-EXTENDED-VALIDATION.md` — source validation contract
 
 ## Required Evidence
