@@ -104,8 +104,8 @@ COMPLETED
 | Task | Path | Owner Scope | Status | Current Phase | Dependencies / Gate | Next Required Action |
 |---|---|---|---|---|---|---|
 | Laundry Work | `tasks/laundry-work/` | Laundry Work host flow | `COMPLETED_BASELINE` | Completed baseline | Reopen only for verified regression or downstream host-contract need | Preserve as host baseline |
-| Laundry Issue | `tasks/laundry-issue/` | Issue create, link, update, cancel, resolve | `IMPLEMENTED_PENDING_RUN_EVIDENCE` | Validation | Extended runtime evidence must pass | Complete Count Line, relink, cancel, summary, terminal, isolation, permission, duplicate-submit and lint evidence |
-| Laundry Image | `tasks/laundry-image/` | Laundry Work evidence images | `NOT_STARTED` | Not started | Do not begin implementation before Laundry Issue completion gate unless explicitly reprioritized | Open architecture and contract inspection after current Task closes |
+| Laundry Issue | `tasks/laundry-issue/` | Issue create, link, update, cancel, resolve | `COMPLETED` | Completed | Validation and handoff complete | Preserve completion evidence |
+| Laundry Image | `tasks/laundry-image/` | Laundry Work evidence images | `NOT_STARTED` | Not started | Laundry Issue completion gate passed | Open architecture and contract inspection |
 | Inventory | `tasks/inventory/` | Resort linen movement and stock visibility | `NOT_STARTED` | Not started | Requires stable Count Line semantics and master-data decision | Define source-of-truth and movement contract before implementation |
 | Packing | `tasks/packing/` | Packing preparation and quantity verification | `NOT_STARTED` | Not started | Depends on inventory/count truth | Keep closed until upstream contract is ready |
 | Delivery | `tasks/delivery/` | Dispatch, return confirmation, work closure | `NOT_STARTED` | Not started | Depends on packing and movement truth | Keep closed until upstream flow is ready |
@@ -124,19 +124,19 @@ Default operating rule:
 Current primary Task:
 
 ```text
-Laundry Issue
+Laundry Image
 ```
 
 Current gate:
 
 ```text
-IMPLEMENTED_PENDING_RUN_EVIDENCE
+READY_TO_OPEN
 ```
 
 Next planned Task after completion:
 
 ```text
-Laundry Image
+Inventory
 ```
 
 ## FE Standards Mapping
