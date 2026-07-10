@@ -2,7 +2,12 @@
 
 Store real run evidence here.
 
-Required evidence:
+## Start Here
+
+- `CONTROLLED-RUN-CHECKLIST.md` — execution-ready checklist for the remaining completion gate
+- `project-os/frontend/execution/fe-08-laundry-issue/FE-08-ISSUE-EXTENDED-VALIDATION.md` — source validation contract
+
+## Required Evidence
 
 - Commands executed
 - Build/lint/typecheck results
@@ -11,7 +16,10 @@ Required evidence:
 - Functional PASS/FAIL result
 - Workspace and permission result
 - Blocker and recovery evidence when applicable
+- Related commit SHA
 
-Current source checklist:
+## Completion Rule
 
-- `project-os/frontend/execution/fe-08-laundry-issue/FE-08-ISSUE-EXTENDED-VALIDATION.md`
+Conversation confirmation or repository review alone is not completion evidence.
+
+The Laundry Issue Task remains `IMPLEMENTED_PENDING_RUN_EVIDENCE` until controlled runtime validation is recorded, the handoff is written, and `STATUS.md` plus `TASK-INDEX.md` are updated together.
