@@ -121,13 +121,17 @@ export function createLaundryWorkDetailProjection({
 }: LaundryWorkDetailProjectionInput) {
   const work = detail?.work
   const bags = detail?.bags || []
+  const bagNoById = new Map(bags.map((bag) => [String(bag.id), bag.bagNo]))
   const statusLabel = statusLabels[work?.currentStatus || ''] || work?.currentStatus || 'ไม่ระบุสถานะ'
   const issueCount = detail?.issues?.length ?? work?.issueCount ?? 0
   const countRows = (detail?.countLines || []).map((line) => ({
     id: line.id,
+    bagId: line.bagId,
+    bagNo: line.bagNo || (line.bagId ? bagNoById.get(String(line.bagId)) : undefined),
     type: line.itemTypeName || '-',
     category: line.category || '-',
     color: line.colorGroup || '-',
+    colorGroup: line.colorGroup,
     quantity: line.quantity,
     weight: line.weight ?? '-',
   }))
