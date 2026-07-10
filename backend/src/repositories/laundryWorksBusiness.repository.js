@@ -22,7 +22,26 @@ const findLaundryWorkByWorkNo = async ({ workNo, client } = {}) => {
   });
 };
 
+const findLatestLaundryWorkByPrefix = async ({ workNoPrefix, client } = {}) => {
+  const db = getClient(client);
+
+  return db.laundryWork.findFirst({
+    where: {
+      workNo: {
+        startsWith: workNoPrefix,
+      },
+    },
+    orderBy: {
+      workNo: 'desc',
+    },
+    select: {
+      workNo: true,
+    },
+  });
+};
+
 module.exports = {
   findResortById,
   findLaundryWorkByWorkNo,
+  findLatestLaundryWorkByPrefix,
 };
