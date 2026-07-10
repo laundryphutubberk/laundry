@@ -1,0 +1,65 @@
+{
+  "project": "laundry-project-os-backend",
+  "last_updated": "2026-07-10T20:00:00Z",
+  "global_governance_version": "1.0.0",
+  "state_policy": "verified-evidence-only",
+  "modules": {
+    "be-01-runtime-foundation": {
+      "status": "frozen",
+      "version": "1.0.2",
+      "dependencies": []
+    },
+    "be-02-repository-foundation": {
+      "status": "frozen",
+      "version": "1.0.0",
+      "dependencies": ["be-01-runtime-foundation"]
+    },
+    "be-03-rest-api-layer": {
+      "status": "frozen",
+      "version": "1.1.0",
+      "dependencies": ["be-01-runtime-foundation", "be-05-business-layer"]
+    },
+    "be-04-architecture-normalization": {
+      "status": "frozen",
+      "version": "1.0.0",
+      "dependencies": ["be-01-runtime-foundation", "be-02-repository-foundation"]
+    },
+    "be-05-business-layer": {
+      "status": "frozen",
+      "version": "1.2.1",
+      "dependencies": ["be-01-runtime-foundation", "be-02-repository-foundation"]
+    },
+    "be-06-validation": {
+      "status": "frozen",
+      "version": "1.0.5",
+      "dependencies": ["be-04-architecture-normalization", "be-05-business-layer"]
+    },
+    "be-07-policy-domain-rules": {
+      "status": "frozen",
+      "version": "1.0.0",
+      "dependencies": ["be-05-business-layer", "be-06-validation"]
+    },
+    "be-08-transaction-consistency": {
+      "status": "active",
+      "version": "1.0.2",
+      "dependencies": ["be-02-repository-foundation", "be-05-business-layer", "be-07-policy-domain-rules"]
+    },
+    "be-09-observability": {
+      "status": "frozen",
+      "version": "1.0.0",
+      "dependencies": ["be-01-runtime-foundation", "be-06-validation", "be-07-policy-domain-rules"]
+    },
+    "be-10-production-readiness": {
+      "status": "planning",
+      "version": "0.8.0",
+      "dependencies": ["be-08-transaction-consistency", "be-09-observability"]
+    }
+  },
+  "active_execution_token": "DM-LW-003-LAUNDRY-WORK-IMAGE-DOMAIN",
+  "blocked_tasks": {
+    "BE-LW-002": {
+      "reason": "Laundry Work image endpoints require approved schema and migration support",
+      "blocked_by": "DM-LW-003"
+    }
+  }
+}
