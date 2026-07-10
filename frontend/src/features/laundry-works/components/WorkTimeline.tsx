@@ -56,6 +56,15 @@ const labelClassName: Record<string, string> = {
   disabled: 'text-slate-400',
 }
 
+const stateLabel: Record<string, string> = {
+  completed: 'เสร็จแล้ว',
+  current: 'ขั้นตอนปัจจุบัน',
+  pending: 'รอดำเนินการ',
+  blocked: 'ถูกระงับ',
+  cancelled: 'ยกเลิกแล้ว',
+  disabled: 'ยังไม่พร้อมใช้งาน',
+}
+
 export function WorkTimeline({
   steps = [],
   nextHint,
@@ -65,7 +74,7 @@ export function WorkTimeline({
 }: WorkTimelineProps) {
   if (loading) {
     return (
-      <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm" aria-busy="true">
+      <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm" aria-busy="true" aria-label="กำลังโหลดลำดับงาน">
         <div className="mb-6 h-5 w-28 animate-pulse rounded bg-slate-100" />
         <div className="space-y-5">
           {[0, 1, 2, 3].map((item) => (
@@ -78,7 +87,7 @@ export function WorkTimeline({
 
   if (error) {
     return (
-      <section className="rounded-[28px] border border-red-100 bg-red-50 p-7 text-red-800 shadow-sm">
+      <section className="rounded-[28px] border border-red-100 bg-red-50 p-7 text-red-800 shadow-sm" role="alert">
         <h2 className="text-base font-black">ลำดับงาน</h2>
         <p className="mt-2 text-sm">{error}</p>
       </section>
@@ -95,9 +104,9 @@ export function WorkTimeline({
   }
 
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
+    <section className="rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm" aria-labelledby="work-timeline-title">
       <div>
-        <h2 className="text-xl font-black tracking-tight text-slate-950">ลำดับงาน</h2>
+        <h2 id="work-timeline-title" className="text-xl font-black tracking-tight text-slate-950">ลำดับงาน</h2>
         {nextHint ? <p className="mt-1 text-sm font-bold text-slate-500">{nextHint}</p> : null}
       </div>
 
@@ -108,15 +117,23 @@ export function WorkTimeline({
           const lineTone = lineClassName[state] || lineClassName.pending
           const itemTone = itemClassName[state] || itemClassName.pending
           const labelTone = labelClassName[state] || labelClassName.pending
+          const readableState = stateLabel[state] || stateLabel.pending
           const isLast = index === steps.length - 1
           return (
-            <li key={step.id || step.key || index} className="relative flex min-h-[76px] gap-4 pb-4 last:min-h-0 last:pb-0">
+            <li
+              key={step.id || step.key || index}
+              className="relative flex min-h-[76px] gap-4 pb-4 last:min-h-0 last:pb-0"
+              aria-current={state === 'current' ? 'step' : undefined}
+            >
               {!isLast ? <span className={`absolute left-[18px] top-10 h-full w-0.5 ${lineTone}`} aria-hidden="true" /> : null}
-              <span className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black shadow-sm ${markerTone}`}>
+              <span className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black shadow-sm ${markerTone}`} aria-hidden="true">
                 {state === 'completed' ? '✓' : index + 1}
               </span>
               <div className={`min-w-0 flex-1 rounded-2xl border border-transparent px-4 py-3 ${itemTone}`}>
-                <p className={`text-sm font-black ${labelTone}`}>{step.label || step.name || 'ขั้นตอน'}</p>
+                <p className={`text-sm font-black ${labelTone}`}>
+                  {step.label || step.name || 'ขั้นตอน'}
+                  <span className="sr-only"> — {readableState}</span>
+                </p>
                 {step.description || step.helperText ? (
                   <p className={state === 'current' ? 'mt-1 text-xs font-black text-amber-600' : 'mt-1 text-xs font-semibold text-slate-500'}>
                     {step.description || step.helperText}
