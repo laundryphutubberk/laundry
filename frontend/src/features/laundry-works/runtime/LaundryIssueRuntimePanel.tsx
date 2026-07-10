@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { useLaundryIssueController } from '../controllers/useLaundryIssueController'
 
@@ -10,26 +10,65 @@ const issueTypeOptions = [
   ['OTHER', 'อื่น ๆ'],
 ] as const
 
-export function LaundryIssueRuntimePanel({ workId, workStatus }: { workId?: string | number; workStatus?: string }) {
+type IssueBagOption = {
+  id?: string | number
+  bagNo?: string
+}
+
+type IssueCountLineOption = {
+  id?: string | number
+  bagId?: string | number | null
+  bagNo?: string
+  type?: string
+  itemTypeName?: string
+  color?: string
+  colorGroup?: string
+}
+
+type LaundryIssueRuntimePanelProps = {
+  workId?: string | number
+  workStatus?: string
+  bags?: IssueBagOption[]
+  countLines?: IssueCountLineOption[]
+}
+
+export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countLines = [] }: LaundryIssueRuntimePanelProps) {
   const runtime = useLaundryIssueController({ workId, workStatus })
   const [showForm, setShowForm] = useState(false)
   const [issueType, setIssueType] = useState<(typeof issueTypeOptions)[number][0]>('DAMAGED')
+  const [bagId, setBagId] = useState('')
+  const [countLineId, setCountLineId] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [description, setDescription] = useState('')
+
+  const availableCountLines = useMemo(
+    () => bagId ? countLines.filter((line) => String(line.bagId || '') === bagId) : countLines,
+    [bagId, countLines],
+  )
+
+  const resetForm = () => {
+    setBagId('')
+    setCountLineId('')
+    setDescription('')
+    setQuantity('1')
+  }
 
   const submitIssue = async () => {
     const normalizedQuantity = Number(quantity)
     if (!description.trim() || !Number.isInteger(normalizedQuantity) || normalizedQuantity < 0) return
 
+    const selectedCountLine = countLines.find((line) => String(line.id) === countLineId)
     const created = await runtime.createIssue({
       issueType,
+      bagId: bagId ? Number(bagId) : undefined,
+      countLineId: countLineId ? Number(countLineId) : undefined,
+      colorGroup: selectedCountLine?.colorGroup || selectedCountLine?.color,
       quantity: normalizedQuantity,
       description: description.trim(),
     })
 
     if (created) {
-      setDescription('')
-      setQuantity('1')
+      resetForm()
       setShowForm(false)
     }
   }
@@ -61,7 +100,7 @@ export function LaundryIssueRuntimePanel({ workId, workStatus }: { workId?: stri
       </div>
 
       {showForm ? (
-        <div className="mt-5 grid gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+        <div className="mt-5 grid gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-bold text-slate-700">
             ประเภทปัญหา
             <select value={issueType} onChange={(event) => setIssueType(event.target.value as typeof issueType)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
@@ -73,10 +112,35 @@ export function LaundryIssueRuntimePanel({ workId, workStatus }: { workId?: stri
             <input type="number" min="0" value={quantity} onChange={(event) => setQuantity(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
           </label>
           <label className="grid gap-2 text-sm font-bold text-slate-700">
+            ถุงที่เกี่ยวข้อง (ไม่บังคับ)
+            <select
+              value={bagId}
+              onChange={(event) => {
+                setBagId(event.target.value)
+                setCountLineId('')
+              }}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+            >
+              <option value="">ระดับงานซัก</option>
+              {bags.map((bag) => <option key={bag.id} value={String(bag.id)}>{bag.bagNo || `Bag ${bag.id}`}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-bold text-slate-700">
+            รายการนับที่เกี่ยวข้อง (ไม่บังคับ)
+            <select value={countLineId} onChange={(event) => setCountLineId(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+              <option value="">ไม่ผูกกับรายการนับ</option>
+              {availableCountLines.map((line) => (
+                <option key={line.id} value={String(line.id)}>
+                  {[line.bagNo, line.itemTypeName || line.type, line.colorGroup || line.color].filter(Boolean).join(' · ') || `Count Line ${line.id}`}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-bold text-slate-700 sm:col-span-2">
             รายละเอียด
             <textarea rows={3} value={description} onChange={(event) => setDescription(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
           </label>
-          <button type="button" onClick={() => void submitIssue()} disabled={runtime.busy || !description.trim()} className="justify-self-end rounded-xl bg-blue-900 px-4 py-2.5 text-sm font-black text-white disabled:opacity-50">
+          <button type="button" onClick={() => void submitIssue()} disabled={runtime.busy || !description.trim()} className="justify-self-end rounded-xl bg-blue-900 px-4 py-2.5 text-sm font-black text-white disabled:opacity-50 sm:col-span-2">
             {runtime.busy ? 'กำลังบันทึก...' : 'บันทึกปัญหา'}
           </button>
         </div>
@@ -94,7 +158,11 @@ export function LaundryIssueRuntimePanel({ workId, workStatus }: { workId?: stri
                 <div>
                   <p className="font-black text-slate-950">{issue.issueType}</p>
                   <p className="mt-1 text-sm text-slate-600">{issue.description}</p>
-                  <p className="mt-2 text-xs text-slate-500">จำนวน {issue.quantity ?? 0} · สถานะ {issue.status}</p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    จำนวน {issue.quantity ?? 0} · สถานะ {issue.status}
+                    {issue.bagId ? ` · Bag #${issue.bagId}` : ''}
+                    {issue.countLineId ? ` · Count Line #${issue.countLineId}` : ''}
+                  </p>
                 </div>
                 {issue.status !== 'RESOLVED' ? (
                   <div className="flex shrink-0 gap-2">
