@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { getWorkspaceContext } from '../../auth/authSession'
 import { laundryWorkApi, type ApiFailure, type LaundryWorkDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
+import { removeLaundryWork } from '../api/laundryWorkManagementApi'
 
 const createRequestId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -12,10 +13,13 @@ const createRequestId = () => {
   return `lw-list-${Date.now()}`
 }
 
-const createRequestMeta = (sessionContext: ReturnType<typeof getWorkspaceContext>): LaundryWorkRequestMeta => ({
+const createRequestMeta = (
+  sessionContext: ReturnType<typeof getWorkspaceContext>,
+  action = 'listLaundryWorks',
+): LaundryWorkRequestMeta => ({
   requestId: createRequestId(),
   feature: 'laundry-work',
-  action: 'listLaundryWorks',
+  action,
   actorId: sessionContext.actorId,
   actorRole: sessionContext.actorRole,
   workspaceType: sessionContext.workspaceType,
@@ -61,36 +65,69 @@ export function LaundryWorkListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiFailure['error'] | null>(null)
   const [requestId, setRequestId] = useState<string | undefined>()
+  const [pendingRemoval, setPendingRemoval] = useState<LaundryWorkDTO | null>(null)
+  const [removalReason, setRemovalReason] = useState('')
+  const [removing, setRemoving] = useState(false)
   const canCreate = sessionContext.workspaceType === 'LAUNDRY'
+  const canManage = ['LAUNDRY_OWNER', 'LAUNDRY_MANAGER'].includes(sessionContext.actorRole || '')
 
-  useEffect(() => {
-    let active = true
+  const loadItems = useCallback(async () => {
     const meta = createRequestMeta(sessionContext)
-
     setLoading(true)
     setError(null)
     setRequestId(meta.requestId)
 
-    laundryWorkApi.listLaundryWorks({ meta, take: 50 }).then((result) => {
-      if (!active) return
+    const result = await laundryWorkApi.listLaundryWorks({ meta, take: 50 })
+    setRequestId(result.meta.requestId)
 
-      setRequestId(result.meta.requestId)
+    if (result.ok) {
+      setItems(result.data.items)
+      setError(null)
+    } else {
+      setItems([])
+      setError(result.error)
+    }
 
-      if (result.ok) {
-        setItems(result.data.items)
-        setError(null)
-      } else {
-        setItems([])
-        setError(result.error)
-      }
+    setLoading(false)
+  }, [sessionContext])
 
-      setLoading(false)
+  useEffect(() => {
+    void loadItems()
+  }, [loadItems])
+
+  const closeRemovalDialog = () => {
+    if (removing) return
+    setPendingRemoval(null)
+    setRemovalReason('')
+  }
+
+  const confirmRemoval = async () => {
+    if (!pendingRemoval || !removalReason.trim()) return
+
+    const meta = createRequestMeta(sessionContext, 'deleteOrCancelLaundryWork')
+    setRemoving(true)
+    setError(null)
+    setRequestId(meta.requestId)
+
+    const result = await removeLaundryWork({
+      workId: pendingRemoval.id,
+      reason: removalReason,
+      meta,
     })
 
-    return () => {
-      active = false
+    setRequestId(result.meta.requestId)
+
+    if (!result.ok) {
+      setError(result.error)
+      setRemoving(false)
+      return
     }
-  }, [sessionContext])
+
+    setPendingRemoval(null)
+    setRemovalReason('')
+    await loadItems()
+    setRemoving(false)
+  }
 
   return (
     <div className="min-h-screen bg-slate-100/70">
@@ -118,7 +155,7 @@ export function LaundryWorkListPage() {
 
         {error ? (
           <section className="rounded-[28px] border border-red-100 bg-red-50 p-6 text-red-800 shadow-sm">
-            <p className="text-base font-semibold">ไม่สามารถโหลดรายการงานซักได้</p>
+            <p className="text-base font-semibold">ไม่สามารถดำเนินการกับรายการงานซักได้</p>
             <p className="mt-2 text-sm">{error.message}</p>
             {requestId ? <p className="mt-3 text-xs text-red-600">requestId: {requestId}</p> : null}
           </section>
@@ -128,43 +165,81 @@ export function LaundryWorkListPage() {
           <section className="rounded-[28px] border border-white/70 bg-white p-6 shadow-sm">
             <p className="text-base font-bold text-slate-950">ยังไม่มี Laundry Work</p>
             <p className="mt-2 text-sm text-slate-500">เมื่อ backend มีงานซักใน workspace นี้ รายการจะแสดงที่นี่</p>
-            {canCreate ? (
-              <Link to="/workspace/laundry/works/new" className="mt-5 inline-flex rounded-2xl bg-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800">
-                สร้างงานซักแรก
-              </Link>
-            ) : null}
           </section>
         ) : null}
 
-        {!loading && !error && items.length > 0 ? (
+        {!loading && items.length > 0 ? (
           <section className="overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-sm">
-            <div className="grid grid-cols-[minmax(0,1.3fr)_160px_140px_140px] gap-4 border-b bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 max-lg:hidden">
+            <div className={`grid gap-4 border-b bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 max-lg:hidden ${canManage ? 'grid-cols-[minmax(0,1.3fr)_160px_140px_140px_100px]' : 'grid-cols-[minmax(0,1.3fr)_160px_140px_140px]'}`}>
               <span>Work</span>
               <span>Status</span>
               <span>Bags</span>
               <span>Updated</span>
+              {canManage ? <span className="text-right">Manage</span> : null}
             </div>
 
             <div className="divide-y divide-slate-100">
               {items.map((work) => (
-                <Link
-                  key={work.id}
-                  to={`/workspace/laundry/works/${work.id}`}
-                  className="grid gap-3 px-5 py-4 text-left transition hover:bg-blue-50/70 lg:grid-cols-[minmax(0,1.3fr)_160px_140px_140px] lg:items-center"
-                >
-                  <div className="min-w-0">
+                <div key={work.id} className={`grid gap-3 px-5 py-4 transition hover:bg-blue-50/70 lg:items-center ${canManage ? 'lg:grid-cols-[minmax(0,1.3fr)_160px_140px_140px_100px]' : 'lg:grid-cols-[minmax(0,1.3fr)_160px_140px_140px]'}`}>
+                  <Link to={`/workspace/laundry/works/${work.id}`} className="min-w-0">
                     <p className="truncate text-base font-black text-slate-950">{work.workNo}</p>
                     <p className="mt-1 truncate text-sm font-medium text-slate-500">{work.resortName}</p>
-                  </div>
+                  </Link>
                   <p className="text-sm font-bold text-blue-700">{statusLabel(work.currentStatus)}</p>
                   <p className="text-sm font-semibold text-slate-600">{work.bagCount}</p>
                   <p className="text-sm font-semibold text-slate-500">{formatDate(work.updatedAt)}</p>
-                </Link>
+                  {canManage && !['CLOSED', 'CANCELLED'].includes(work.currentStatus) ? (
+                    <button
+                      type="button"
+                      onClick={() => setPendingRemoval(work)}
+                      className="justify-self-start rounded-xl border border-red-100 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 lg:justify-self-end"
+                    >
+                      {work.currentStatus === 'DRAFT' ? 'ลบ/ยกเลิก' : 'ยกเลิก'}
+                    </button>
+                  ) : null}
+                </div>
               ))}
             </div>
           </section>
         ) : null}
       </main>
+
+      {pendingRemoval ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4" role="dialog" aria-modal="true">
+          <section className="w-full max-w-lg rounded-[28px] bg-white p-6 shadow-2xl">
+            <h2 className="text-xl font-black text-slate-950">
+              {pendingRemoval.currentStatus === 'DRAFT' ? 'ลบหรือยกเลิกงาน' : 'ยกเลิกงาน'} {pendingRemoval.workNo}
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              งาน DRAFT ที่ยังไม่มีข้อมูลลูกจะถูกลบถาวร ส่วนงานที่เริ่มดำเนินการแล้วจะเปลี่ยนสถานะเป็น CANCELLED และเก็บประวัติไว้
+            </p>
+            <label className="mt-5 block text-sm font-bold text-slate-700">
+              เหตุผล
+              <textarea
+                value={removalReason}
+                onChange={(event) => setRemovalReason(event.target.value)}
+                disabled={removing}
+                rows={4}
+                placeholder="เช่น ผู้ใช้กรอกรายการผิด"
+                className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              />
+            </label>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={closeRemovalDialog} disabled={removing} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+                กลับ
+              </button>
+              <button
+                type="button"
+                onClick={confirmRemoval}
+                disabled={removing || !removalReason.trim()}
+                className="rounded-xl bg-red-700 px-4 py-2 text-sm font-black text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {removing ? 'กำลังดำเนินการ...' : 'ยืนยัน'}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   )
 }
