@@ -148,6 +148,12 @@ const resortToken = createToken({
   active: true,
 });
 
+const validCreateBody = Object.freeze({
+  issueType: 'DAMAGED',
+  quantity: 1,
+  description: 'HTTP contract verification issue',
+});
+
 const runResortMutationDeniedTest = async () => {
   await withMockedModules(
     {
@@ -162,7 +168,7 @@ const runResortMutationDeniedTest = async () => {
           method: 'POST',
           path: '/api/laundry/works/20/issues',
           token: resortToken,
-          body: { issueType: 'DAMAGED', quantity: 1 },
+          body: validCreateBody,
         });
         assert.equal(response.statusCode, 403);
         assert.equal(response.body.success, false);
@@ -188,7 +194,7 @@ const runTerminalWorkBlockedTest = async () => {
           method: 'POST',
           path: '/api/laundry/works/20/issues',
           token: laundryToken,
-          body: { issueType: 'DAMAGED', quantity: 1 },
+          body: validCreateBody,
         });
         assert.equal(response.statusCode, 409);
         assert.equal(response.body.success, false);
@@ -213,7 +219,7 @@ const runInvalidPairBlockedTest = async () => {
           method: 'POST',
           path: '/api/laundry/works/20/issues',
           token: laundryToken,
-          body: { issueType: 'DAMAGED', quantity: 1, bagId: 100, countLineId: 200 },
+          body: { ...validCreateBody, bagId: 100, countLineId: 200 },
         });
         assert.equal(response.statusCode, 409);
         assert.equal(response.body.success, false);
