@@ -20,8 +20,18 @@ export type LaundryWorkImageDTO = {
   updatedAt?: string
 }
 
-export type ListLaundryWorkImagesInput = {
+export type ListLaundryWorkImagesInput = { workId?: string | number; meta: LaundryWorkRequestMeta }
+export type RegisterLaundryWorkImageInput = {
   workId?: string | number
+  url: string
+  publicId?: string
+  provider?: string
+  mimeType?: string
+  originalName?: string
+  sizeBytes?: number
+  caption?: string
+  displayOrder?: number
+  isCover?: boolean
   meta: LaundryWorkRequestMeta
 }
 
@@ -29,31 +39,20 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const capability = {
   list: true,
-  upload: false,
-  updateCaption: false,
-  setCover: false,
-  softDelete: false,
+  upload: true,
+  updateCaption: true,
+  setCover: true,
+  softDelete: true,
 } as const
 
 function buildMeta(requestId: string, source: 'backend' | 'client-normalized' = 'client-normalized') {
-  return {
-    requestId,
-    receivedAt: new Date().toISOString(),
-    source,
-    capability,
-  }
+  return { requestId, receivedAt: new Date().toISOString(), source, capability }
 }
 
 function getAuthToken(meta: LaundryWorkRequestMeta) {
   if (meta.token) return meta.token
   if (typeof window === 'undefined') return undefined
-
-  return (
-    window.localStorage.getItem('laundry.auth.token') ||
-    window.localStorage.getItem('authToken') ||
-    window.localStorage.getItem('token') ||
-    undefined
-  )
+  return window.localStorage.getItem('laundry.auth.token') || window.localStorage.getItem('authToken') || window.localStorage.getItem('token') || undefined
 }
 
 function normalizeImage(raw: any): LaundryWorkImageDTO {
@@ -78,33 +77,19 @@ function normalizeImage(raw: any): LaundryWorkImageDTO {
   }
 }
 
-async function list({ workId, meta }: ListLaundryWorkImagesInput): Promise<ApiResult<LaundryWorkImageDTO[]>> {
-  if (!workId) {
-    return {
-      ok: false,
-      error: {
-        code: 'MISSING_WORK_ID',
-        message: 'Missing Laundry Work id.',
-        requestId: meta.requestId,
-        retryable: false,
-      },
-      meta: buildMeta(meta.requestId),
-    }
-  }
-
+async function request<T>(path: string, meta: LaundryWorkRequestMeta, init: RequestInit = {}): Promise<ApiResult<T>> {
   try {
-    const headers = new Headers()
+    const headers = new Headers(init.headers)
     const token = getAuthToken(meta)
-
     headers.set('Content-Type', 'application/json')
     headers.set('X-Request-Id', meta.requestId)
-    headers.set('X-Feature', meta.feature)
+    headers.set('X-Feature', 'laundry-image')
     headers.set('X-Action', meta.action)
     if (token) headers.set('Authorization', `Bearer ${token}`)
     if (meta.workspaceType) headers.set('X-Workspace-Type', meta.workspaceType)
     if (meta.resortId) headers.set('X-Resort-Id', String(meta.resortId))
 
-    const response = await fetch(`${API_BASE_URL}/laundry/works/${workId}`, { headers })
+    const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
     const envelope = await response.json().catch(() => ({}))
     const requestId = envelope?.meta?.requestId || meta.requestId
 
@@ -112,8 +97,8 @@ async function list({ workId, meta }: ListLaundryWorkImagesInput): Promise<ApiRe
       return {
         ok: false,
         error: {
-          code: envelope?.error?.code || 'LAUNDRY_IMAGE_LIST_FAILED',
-          message: envelope?.error?.message || response.statusText || 'Unable to load Laundry Work images.',
+          code: envelope?.error?.code || `HTTP_${response.status}`,
+          message: envelope?.error?.message || response.statusText || 'Laundry Image request failed.',
           status: envelope?.error?.statusCode || response.status,
           fieldErrors: envelope?.error?.details?.fieldErrors,
           requestId,
@@ -123,15 +108,7 @@ async function list({ workId, meta }: ListLaundryWorkImagesInput): Promise<ApiRe
       }
     }
 
-    const images = Array.isArray(envelope?.data?.images)
-      ? envelope.data.images.filter((image: any) => !image?.deletedAt).map(normalizeImage)
-      : []
-
-    return {
-      ok: true,
-      data: images,
-      meta: buildMeta(requestId, 'backend'),
-    }
+    return { ok: true, data: envelope.data as T, meta: buildMeta(requestId, 'backend') }
   } catch (error) {
     return {
       ok: false,
@@ -148,5 +125,29 @@ async function list({ workId, meta }: ListLaundryWorkImagesInput): Promise<ApiRe
 
 export const laundryImageApi = {
   capability,
-  list,
+
+  async list({ workId, meta }: ListLaundryWorkImagesInput): Promise<ApiResult<LaundryWorkImageDTO[]>> {
+    if (!workId) return request('/laundry/works/0/images', meta)
+    const result = await request<any[]>(`/laundry/works/${workId}/images`, meta)
+    return result.ok ? { ...result, data: (result.data || []).filter((image) => !image?.deletedAt).map(normalizeImage) } : result
+  },
+
+  async register({ workId, meta, ...input }: RegisterLaundryWorkImageInput): Promise<ApiResult<LaundryWorkImageDTO>> {
+    const result = await request<any>(`/laundry/works/${workId}/images`, meta, { method: 'POST', body: JSON.stringify(input) })
+    return result.ok ? { ...result, data: normalizeImage(result.data) } : result
+  },
+
+  async update(imageId: string | number, input: { caption?: string | null; displayOrder?: number }, meta: LaundryWorkRequestMeta): Promise<ApiResult<LaundryWorkImageDTO>> {
+    const result = await request<any>(`/laundry/images/${imageId}`, meta, { method: 'PATCH', body: JSON.stringify(input) })
+    return result.ok ? { ...result, data: normalizeImage(result.data) } : result
+  },
+
+  async setCover(imageId: string | number, meta: LaundryWorkRequestMeta): Promise<ApiResult<LaundryWorkImageDTO>> {
+    const result = await request<any>(`/laundry/images/${imageId}/cover`, meta, { method: 'PATCH', body: '{}' })
+    return result.ok ? { ...result, data: normalizeImage(result.data) } : result
+  },
+
+  async softDelete(imageId: string | number, meta: LaundryWorkRequestMeta): Promise<ApiResult<{ deleted: true }>> {
+    return request(`/laundry/images/${imageId}`, meta, { method: 'DELETE' })
+  },
 }
