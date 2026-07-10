@@ -21,47 +21,53 @@ Feature ownership remains under:
 - [ ] Delivery Review template
 - [ ] Handoff readiness template
 
+## Latest Completed Review
+
+Feature Task:
+
+- Laundry Issue
+
+Task state:
+
+- `COMPLETED`
+
+FE-08 verdict:
+
+- `DELIVERY_APPROVED`
+
+Accepted evidence:
+
+- Prisma format / validate / generate / migrate deploy
+- Backend runtime and policy verification
+- Service and HTTP contract verification
+- Frontend production build and lint
+- Create / list / update / cancel / resolve
+- Bag and Count Line linkage
+- Unlink / Relink
+- Summary synchronization
+- Terminal Work UI and API protection
+- Workspace isolation
+- Role / permission behavior
+- Duplicate-submit protection
+- Refresh persistence
+- Business audit logging
+- Final handoff
+
 ## Current Feature Review
 
 Primary Feature Task:
 
-- Laundry Issue
+- Laundry Image
 
 Current Task state:
 
-- `AUTOMATED_VALIDATION_PASSED`
+- `READY_TO_OPEN`
 
 Current FE-08 verdict:
 
-- `READY_FOR_DELIVERY_REVIEW`
+- `NOT_REVIEWED`
 
-Accepted evidence includes:
-
-- Core create / list / update / resolve runtime evidence
-- Persistence and business audit evidence
-- Automated service contract verification
-- Automated HTTP contract verification
-- Workspace mutation denial
-- Terminal Work mutation denial
-- Invalid Bag / Count Line rejection
-- Cancelled Issue mutation protection
-- Relink / unlink service behavior
-- Count Line derivation behavior
-
-Remaining delivery evidence:
-
-- Fresh Prisma format / validate / generate / migrate deploy after schema alignment
-- Frontend lint
-- Count Line linkage controlled browser run
-- Linked Issue refresh persistence
-- Unlink / Relink controlled browser run
-- Cancel Issue controlled browser run
-- Summary synchronization controlled run
-- Terminal Work UI protection controlled run
-- Workspace isolation against real persisted data
-- Role / permission controlled run
-- Duplicate-submit controlled run
-- Final handoff
+FE-08 will begin delivery review after Laundry Image produces implementation and validation evidence.
 
 ## Review
 
@@ -75,13 +81,11 @@ Review artifact:
 ## Handoff
 
 - [x] Laundry Work Delivery Gate Ready
-- [ ] Laundry Issue Handoff Ready
+- [x] Laundry Issue Handoff Ready
 - [ ] Shared Task Delivery Handoff Ready
 
 ## Latest Progress
 
-Laundry Issue automated verification has passed and FE-08 has promoted the feature from `READY_WITH_BLOCKERS` to `READY_FOR_DELIVERY_REVIEW`.
+Laundry Issue has received `DELIVERY_APPROVED` and is closed.
 
-Next action:
-
-- Collect the remaining controlled environment evidence, write the final handoff, then decide whether to issue `DELIVERY_APPROVED`.
+The Task Registry now permits Laundry Image to open as the next primary Feature Task.
