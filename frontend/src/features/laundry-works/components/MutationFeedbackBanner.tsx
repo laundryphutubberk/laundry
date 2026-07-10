@@ -1,5 +1,7 @@
 import type { MutationFeedbackModel, MutationFeedbackTone } from '../runtime/mutationFeedback.model'
 
+export type { MutationFeedbackModel, MutationFeedbackTone } from '../runtime/mutationFeedback.model'
+
 export type MutationFeedbackBannerProps = {
   feedback?: MutationFeedbackModel | null
 }
