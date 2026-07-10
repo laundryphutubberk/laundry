@@ -84,7 +84,22 @@ const createLaundryWork = async (payload = {}, context = {}) => {
     });
     laundryWorksBusiness.assertResortCanReceiveWork(resort);
 
-    const data = laundryWorksBusiness.buildCreateWorkData(payload);
+    let generatedWorkNo;
+
+    if (!payload.workNo) {
+      const workNoPrefix = laundryWorksBusiness.buildWorkNoPrefix();
+      const latestWork = await laundryWorksBusinessRepository.findLatestLaundryWorkByPrefix({
+        workNoPrefix,
+        client: tx,
+      });
+
+      generatedWorkNo = laundryWorksBusiness.buildNextWorkNo({
+        prefix: workNoPrefix,
+        latestWorkNo: latestWork?.workNo,
+      });
+    }
+
+    const data = laundryWorksBusiness.buildCreateWorkData(payload, generatedWorkNo);
     const existingWork = await laundryWorksBusinessRepository.findLaundryWorkByWorkNo({
       workNo: data.workNo,
       client: tx,
