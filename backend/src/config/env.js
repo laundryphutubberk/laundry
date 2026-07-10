@@ -8,6 +8,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32),
+  FRONTEND_URL: z.string().url().optional(),
   ENABLE_DEV_ACTOR_HEADER: z.coerce.boolean().default(false),
 });
 
