@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { MutationFeedbackBanner } from '../components/MutationFeedbackBanner'
 import { useLaundryIssueController } from '../controllers/useLaundryIssueController'
@@ -51,9 +51,12 @@ type LaundryIssueRuntimePanelProps = {
 }
 
 const ISSUE_FORM_ID = 'laundry-issue-form'
+const ISSUE_TYPE_ID = 'laundry-issue-type'
 const ISSUE_QUANTITY_ID = 'laundry-issue-quantity'
+const ISSUE_BAG_ID = 'laundry-issue-bag'
 const ISSUE_COUNT_LINE_ID = 'laundry-issue-count-line'
 const ISSUE_DESCRIPTION_ID = 'laundry-issue-description'
+const ISSUE_FORM_HINT_ID = 'laundry-issue-form-keyboard-hint'
 
 const isMutableIssueStatus = (status?: string | null) => !['RESOLVED', 'CANCELLED'].includes(status || '')
 
@@ -68,12 +71,20 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
   const [description, setDescription] = useState('')
   const [formErrors, setFormErrors] = useState<IssueFormErrors>({})
 
+  const createButtonRef = useRef<HTMLButtonElement>(null)
+  const returnFocusRef = useRef<HTMLElement | null>(null)
+  const issueTypeRef = useRef<HTMLSelectElement>(null)
+  const quantityRef = useRef<HTMLInputElement>(null)
+  const countLineRef = useRef<HTMLSelectElement>(null)
+  const descriptionRef = useRef<HTMLTextAreaElement>(null)
+
   const availableCountLines = useMemo(
     () => (bagId ? countLines.filter((line) => String(line.bagId || '') === bagId) : countLines),
     [bagId, countLines],
   )
 
   const backendFieldErrors = runtime.error?.fieldErrors as Record<string, string | string[]> | undefined
+  const canRenderForm = editingIssueId ? runtime.policy.canUpdate : runtime.policy.canCreate
 
   const resetForm = () => {
     setEditingIssueId(null)
@@ -85,18 +96,33 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
     setFormErrors({})
   }
 
-  const closeForm = () => {
-    if (runtime.busy) return
+  const restoreTriggerFocus = () => {
+    window.requestAnimationFrame(() => {
+      const target = returnFocusRef.current || createButtonRef.current
+      target?.focus()
+      returnFocusRef.current = null
+    })
+  }
+
+  const finishForm = () => {
     resetForm()
     setShowForm(false)
+    restoreTriggerFocus()
+  }
+
+  const closeForm = () => {
+    if (runtime.busy) return
+    finishForm()
   }
 
   const openCreateForm = () => {
+    returnFocusRef.current = createButtonRef.current
     resetForm()
     setShowForm(true)
   }
 
-  const openEditForm = (issue: EditableIssue) => {
+  const openEditForm = (issue: EditableIssue, trigger: HTMLElement) => {
+    returnFocusRef.current = trigger
     setEditingIssueId(issue.id)
     setIssueType((issue.issueType as IssueType) || 'DAMAGED')
     setBagId(issue.bagId ? String(issue.bagId) : '')
@@ -114,6 +140,14 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
 
     const selectedCountLine = countLines.find((line) => String(line.id) === nextCountLineId)
     if (selectedCountLine?.bagId) setBagId(String(selectedCountLine.bagId))
+  }
+
+  const focusFirstInvalidField = (errors: IssueFormErrors) => {
+    window.requestAnimationFrame(() => {
+      if (errors.quantity) quantityRef.current?.focus()
+      else if (errors.countLineId) countLineRef.current?.focus()
+      else if (errors.description) descriptionRef.current?.focus()
+    })
   }
 
   const validateForm = () => {
@@ -134,6 +168,8 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
     }
 
     setFormErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) focusFirstInvalidField(nextErrors)
+
     return { valid: Object.keys(nextErrors).length === 0, normalizedQuantity, selectedCountLine }
   }
 
@@ -160,7 +196,20 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
           countLineId: payload.countLineId ?? undefined,
         })
 
-    if (saved) closeForm()
+    if (saved) finishForm()
+  }
+
+  const handleFormKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      closeForm()
+      return
+    }
+
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault()
+      void submitIssue()
+    }
   }
 
   const resolveIssue = async (issueId: string | number) => {
@@ -177,7 +226,21 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
     await runtime.updateIssue(issueId, { status: 'CANCELLED' })
   }
 
-  const canRenderForm = editingIssueId ? runtime.policy.canUpdate : runtime.policy.canCreate
+  useEffect(() => {
+    if (!showForm || !canRenderForm) return
+    window.requestAnimationFrame(() => issueTypeRef.current?.focus())
+  }, [canRenderForm, editingIssueId, showForm])
+
+  useEffect(() => {
+    if (!showForm || !backendFieldErrors) return
+
+    const errors: IssueFormErrors = {
+      quantity: backendFieldErrors.quantity ? String(backendFieldErrors.quantity) : undefined,
+      countLineId: backendFieldErrors.countLineId ? String(backendFieldErrors.countLineId) : undefined,
+      description: backendFieldErrors.description ? String(backendFieldErrors.description) : undefined,
+    }
+    focusFirstInvalidField(errors)
+  }, [backendFieldErrors, showForm])
 
   return (
     <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm" aria-labelledby="laundry-issue-title">
@@ -188,6 +251,7 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
         </div>
         {runtime.policy.canCreate ? (
           <button
+            ref={createButtonRef}
             type="button"
             onClick={showForm ? closeForm : openCreateForm}
             disabled={runtime.busy}
@@ -208,24 +272,40 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
             event.preventDefault()
             void submitIssue()
           }}
+          onKeyDown={handleFormKeyDown}
           noValidate
           aria-busy={runtime.busy}
+          aria-describedby={ISSUE_FORM_HINT_ID}
         >
           <div className="sm:col-span-2">
             <p className="text-sm font-black text-blue-950">{editingIssueId ? 'แก้ไขและเชื่อมโยงปัญหา' : 'เพิ่มปัญหาใหม่'}</p>
             <p className="mt-1 text-xs text-blue-700">
               สามารถผูกกับระดับงาน ถุง หรือรายการนับ และล้างการเชื่อมโยงกลับเป็นระดับงานได้
             </p>
+            <p id={ISSUE_FORM_HINT_ID} className="mt-1 text-xs text-blue-700">
+              กด Ctrl+Enter หรือ Command+Enter เพื่อบันทึก และกด Esc เพื่อปิดแบบฟอร์ม
+            </p>
           </div>
-          <label className="grid gap-2 text-sm font-bold text-slate-700">
-            ประเภทปัญหา
-            <select value={issueType} onChange={(event) => setIssueType(event.target.value as IssueType)} disabled={runtime.busy} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 disabled:cursor-not-allowed disabled:bg-slate-100">
+
+          <div className="grid gap-2 text-sm font-bold text-slate-700">
+            <label htmlFor={ISSUE_TYPE_ID}>ประเภทปัญหา</label>
+            <select
+              ref={issueTypeRef}
+              id={ISSUE_TYPE_ID}
+              name="issueType"
+              value={issueType}
+              onChange={(event) => setIssueType(event.target.value as IssueType)}
+              disabled={runtime.busy}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+            >
               {issueTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
-          </label>
+          </div>
+
           <div className="grid gap-2 text-sm font-bold text-slate-700">
             <label htmlFor={ISSUE_QUANTITY_ID}>จำนวน</label>
             <input
+              ref={quantityRef}
               id={ISSUE_QUANTITY_ID}
               name="quantity"
               type="number"
@@ -240,7 +320,7 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
               disabled={runtime.busy}
               aria-invalid={Boolean(formErrors.quantity || backendFieldErrors?.quantity)}
               aria-describedby={formErrors.quantity || backendFieldErrors?.quantity ? `${ISSUE_QUANTITY_ID}-error` : undefined}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
             {formErrors.quantity || backendFieldErrors?.quantity ? (
               <p id={`${ISSUE_QUANTITY_ID}-error`} className="text-xs font-semibold text-red-700" role="alert">
@@ -248,9 +328,12 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
               </p>
             ) : null}
           </div>
-          <label className="grid gap-2 text-sm font-bold text-slate-700">
-            ถุงที่เกี่ยวข้อง (ไม่บังคับ)
+
+          <div className="grid gap-2 text-sm font-bold text-slate-700">
+            <label htmlFor={ISSUE_BAG_ID}>ถุงที่เกี่ยวข้อง (ไม่บังคับ)</label>
             <select
+              id={ISSUE_BAG_ID}
+              name="bagId"
               value={bagId}
               disabled={runtime.busy}
               onChange={(event) => {
@@ -258,22 +341,25 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
                 setCountLineId('')
                 setFormErrors((current) => ({ ...current, countLineId: undefined }))
               }}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
             >
               <option value="">ระดับงานซัก / ไม่ผูกกับถุง</option>
               {bags.map((bag) => <option key={bag.id} value={String(bag.id)}>{bag.bagNo || `Bag ${bag.id}`}</option>)}
             </select>
-          </label>
+          </div>
+
           <div className="grid gap-2 text-sm font-bold text-slate-700">
             <label htmlFor={ISSUE_COUNT_LINE_ID}>รายการนับที่เกี่ยวข้อง (ไม่บังคับ)</label>
             <select
+              ref={countLineRef}
               id={ISSUE_COUNT_LINE_ID}
+              name="countLineId"
               value={countLineId}
               disabled={runtime.busy}
               onChange={(event) => handleCountLineChange(event.target.value)}
               aria-invalid={Boolean(formErrors.countLineId || backendFieldErrors?.countLineId)}
               aria-describedby={formErrors.countLineId || backendFieldErrors?.countLineId ? `${ISSUE_COUNT_LINE_ID}-error` : undefined}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
             >
               <option value="">ไม่ผูกกับรายการนับ</option>
               {availableCountLines.map((line) => (
@@ -288,9 +374,11 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
               </p>
             ) : null}
           </div>
+
           <div className="grid gap-2 text-sm font-bold text-slate-700 sm:col-span-2">
             <label htmlFor={ISSUE_DESCRIPTION_ID}>รายละเอียด <span className="text-red-600" aria-hidden="true">*</span></label>
             <textarea
+              ref={descriptionRef}
               id={ISSUE_DESCRIPTION_ID}
               name="description"
               rows={3}
@@ -304,7 +392,7 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
               }}
               aria-invalid={Boolean(formErrors.description || backendFieldErrors?.description)}
               aria-describedby={formErrors.description || backendFieldErrors?.description ? `${ISSUE_DESCRIPTION_ID}-error` : undefined}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
             />
             {formErrors.description || backendFieldErrors?.description ? (
               <p id={`${ISSUE_DESCRIPTION_ID}-error`} className="text-xs font-semibold text-red-700" role="alert">
@@ -312,6 +400,7 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
               </p>
             ) : null}
           </div>
+
           <button
             type="submit"
             disabled={runtime.busy || !description.trim()}
@@ -356,7 +445,12 @@ export function LaundryIssueRuntimePanel({ workId, workStatus, bags = [], countL
                   {mutable ? (
                     <div className="flex shrink-0 flex-wrap gap-2">
                       {runtime.policy.canUpdate ? (
-                        <button type="button" onClick={() => openEditForm(issue)} disabled={runtime.busy} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-50">
+                        <button
+                          type="button"
+                          onClick={(event) => openEditForm(issue, event.currentTarget)}
+                          disabled={runtime.busy}
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
                           แก้ไข / เชื่อมโยง
                         </button>
                       ) : null}
