@@ -71,6 +71,30 @@ The ref is set synchronously before the first request begins, so a second Create
 
 This is repository evidence only. A rapid double-click or slow-network controlled run is still required.
 
+## Architecture Guard Readiness
+
+A dependency-free architecture verifier is available at:
+
+```text
+frontend/scripts/verify-architecture.mjs
+```
+
+The verifier scans Laundry Work presentation components and fails when a component imports directly from:
+
+- `api/`
+- `stores/`
+- `repositories/`
+- `controllers/`
+
+Command:
+
+```bash
+cd frontend
+npm run verify:architecture
+```
+
+This command is required evidence before completion. Repository availability does not count as a PASS until it is executed successfully.
+
 ## Repository Readiness Decision
 
 | Gate | Repository readiness | Run evidence |
@@ -85,6 +109,7 @@ This is repository evidence only. A rapid double-click or slow-network controlle
 | Workspace isolation | READY | REQUIRED |
 | Permission validation | READY | REQUIRED |
 | Duplicate-submit protection | READY WITH SYNCHRONOUS LOCK | REQUIRED |
+| Architecture boundary verification | COMMAND AVAILABLE | REQUIRED |
 | Frontend lint/build | COMMANDS AVAILABLE | REQUIRED |
 
 ## Required Controlled Run
@@ -95,6 +120,7 @@ Minimum local command evidence:
 
 ```bash
 cd frontend
+npm run verify:architecture
 npm run lint
 npm run build
 ```
