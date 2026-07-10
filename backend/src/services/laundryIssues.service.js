@@ -162,8 +162,8 @@ const updateLaundryIssue = async (issueId, payload = {}, context = {}) => {
       throw error;
     }
 
-    if (current.status === 'RESOLVED') {
-      const error = new Error('Resolved Laundry Issue cannot be edited');
+    if (['RESOLVED', 'CANCELLED'].includes(current.status)) {
+      const error = new Error('Resolved or cancelled Laundry Issue cannot be edited');
       error.statusCode = 409;
       throw error;
     }
