@@ -4,6 +4,8 @@ Store real run evidence here.
 
 ## Start Here
 
+- `SCHEMA-ALIGNMENT-HANDOFF.md` — blocking backend Prisma schema alignment required before controlled runtime validation
+- `SCHEMA-MIGRATION-DRIFT.md` — verified schema/migration drift evidence
 - `CONTROLLED-RUN-CHECKLIST.md` — execution-ready checklist for the remaining completion gate
 - `V2-COUNT-LINE-LINKAGE-RUN.md` — focused real-runtime run sheet for valid linkage, invalid cross-bag protection, refresh persistence, relink, and unlink preparation
 - `project-os/frontend/execution/fe-08-laundry-issue/FE-08-ISSUE-EXTENDED-VALIDATION.md` — source validation contract
@@ -23,4 +25,4 @@ Store real run evidence here.
 
 Conversation confirmation or repository review alone is not completion evidence.
 
-The Laundry Issue Task remains `IMPLEMENTED_PENDING_RUN_EVIDENCE` until controlled runtime validation is recorded, the handoff is written, and `STATUS.md` plus `TASK-INDEX.md` are updated together.
+The Laundry Issue Task remains `IMPLEMENTED_PENDING_RUN_EVIDENCE` until schema alignment is complete, controlled runtime validation is recorded, the handoff is written, and `STATUS.md` plus `TASK-INDEX.md` are updated together.
