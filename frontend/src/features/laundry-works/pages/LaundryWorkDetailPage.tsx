@@ -143,7 +143,10 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
                 bags={projection.bags}
                 countLines={projection.countRows}
               />
-              <LaundryImageRuntimePanel workId={projection.work?.id} />
+              <LaundryImageRuntimePanel
+                workId={projection.work?.id}
+                workStatus={projection.work?.currentStatus}
+              />
             </div>
 
             <HistoryPanel events={projection.history} />
