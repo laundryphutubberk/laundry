@@ -107,6 +107,17 @@ export function useLaundryWorkController() {
     }
   }, [loadDetail, resetLaundryWorkSelection])
 
+  useEffect(() => {
+    const handleIssueChanged = (event: Event) => {
+      const changedWorkId = (event as CustomEvent<{ workId?: string }>).detail?.workId
+      if (!changedWorkId || changedWorkId !== String(workId)) return
+      void loadDetail()
+    }
+
+    window.addEventListener('laundry-work:issue-changed', handleIssueChanged)
+    return () => window.removeEventListener('laundry-work:issue-changed', handleIssueChanged)
+  }, [loadDetail, workId])
+
   const workspaceScope = useMemo(
     () => ({
       workspaceType: sessionContext.workspaceType,
