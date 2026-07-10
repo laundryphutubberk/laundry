@@ -11,6 +11,7 @@
     "verify:http-policy": "node scripts/verify-http-policy-tests.js",
     "verify:laundry-issue": "node scripts/verify-laundry-issue.js",
     "verify:laundry-issue-http": "node scripts/verify-laundry-issue-http.js",
+    "verify:laundry-issue:all": "npm run verify:laundry-issue && npm run verify:laundry-issue-http",
     "verify:be07": "node scripts/verify-be07.js"
   },
   "keywords": [],
