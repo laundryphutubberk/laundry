@@ -1,16 +1,20 @@
 # Laundry Issue — Schema / Migration Drift
 
-Status: VERIFIED_BLOCKER
+Status: REPOSITORY_ALIGNMENT_CONFIRMED_PENDING_RUN_EVIDENCE
 Date: 2026-07-10
 Task: Laundry Issue
 
 ## Summary
 
-Laundry Issue bag/count-line linkage is implemented in runtime code and database migration, but `backend/prisma/schema.prisma` does not declare the corresponding fields or relations.
+The previously recorded Prisma schema drift is no longer present in the current repository state.
 
-## Verified Evidence
+`backend/prisma/schema.prisma` now declares the Laundry Issue linkage fields, relations, back-relations, and indexes that correspond to the existing migration.
 
-Migration present:
+This document does not claim runtime PASS. Prisma format, validate, generate, migrate deploy, and runtime verification still require controlled-run evidence.
+
+## Repository Evidence
+
+Migration:
 
 ```text
 backend/prisma/migrations/20260710_add_issue_links/migration.sql
@@ -25,56 +29,18 @@ foreign keys to LaundryBag and LaundryCountLine
 indexes for bagId and countLineId
 ```
 
-Runtime implementation present:
-
-```text
-backend/src/services/laundryIssues.service.js
-backend/src/repositories/laundryIssues.repository.js
-```
-
-The runtime currently accesses these fields through raw SQL:
-
-```text
-SELECT "bagId", "countLineId" FROM "IssueReport"
-UPDATE "IssueReport" SET "bagId" = ..., "countLineId" = ...
-```
-
-Current Prisma schema does not declare:
-
-```text
-IssueReport.bagId
-IssueReport.countLineId
-IssueReport.bag relation
-IssueReport.countLine relation
-LaundryBag.issueReports back relation
-LaundryCountLine.issueReports back relation
-```
-
-## Risk
-
-- Prisma schema and deployed database can diverge.
-- `prisma generate` does not expose linkage fields.
-- Future ORM queries may silently omit or reject the linkage fields.
-- A future migration generated from the current schema may attempt destructive correction.
-- Controlled-run evidence would not prove schema consistency.
-
-## Required Recovery
-
-Update `backend/prisma/schema.prisma` to match the applied migration:
+Current Prisma schema declares:
 
 ```prisma
 model LaundryBag {
-  // existing fields
-  issueReports IssueReport[]
+  issues IssueReport[]
 }
 
 model LaundryCountLine {
-  // existing fields
-  issueReports IssueReport[]
+  issues IssueReport[]
 }
 
 model IssueReport {
-  // existing fields
   bagId       Int?
   bag         LaundryBag?       @relation(fields: [bagId], references: [id], onDelete: SetNull)
   countLineId Int?
@@ -85,7 +51,11 @@ model IssueReport {
 }
 ```
 
-Then run:
+The schema and migration therefore describe the same linkage boundary at repository level.
+
+## Remaining Verification
+
+Run and record:
 
 ```bash
 cd backend
@@ -96,10 +66,20 @@ npx prisma migrate deploy
 npm run verify:runtime
 ```
 
+Required evidence:
+
+- command output
+- environment and database target
+- commit SHA
+- PASS / FAIL result
+- recovery notes if any command fails
+
 ## Gate Decision
 
 ```text
-DO_NOT_COMPLETE_LAUNDRY_ISSUE
+SCHEMA_DRIFT_BLOCKER_RESOLVED_IN_REPOSITORY
+RUNTIME_VERIFICATION_PENDING
+DO_NOT_COMPLETE_LAUNDRY_ISSUE_YET
 ```
 
-Controlled runtime validation may continue only after schema drift is resolved and the Prisma commands pass with recorded evidence.
+Controlled runtime validation may proceed after the Prisma command set passes with recorded evidence.
