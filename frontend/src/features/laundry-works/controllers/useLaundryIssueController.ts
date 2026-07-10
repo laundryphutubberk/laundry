@@ -51,13 +51,29 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
   )
 
   const loadIssues = useCallback(async () => {
+    if (!workId) {
+      setIssues([])
+      setError(null)
+      setLoading(false)
+      return false
+    }
+
     const meta = createMeta('listLaundryIssues', session)
     setLoading(true)
     setError(null)
-    const result = await laundryIssueApi.list({ workId, meta })
-    if (result.ok) setIssues(result.data)
-    else setError(result.error)
-    setLoading(false)
+
+    try {
+      const result = await laundryIssueApi.list({ workId, meta })
+      if (result.ok) {
+        setIssues(result.data)
+        return true
+      }
+
+      setError(result.error)
+      return false
+    } finally {
+      setLoading(false)
+    }
   }, [session, setError, setIssues, setLoading, workId])
 
   useEffect(() => {
@@ -72,7 +88,7 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
   }, [mutationFeedback])
 
   const createIssue = useCallback(async (input: Omit<CreateLaundryIssueInput, 'workId' | 'meta'>) => {
-    if (!policy.canCreate || busy || mutationInFlightRef.current) return false
+    if (!workId || !policy.canCreate || busy || mutationInFlightRef.current) return false
     mutationInFlightRef.current = true
     setBusy(true)
     setError(null)
@@ -101,7 +117,7 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
   }, [busy, dismissMutationFeedback, loadIssues, policy.canCreate, session, setBusy, setError, workId])
 
   const updateIssue = useCallback(async (issueId: string | number, input: Omit<UpdateLaundryIssueInput, 'issueId' | 'meta'>) => {
-    if (!policy.canUpdate || busy || mutationInFlightRef.current) return false
+    if (!workId || !policy.canUpdate || busy || mutationInFlightRef.current) return false
     mutationInFlightRef.current = true
     setBusy(true)
     setError(null)
@@ -135,7 +151,7 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
   }, [busy, dismissMutationFeedback, loadIssues, policy.canUpdate, session, setBusy, setError, workId])
 
   const resolveIssue = useCallback(async (issueId: string | number, resolutionNote: string) => {
-    if (!policy.canResolve || busy || mutationInFlightRef.current) return false
+    if (!workId || !policy.canResolve || busy || mutationInFlightRef.current) return false
     mutationInFlightRef.current = true
     setBusy(true)
     setError(null)
