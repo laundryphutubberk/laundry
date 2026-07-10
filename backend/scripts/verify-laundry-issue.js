@@ -225,6 +225,53 @@ const runCountLineDerivationAndSummarySyncTest = async () => {
   );
 };
 
+const runUnlinkIssueToWorkLevelTest = async () => {
+  const { repository, calls } = createRepository();
+
+  await withMockedModules(
+    {
+      '../repositories/laundryIssues.repository': repository,
+      '../repositories/laundryWorks.repository': createWorkRepository(),
+    },
+    async () => {
+      const { updateLaundryIssue } = require('../src/services/laundryIssues.service');
+      await updateLaundryIssue(
+        300,
+        { bagId: null, countLineId: null, description: 'Work-level issue' },
+        { actor: laundryStaffActor },
+      );
+
+      const linkCall = calls.find((call) => call.fn === 'updateLaundryIssueLinks');
+      assert.equal(linkCall.bagId, null);
+      assert.equal(linkCall.countLineId, null);
+      assert.equal(calls.some((call) => call.fn === 'updateWorkIssueCount'), true);
+    },
+  );
+};
+
+const runCancelIssueSummarySyncTest = async () => {
+  const { repository, calls } = createRepository();
+
+  await withMockedModules(
+    {
+      '../repositories/laundryIssues.repository': repository,
+      '../repositories/laundryWorks.repository': createWorkRepository(),
+    },
+    async () => {
+      const { updateLaundryIssue } = require('../src/services/laundryIssues.service');
+      await updateLaundryIssue(
+        300,
+        { status: 'CANCELLED' },
+        { actor: laundryStaffActor },
+      );
+
+      const updateCall = calls.find((call) => call.fn === 'updateLaundryIssue');
+      assert.equal(updateCall.data.status, 'CANCELLED');
+      assert.equal(calls.some((call) => call.fn === 'updateWorkIssueCount'), true);
+    },
+  );
+};
+
 const runCancelledIssueEditBlockedTest = async () => {
   const { repository } = createRepository({
     findLaundryIssueById: async () => ({
@@ -244,7 +291,7 @@ const runCancelledIssueEditBlockedTest = async () => {
       const { updateLaundryIssue } = require('../src/services/laundryIssues.service');
       await expectError(
         () => updateLaundryIssue(300, { description: 'should not update' }, { actor: laundryStaffActor }),
-        { statusCode: 409, message: /Cancelled Laundry Issue cannot be edited/ },
+        { statusCode: 409, message: /Resolved or cancelled Laundry Issue cannot be edited/ },
       );
     },
   );
@@ -281,6 +328,8 @@ const run = async () => {
   await runTerminalWorkBlockedTest();
   await runInvalidBagCountLinePairBlockedTest();
   await runCountLineDerivationAndSummarySyncTest();
+  await runUnlinkIssueToWorkLevelTest();
+  await runCancelIssueSummarySyncTest();
   await runCancelledIssueEditBlockedTest();
   await runCancelledIssueResolveBlockedTest();
 
