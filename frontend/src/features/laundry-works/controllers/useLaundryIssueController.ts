@@ -20,6 +20,14 @@ const createMeta = (action: string, session: ReturnType<typeof getWorkspaceConte
   createdAt: new Date().toISOString(),
 })
 
+const notifyLaundryWorkIssueChanged = (workId?: string | number) => {
+  if (!workId || typeof window === 'undefined') return
+
+  window.dispatchEvent(new CustomEvent('laundry-work:issue-changed', {
+    detail: { workId: String(workId) },
+  }))
+}
+
 export function useLaundryIssueController({ workId, workStatus }: { workId?: string | number; workStatus?: string }) {
   const session = useMemo(() => getWorkspaceContext(), [])
   const issues = useLaundryIssueStore((state) => state.issues)
@@ -53,7 +61,7 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
   }, [loadIssues, reset])
 
   const createIssue = useCallback(async (input: Omit<CreateLaundryIssueInput, 'workId' | 'meta'>) => {
-    if (!policy.canCreate) return false
+    if (!policy.canCreate || busy) return false
     setBusy(true)
     setError(null)
     try {
@@ -63,14 +71,15 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
         return false
       }
       await loadIssues()
+      notifyLaundryWorkIssueChanged(workId)
       return true
     } finally {
       setBusy(false)
     }
-  }, [loadIssues, policy.canCreate, session, setBusy, setError, workId])
+  }, [busy, loadIssues, policy.canCreate, session, setBusy, setError, workId])
 
   const updateIssue = useCallback(async (issueId: string | number, input: Omit<UpdateLaundryIssueInput, 'issueId' | 'meta'>) => {
-    if (!policy.canUpdate) return false
+    if (!policy.canUpdate || busy) return false
     setBusy(true)
     setError(null)
     try {
@@ -80,14 +89,15 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
         return false
       }
       await loadIssues()
+      notifyLaundryWorkIssueChanged(workId)
       return true
     } finally {
       setBusy(false)
     }
-  }, [loadIssues, policy.canUpdate, session, setBusy, setError])
+  }, [busy, loadIssues, policy.canUpdate, session, setBusy, setError, workId])
 
   const resolveIssue = useCallback(async (issueId: string | number, resolutionNote: string) => {
-    if (!policy.canResolve) return false
+    if (!policy.canResolve || busy) return false
     setBusy(true)
     setError(null)
     try {
@@ -97,11 +107,12 @@ export function useLaundryIssueController({ workId, workStatus }: { workId?: str
         return false
       }
       await loadIssues()
+      notifyLaundryWorkIssueChanged(workId)
       return true
     } finally {
       setBusy(false)
     }
-  }, [loadIssues, policy.canResolve, session, setBusy, setError])
+  }, [busy, loadIssues, policy.canResolve, session, setBusy, setError, workId])
 
   return { issues, loading, busy, error, policy, createIssue, updateIssue, resolveIssue, reload: loadIssues }
 }
