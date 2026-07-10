@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 
 import { clearAuthSession, getAuthSession } from '../../auth/authSession'
@@ -59,6 +59,7 @@ function iconClassName(active?: boolean) {
 
 export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) {
   const navigate = useNavigate()
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const session = getAuthSession()
   const displayName = session?.user?.displayName?.trim() || session?.user?.email || 'ผู้ใช้งาน'
   const role = session?.actor?.role || session?.user?.role || ''
@@ -113,23 +114,41 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
 
             <span className="h-8 w-px bg-white/15" aria-hidden="true" />
 
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 text-lg font-black text-white shadow-sm">
-                {avatarLabel}
-              </div>
-              <div className="max-w-52 text-right">
-                <p className="truncate text-base font-black leading-tight text-white">{displayName}</p>
-                <p className="mt-0.5 truncate text-xs font-semibold text-blue-100/75">{roleLabel}</p>
-              </div>
-            </div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((open) => !open)}
+                aria-expanded={userMenuOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-3 rounded-2xl px-2 py-1.5 text-left transition hover:bg-white/10"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 to-blue-400 text-lg font-black text-white shadow-sm">
+                  {avatarLabel}
+                </div>
+                <div className="max-w-52 text-right">
+                  <p className="truncate text-base font-black leading-tight text-white">{displayName}</p>
+                  <p className="mt-0.5 truncate text-xs font-semibold text-blue-100/75">{roleLabel}</p>
+                </div>
+                <span className={`text-sm text-blue-100/75 transition ${userMenuOpen ? 'rotate-180' : ''}`}>⌄</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/20"
-            >
-              ออกจากระบบ
-            </button>
+              {userMenuOpen ? (
+                <div role="menu" className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 text-slate-800 shadow-2xl shadow-slate-950/20">
+                  <div className="border-b border-slate-100 px-3 py-2">
+                    <p className="truncate text-sm font-black text-slate-950">{displayName}</p>
+                    <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{roleLabel}</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogout}
+                    className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm font-bold text-red-700 transition hover:bg-red-50"
+                  >
+                    ออกจากระบบ
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
 
