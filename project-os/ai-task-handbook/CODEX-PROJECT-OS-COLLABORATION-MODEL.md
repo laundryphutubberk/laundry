@@ -60,6 +60,8 @@ Task ownership follows business/engineering responsibility, not repository folde
 
 ```text
 Project OS Blueprint and Principles
+  -> Domain Discovery
+  -> Operational Capability Definition
   -> Architect Command Pack
   -> Codex Big Flow Implementation
   -> Automated / DB / Build Verification
@@ -68,8 +70,134 @@ Project OS Blueprint and Principles
   -> Project OS Task Completion
   -> Targeted Human Re-test
   -> Project OS Audit and Elevation
-  -> Acceptance / Release
+  -> Verified Baseline / Acceptance / Release
 ```
+
+## Operational Capability First
+
+### Principle
+
+Development work must be framed as an operational business capability before it is framed as technical implementation.
+
+Codex must not be assigned a module, CRUD set, screen, API group, or database entity as the primary mission when the actual business capability has not yet been defined.
+
+### Capability Definition
+
+An Operational Capability must identify:
+
+- Actor.
+- Operational goal.
+- Entry condition.
+- Main flow.
+- Exception flow.
+- Domain ownership.
+- State and lifecycle.
+- Policies and blocking rules.
+- Data and source of truth.
+- Cross-layer behavior.
+- Verification evidence.
+- Human operational acceptance.
+
+### Command Rule
+
+Prefer:
+
+> Implement Laundry Issue Operational Capability.
+
+over:
+
+> Implement Laundry Issue CRUD.
+
+A Codex Command Pack must describe the end-to-end capability across all required layers, which may include:
+
+- Backend.
+- Frontend.
+- Runtime.
+- Policy.
+- Persistence.
+- Integration.
+- Automated verification.
+- Database verification.
+- Browser-test preparation.
+
+### Architecture Gate
+
+A new Codex Big Flow must not begin until the Architect can clearly explain:
+
+1. What business capability is being created.
+2. Who uses it and why.
+3. What truth it owns or changes.
+4. What states and transitions apply.
+5. What conditions block or permit progress.
+6. What evidence proves completion.
+7. What decisions remain unresolved.
+
+If these cannot be answered, the work remains in Domain Discovery or Blueprint refinement.
+
+### Ownership Rule
+
+Ownership follows the operational capability and business responsibility, not a strict Frontend or Backend folder boundary.
+
+A Project OS Task may patch both Frontend and Backend when both changes are necessary to complete the same approved capability.
+
+### Codex and Task Rule
+
+Codex owns breadth:
+
+- End-to-end implementation.
+- Cross-module integration.
+- Major runtime and transaction work.
+- Initial automated verification.
+
+Project OS Tasks own depth:
+
+- Evidence-driven completion.
+- Policy refinement.
+- UX and behavior gaps.
+- Focused regression protection.
+- Targeted cross-layer patches.
+
+The Architect decides the boundary.
+
+### Human Reality Gate
+
+Automated verification does not complete an operational capability.
+
+The capability must pass Human Operational Test before it can be accepted, audited, elevated, or locked as a verified baseline.
+
+### Lifecycle
+
+```text
+Blueprint
+-> Domain Discovery
+-> Operational Capability Definition
+-> Architect Command Pack
+-> Codex Big Flow
+-> Automated and Database Verification
+-> Human Operational Test
+-> Architect Analysis
+-> Project OS Task Completion
+-> Human Re-test
+-> Audit and Elevation
+-> Verified Baseline
+```
+
+### Anti-Patterns
+
+Do not:
+
+- Open Codex work while domain identity is unresolved.
+- Use CRUD completion as proof of business completion.
+- Divide ownership solely by Frontend/Backend folders.
+- Mark `READY_FOR_TEST` as `ACCEPTED`.
+- Perform premature audit before Human Operational Test.
+- Send a whole flow back to Codex for narrow evidence-driven gaps.
+
+### Engineering Objective
+
+Maximize completed business capability per Codex run.
+
+Minimize redesign, repeated context loading, and correction cycles by completing architecture and domain reasoning before implementation begins.
 
 ## Human Test Rule
 
@@ -230,4 +358,4 @@ Final acceptance requires:
 
 ## Durable Summary
 
-> Codex builds the broad flow. Human operation reveals reality. The Architect analyzes and routes the gaps. Project OS Tasks complete the depth. Project OS audits and elevates the stable result.
+> Define the operational capability first. Codex builds its breadth. Human operation reveals reality. The Architect analyzes and routes the gaps. Project OS Tasks complete the depth. Project OS audits and elevates the stable result.
