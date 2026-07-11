@@ -6,8 +6,9 @@ const {
 } = require('../controllers/laundryWorkImages.controller');
 
 const router = express.Router({ mergeParams: true });
+const { parseLaundryImageUpload } = require('../middlewares/laundryImageUpload.middleware');
 
 router.get('/', listLaundryWorkImagesController);
-router.post('/', createLaundryWorkImageController);
+router.post('/', parseLaundryImageUpload, createLaundryWorkImageController);
 
 module.exports = router;

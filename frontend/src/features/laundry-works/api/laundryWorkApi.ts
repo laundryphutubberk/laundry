@@ -86,7 +86,7 @@ export type LaundryWorkBackendCapability = {
     update: true
     setCover: true
     softDelete: true
-    binaryUploadAdapter: false
+    binaryUploadAdapter: true
   }
   history: {
     fromDetailStatusLogs: true
@@ -132,7 +132,7 @@ export const laundryWorkBackendCapability: LaundryWorkBackendCapability = {
     update: true,
     setCover: true,
     softDelete: true,
-    binaryUploadAdapter: false,
+    binaryUploadAdapter: true,
   },
   history: {
     fromDetailStatusLogs: true,

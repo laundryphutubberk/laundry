@@ -1,0 +1,13 @@
+{
+  "flow_id": "laundry-images-operational-capability-v1",
+  "document_status": "DRAFT",
+  "work_status": "READY",
+  "scope": "REAL_BINARY_UPLOAD_CLOUDINARY",
+  "binary_upload": "IMPLEMENTED",
+  "schema_change": "NOT_PROPOSED",
+  "api_contract_change": "MULTIPART_EXTENSION_TO_EXISTING_CREATE_ENDPOINT",
+  "current_gate": "FLOW_READY_FOR_TEST",
+  "blocked_by": [],
+  "known_gaps": ["Human browser verification remains pending", "Frontend focused test capability is unavailable"],
+  "updated_at": "2026-07-11T17:00:00+07:00"
+}

@@ -3,6 +3,7 @@ const { getRequestPolicyContext } = require('../core/policyContext');
 const {
   listLaundryWorkImages,
   createLaundryWorkImage,
+  uploadLaundryWorkImage,
   updateLaundryWorkImage,
   setLaundryWorkImageCover,
   softDeleteLaundryWorkImage,
@@ -28,8 +29,10 @@ const listLaundryWorkImagesController = async (req, res, next) => {
 const createLaundryWorkImageController = async (req, res, next) => {
   try {
     const params = parseRequest(workIdParamSchema, req.params);
-    const body = parseRequest(createLaundryWorkImageBodySchema, req.body);
-    const image = await createLaundryWorkImage(params.workId, body, getRequestPolicyContext(req));
+    const context = getRequestPolicyContext(req);
+    const image = req.file
+      ? await uploadLaundryWorkImage(params.workId, req.file, req.body, context)
+      : await createLaundryWorkImage(params.workId, parseRequest(createLaundryWorkImageBodySchema, req.body), context);
     return sendSuccess(res, image, undefined, 201);
   } catch (error) {
     return next(error);

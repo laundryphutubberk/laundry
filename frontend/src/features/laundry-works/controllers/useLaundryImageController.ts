@@ -87,6 +87,18 @@ export function useLaundryImageController({ workId, workStatus }: { workId?: str
     })
   }, [policy.canRegister, runMutation, session, setError, workId])
 
+  const uploadFile = useCallback(async (file: File, caption?: string) => {
+    if (!policy.canRegister || !workId || mutationLock.current) return false
+    let succeeded = false
+    await runMutation(REGISTER_PENDING_KEY, async () => {
+      const result = await laundryImageApi.upload({ workId, file, caption, meta: createMeta('uploadLaundryWorkImage', session) })
+      if (!result.ok) setError(result.error)
+      succeeded = result.ok
+      return result.ok
+    })
+    return succeeded
+  }, [policy.canRegister, runMutation, session, setError, workId])
+
   const editCaption = useCallback((image: LaundryWorkImageDTO) => {
     if (!policy.canEditCaption) return
     const caption = window.prompt('แก้ไขคำอธิบายรูปภาพ', image.caption || '')
@@ -127,6 +139,7 @@ export function useLaundryImageController({ workId, workStatus }: { workId?: str
     registerPending: pendingImageId === REGISTER_PENDING_KEY,
     actions: {
       registerByUrl,
+      uploadFile,
       editCaption,
       setCover,
       softDelete,
