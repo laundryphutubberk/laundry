@@ -10,21 +10,24 @@ Every new or resumed session starts here.
 ## Boot Sequence
 
 1. Read `kernel/COLLABORATION-PROTOCOL.md`.
-2. Read `kernel/SOURCE-OF-TRUTH.md`.
-3. Read the engineering, security, and verification standards required by the current stage.
-4. Read `project/PROJECT-PROFILE.md`.
-5. Read `execution/STATE.json`.
-6. If the project is uninitialized, enter Discovery.
-7. If business truth is not approved, continue Blueprint work.
-8. If domain/data design is not approved, continue Domain Design.
-9. If architecture is ready, resolve the active business flow.
-10. Read only the project sources and contracts required by that flow.
-11. Run `npm run verify` from this directory before claiming Project OS integrity.
-12. Verify implementation evidence before claiming flow completion.
+2. Read `kernel/CODEX-PROJECT-OS-COLLABORATION-MODEL.md`.
+3. Read `kernel/SOURCE-OF-TRUTH.md`.
+4. Read the engineering, security, and verification standards required by the current stage.
+5. Read `project/PROJECT-PROFILE.md`.
+6. Read `execution/STATE.json`.
+7. If the project is uninitialized, enter Discovery.
+8. If business truth is not approved, continue Blueprint work.
+9. If domain/data design is not approved, continue Domain Design.
+10. If architecture is ready, resolve the active business flow.
+11. Read only the project sources and contracts required by that flow.
+12. Run `npm run verify` from this directory before claiming Project OS integrity.
+13. Verify implementation evidence before claiming flow completion.
 
 ## Operating Rule
 
 Design broadly enough to protect the whole system. Implement narrowly enough to finish and verify one business flow at a time.
+
+After blueprint and architecture approval, use Codex as the primary broad implementation engine, Human operational testing as the reality gate, specialist Tasks as evidence-driven completion agents, and Project OS V2 as the audit/elevation authority.
 
 ## Stop Conditions
 
@@ -41,4 +44,4 @@ Stop for an explicit human decision when work changes:
 
 ## Truth Rule
 
-Conversation is context, not durable project truth. Approved repository documents, source state, and observed evidence are authoritative according to `kernel/SOURCE-OF-TRUTH.md`.
+Conversation is context, not durable project truth. Approved repository documents, source state, observed Human operational evidence, and verified implementation evidence are authoritative according to `kernel/SOURCE-OF-TRUTH.md`.
