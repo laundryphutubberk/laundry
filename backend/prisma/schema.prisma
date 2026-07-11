@@ -81,6 +81,14 @@ enum IssueStatus {
   CANCELLED
 }
 
+enum ClaimStatus {
+  OPEN
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  RESOLVED
+}
+
 enum WashLoadStatus {
   DRAFT
   PLANNED
@@ -345,6 +353,8 @@ model IssueReport {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  claim LaundryClaim?
+
   @@index([workId])
   @@index([resortId])
   @@index([bagId])
@@ -353,6 +363,30 @@ model IssueReport {
   @@index([colorGroup])
   @@index([status])
   @@index([reportedAt])
+}
+
+model LaundryClaim {
+  id Int @id @default(autoincrement())
+
+  issueId Int         @unique
+  issue   IssueReport @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  status         ClaimStatus @default(OPEN)
+  claimReason    String
+  reviewNote     String?
+  resolutionNote String?
+
+  createdById  Int?
+  reviewedById Int?
+  resolvedById Int?
+  reviewedAt   DateTime?
+  resolvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model LaundryWorkImage {
