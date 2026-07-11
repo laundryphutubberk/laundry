@@ -74,7 +74,8 @@ Approved Blueprint / Architecture
   -> Specialist Task Completion
   -> Targeted Human Re-test
   -> Project OS Audit / Elevation
-  -> Verified Baseline / Acceptance / Release
+  -> Capability Lock
+  -> Controlled Extension / Acceptance / Release
 ```
 
 ## Operational Capability First
@@ -183,7 +184,8 @@ Blueprint
 -> Project OS Task Completion
 -> Human Re-test
 -> Audit and Elevation
--> Verified Baseline
+-> Capability Lock
+-> Controlled Extension / Verified Baseline
 ```
 
 ### Anti-Patterns
@@ -202,6 +204,93 @@ Do not:
 Maximize completed business capability per Codex run.
 
 Minimize redesign, repeated context loading, and correction cycles by completing architecture and domain reasoning before implementation begins.
+
+## Capability Lock Doctrine
+
+### Principle
+
+An Operational Capability becomes `LOCKED` after it has successfully completed:
+
+- Blueprint approval.
+- Codex implementation.
+- Automated verification.
+- Database verification when applicable.
+- Human Operational Test.
+- Integration verification.
+- Architect review.
+
+`LOCKED` means the capability becomes the trusted engineering baseline. It is no longer considered active development.
+
+### Allowed Changes After Lock
+
+Only the following controlled changes are allowed:
+
+- Regression fixes.
+- UX improvements.
+- Accessibility improvements.
+- Performance improvements.
+- Evidence completion.
+- Documentation refinement.
+- Policy refinement.
+- Small behavioral corrections that preserve the approved business capability.
+- Extensions through new Operational Capabilities.
+
+### Forbidden Changes
+
+Do not perform the following against a `LOCKED` capability without Blueprint revision and new Capability approval:
+
+- Business redesign.
+- Domain ownership changes.
+- Lifecycle redesign.
+- Aggregate redesign.
+- Large refactoring without Blueprint approval.
+- Reopening completed Codex Big Flows for localized fixes.
+- Returning a whole Capability to Codex for evidence-driven gaps.
+
+### Extension Rule
+
+New business requirements should be implemented as a new Operational Capability whenever possible.
+
+Do not modify an existing `LOCKED` capability unless the approved business capability itself has changed.
+
+### Architect Rule
+
+The Architect classifies each requested post-lock change as:
+
+- Refinement.
+- Regression.
+- Extension.
+- Blueprint revision.
+
+This classification determines whether the correct execution path is:
+
+- A Project OS Task.
+- A Codex Big Flow.
+- A new or revised Blueprint and Capability approval.
+
+### Capability Status Model
+
+```text
+DRAFT
+-> BLUEPRINT_APPROVED
+-> DOMAIN_DISCOVERED
+-> IMPLEMENTING
+-> READY_FOR_TEST
+-> HUMAN_VERIFIED
+-> INTEGRATED
+-> LOCKED
+-> EXTENDED (optional through a new Operational Capability)
+```
+
+`LOCKED` is not the end of development. It is the beginning of stable evolution.
+
+### Engineering Objective
+
+Protect verified engineering baselines.
+
+Reduce redesign cycles and unnecessary Codex token consumption.
+
+Maintain architectural stability while allowing controlled evolution.
 
 ## Human Operational Test Gate
 
@@ -361,8 +450,9 @@ Acceptance requires:
 - Resolution of material findings.
 - Targeted re-test.
 - Audit/elevation evidence.
+- Capability Lock or an explicit decision not to lock.
 - Compliance with Git and external-action authorization boundaries.
 
 ## Durable Formula
 
-> Define the operational capability first. Codex owns breadth. Tasks own depth. Human operation reveals reality. The Architect decides the boundary. Project OS preserves, audits, and elevates the truth.
+> Define the operational capability first. Codex owns breadth. Tasks own depth. Human operation reveals reality. The Architect decides the boundary. Verified capabilities become locked baselines that evolve through controlled refinement or new capabilities. Project OS preserves, audits, and elevates the truth.
