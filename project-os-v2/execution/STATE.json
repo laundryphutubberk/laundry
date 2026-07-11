@@ -5,7 +5,7 @@
   "status": "IMPLEMENTED_PENDING_VERIFICATION",
   "authority": "PILOT_NON_AUTHORITATIVE",
   "active_stage": "FLOW_READY_FOR_TEST",
-  "active_flow": "laundry-images-operational-capability-v1",
+  "active_flow": "laundry-activity-timeline-v1",
   "blocked_by": [],
   "v1_policy": "READ_ONLY_REFERENCE",
   "git_policy": "NO_COMMIT_OR_PUSH_WITHOUT_EXPLICIT_AUTHORIZATION",
