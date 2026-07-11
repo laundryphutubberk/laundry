@@ -263,7 +263,7 @@ export function useLaundryWorkController() {
 
   const createCountLine = useCallback(
     async (input: { bagId: string | number; itemTypeId: string | number; itemTypeName: string; colorGroup?: string; quantity: number; note?: string }) => {
-      if (!policyActionModel.countLine.updateCountLine.allowed) return
+      if (!policyActionModel.countLine.createCountLine.allowed) return
 
       const meta = createRequestMeta('createLaundryCountLine', sessionContext)
       setIsCreatingCountLine(true)
@@ -315,7 +315,7 @@ export function useLaundryWorkController() {
       lineId: string | number,
       input: { bagId?: string | number; itemTypeId?: string | number; colorGroup?: string | null; quantity?: number; note?: string | null },
     ) => {
-      if (!policyActionModel.countLine.createCountLine.allowed) return
+      if (!policyActionModel.countLine.updateCountLine.allowed) return
 
       const meta = createRequestMeta('updateLaundryCountLine', sessionContext)
       setIsUpdatingCountLine(true)
