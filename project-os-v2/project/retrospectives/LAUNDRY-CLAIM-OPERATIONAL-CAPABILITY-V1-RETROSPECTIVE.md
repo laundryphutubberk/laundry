@@ -1,6 +1,6 @@
 # Laundry Claim Operational Capability V1 Retrospective
 
-Status: COMPLETED
+Status: APPROVED
 Scope: Operational retrospective only
 Capability: LAUNDRY-CLAIM-OPERATIONAL-CAPABILITY-V1
 
