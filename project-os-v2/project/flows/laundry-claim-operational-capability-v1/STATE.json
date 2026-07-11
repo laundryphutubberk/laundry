@@ -2,12 +2,12 @@
   "flow_id": "laundry-claim-operational-capability-v1",
   "document_status": "DRAFT",
   "work_status": "READY",
-  "scope": "CLAIM_DOMAIN_AND_API_PASS_A",
+  "scope": "CLAIM_OPERATIONAL_CAPABILITY_V1",
   "binary_upload": "NOT_APPLICABLE",
   "schema_change": "IMPLEMENTED_AND_MIGRATED",
   "api_contract_change": "ADDITIVE_EXPLICIT_CLAIM_COMMANDS",
-  "current_gate": "READY_FOR_PASS_B",
+  "current_gate": "FLOW_READY_FOR_TEST",
   "blocked_by": [],
-  "known_gaps": ["Pass B Frontend integration is NOT_STARTED", "Human Browser Test is NOT_EXECUTED"],
-  "updated_at": "2026-07-11T18:15:00+07:00"
+  "known_gaps": ["Human Browser Test is NOT_EXECUTED", "Focused Frontend test capability is unavailable"],
+  "updated_at": "2026-07-11T21:10:00+07:00"
 }
