@@ -3,6 +3,7 @@ const laundryWorksRepository = require('../repositories/laundryWorks.repository'
 const { logger } = require('../core/observability');
 const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
+const imageStorage = require('../adapters/cloudinaryImageStorage.adapter');
 
 const buildImageWhere = ({ actor, workId } = {}) => {
   const where = buildRequiredActorResortScopedWhere({ actor });
@@ -93,6 +94,29 @@ const createLaundryWorkImage = async (workId, payload = {}, context = {}) => {
   return image;
 };
 
+const uploadLaundryWorkImage = async (workId, file, payload = {}, context = {}) => {
+  const actor = assertLaundryStaffActor(context.actor);
+  await assertWorkExists({ workId, actor, mutable: true });
+  if (!file?.buffer) { const error = new Error('Image file is required'); error.statusCode = 400; throw error; }
+
+  const uploaded = await imageStorage.uploadLaundryWorkImage({ buffer: file.buffer, workId, originalName: file.originalname });
+  try {
+    return await createLaundryWorkImage(workId, {
+      url: uploaded.secure_url,
+      publicId: uploaded.public_id,
+      provider: 'CLOUDINARY',
+      mimeType: file.mimetype,
+      originalName: file.originalname,
+      sizeBytes: uploaded.bytes || file.size,
+      caption: payload.caption,
+      isCover: payload.isCover === true || payload.isCover === 'true',
+    }, context);
+  } catch (error) {
+    try { await imageStorage.deleteLaundryWorkImage(uploaded.public_id); } catch (cleanupError) { logger.error('laundry.image.upload_cleanup_failed', { workId: Number(workId), publicId: uploaded.public_id, message: cleanupError.message }); }
+    throw error;
+  }
+};
+
 const updateLaundryWorkImage = async (imageId, payload = {}, context = {}) => {
   const actor = assertLaundryStaffActor(context.actor);
   const where = buildImageWhere({ actor });
@@ -178,6 +202,7 @@ const softDeleteLaundryWorkImage = async (imageId, context = {}) => {
     }
 
     await assertWorkExists({ workId: current.workId, actor, client: tx, mutable: true });
+    if (current.provider === 'CLOUDINARY' && current.publicId) await imageStorage.deleteLaundryWorkImage(current.publicId);
     return laundryWorkImagesRepository.softDeleteLaundryWorkImage({ imageId, where, client: tx });
   });
 
@@ -195,6 +220,7 @@ const softDeleteLaundryWorkImage = async (imageId, context = {}) => {
 module.exports = {
   listLaundryWorkImages,
   createLaundryWorkImage,
+  uploadLaundryWorkImage,
   updateLaundryWorkImage,
   setLaundryWorkImageCover,
   softDeleteLaundryWorkImage,
