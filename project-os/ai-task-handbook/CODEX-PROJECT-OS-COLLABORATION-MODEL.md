@@ -136,6 +136,59 @@ To prevent conflicts:
 
 No pull, reset, rebase, merge, or cherry-pick should be performed during uncertain ownership without an Architect reconciliation plan.
 
+## Git Responsibility Standard
+
+### Local Commit Boundary
+
+Codex may analyze, implement, verify, and create local commits inside the approved mission boundary.
+
+The normal Codex execution boundary ends when one of these terminal states is reached:
+
+```text
+BLOCKED
+READY_FOR_TEST
+LOCAL_COMMIT_CREATED
+```
+
+An Architect Command Pack must terminate at one of these states. It must not continue into remote Git operations unless the Human explicitly authorizes an exceptional recovery case.
+
+### Human-Owned Remote Operations
+
+The Human owns all remote repository operations and decisions, including:
+
+- `fetch`;
+- `pull`;
+- `push`;
+- branch synchronization;
+- merge and conflict acceptance;
+- release and deployment initiation;
+- remote repository policy and integration decisions.
+
+Routine remote Git operations must not consume Codex implementation tokens. Codex must not perform or narrate routine push, pull, merge, synchronization, or release work as part of a normal Command Pack.
+
+### Architect Planning Rule
+
+The Architect plans execution from an exact commit SHA.
+
+Project OS Tasks must begin from a synchronized Git state and an explicitly identified base commit SHA. If the Human has not synchronized the repository, the Task remains blocked at the Git boundary rather than guessing from stale or divergent state.
+
+### Exceptional Recovery Rule
+
+Remote Git operations may be included only when the Human explicitly authorizes them for an exceptional recovery case and the recovery boundary is clear, evidence-backed, and reversible where possible.
+
+Such authorization is mission-specific and does not change the default responsibility model.
+
+### Engineering Time Principle
+
+Engineering time and Codex tokens should be spent on architecture, implementation, verification, debugging, and evidence—not on routine remote Git mechanics that the Human can perform directly.
+
+The collaboration model therefore optimizes for:
+
+- Codex completing the largest safe local implementation unit;
+- the Architect stopping Command Packs at the local commit boundary;
+- the Human controlling remote integration and release decisions;
+- Project OS recording exact commit-based handoffs.
+
 ## Project OS Operating Modes
 
 ### Before Development
