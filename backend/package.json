@@ -29,6 +29,7 @@
     "verify:sorting-data-recording-http": "node scripts/verify-sorting-data-recording-http.js",
     "verify:return-work-closure-db": "node scripts/verify-return-work-closure-db.js",
     "verify:laundry-timeline-http": "node scripts/verify-laundry-timeline-http.js",
+    "verify:laundry-claim-http": "node scripts/verify-laundry-claim-http.js",
     "seed:laundry-timeline-browser": "node scripts/seed-laundry-timeline-browser.js",
     "cleanup:laundry-timeline-browser": "node scripts/cleanup-laundry-timeline-browser.js",
     "seed:return-work-closure-browser": "node scripts/seed-return-work-closure-browser.js",
