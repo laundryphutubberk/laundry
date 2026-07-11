@@ -39,8 +39,6 @@ const toButtonAction = (action: LaundryWorkPolicyAction, onClick?: () => void) =
 
 const nextBackendStatusByCurrentStatus: Record<string, string> = {
   BAG_RECEIVED: 'FACTORY_RECEIVED',
-  DATA_RECORDED: 'RETURNED',
-  RETURNED: 'CLOSED',
 }
 
 type ControllerMutationFeedback = Omit<MutationFeedbackModel, 'onDismiss' | 'onRetry'>
@@ -175,10 +173,12 @@ export function useLaundryWorkController() {
     setRequestId(meta.requestId)
 
     try {
-      const commandByStatus: Record<string, 'confirm-type-sorting' | 'confirm-color-sorting' | 'record-data'> = {
+      const commandByStatus: Record<string, 'confirm-type-sorting' | 'confirm-color-sorting' | 'record-data' | 'confirm-return' | 'close'> = {
         ITEM_COUNTED: 'confirm-type-sorting',
         TYPE_SORTED: 'confirm-color-sorting',
         COLOR_SORTED: 'record-data',
+        DATA_RECORDED: 'confirm-return',
+        RETURNED: 'close',
       }
       const command = commandByStatus[detail.work.currentStatus]
       const result = detail.work.currentStatus === 'BAG_OPENED'

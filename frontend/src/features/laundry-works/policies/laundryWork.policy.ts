@@ -62,8 +62,6 @@ const deny = (label: string, reasonCode: string, message: string): LaundryWorkPo
 function getNextBackendStatus(currentStatus?: string) {
   const transitions: Record<string, string> = {
     BAG_RECEIVED: 'FACTORY_RECEIVED',
-    DATA_RECORDED: 'RETURNED',
-    RETURNED: 'CLOSED',
   }
 
   return transitions[currentStatus || '']
@@ -90,7 +88,9 @@ export function getLaundryWorkActionModel({
   const explicitCountCompletion = detail?.work.currentStatus === 'BAG_OPENED' && capability?.countLines.complete
   const explicitSortingCommand = ['ITEM_COUNTED', 'TYPE_SORTED', 'COLOR_SORTED'].includes(detail?.work.currentStatus || '')
     && Boolean(capability?.sortingDataRecording)
-  const canContinueByBackend = explicitCountCompletion || explicitSortingCommand || (backendStatusTransitionReady && Boolean(nextBackendStatus))
+  const explicitReturnClosureCommand = (detail?.work.currentStatus === 'DATA_RECORDED' && Boolean(capability?.returnClosure.confirmReturn))
+    || (detail?.work.currentStatus === 'RETURNED' && Boolean(capability?.returnClosure.closeWork))
+  const canContinueByBackend = explicitCountCompletion || explicitSortingCommand || explicitReturnClosureCommand || (backendStatusTransitionReady && Boolean(nextBackendStatus))
   const countLineStatusReady = countLineStatuses.has(detail?.work.currentStatus || '')
 
   const boundaryDenyReason = missingWorkspace

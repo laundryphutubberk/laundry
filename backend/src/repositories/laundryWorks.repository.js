@@ -107,7 +107,7 @@ const findLaundryWorkByIdForUpdate = async ({ workId, where, client } = {}) => {
   });
 };
 
-const updateLaundryWorkStatus = async ({ workId, where, expectedStatus, toStatus, client } = {}) => {
+const updateLaundryWorkStatus = async ({ workId, where, expectedStatus, toStatus, timestamps = {}, client } = {}) => {
   const db = getClient(client);
 
   const updateResult = await db.laundryWork.updateMany({
@@ -118,6 +118,7 @@ const updateLaundryWorkStatus = async ({ workId, where, expectedStatus, toStatus
     },
     data: {
       currentStatus: toStatus,
+      ...timestamps,
     },
   });
 
@@ -220,6 +221,48 @@ const countRecordedMovements = async ({ workId, client } = {}) => {
   });
 };
 
+const findRecordedMovements = async ({ workId, client } = {}) => {
+  const db = getClient(client);
+  return db.linenMovement.findMany({
+    where: { workId: Number(workId), movementType: 'COUNTED_AT_LAUNDRY' },
+    orderBy: { id: 'asc' },
+  });
+};
+
+const lockWorkCommand = async ({ workId, command, client } = {}) => {
+  const db = getClient(client);
+  const key = `laundry-work-${command}:${workId}`;
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))::text AS lock_result`;
+};
+
+const countReturnMovements = async ({ workId, client } = {}) => {
+  const db = getClient(client);
+  return db.linenMovement.count({ where: { workId: Number(workId), movementType: 'RETURNED_TO_RESORT' } });
+};
+
+const createReturnMovements = async ({ work, groups, client } = {}) => {
+  const db = getClient(client);
+  await db.linenMovement.createMany({ data: groups.map((group) => ({
+    resortId: work.resortId,
+    workId: work.id,
+    itemTypeId: group.itemTypeId,
+    colorGroup: group.colorGroup,
+    movementType: 'RETURNED_TO_RESORT',
+    quantity: group.quantity,
+    note: 'Laundry Work return confirmed',
+  })) });
+};
+
+const applyReturnedInventory = async ({ work, groups, client } = {}) => {
+  const db = getClient(client);
+  for (const group of groups) {
+    await db.linenInventorySummary.update({
+      where: { resortId_itemTypeId_colorGroup: { resortId: work.resortId, itemTypeId: group.itemTypeId, colorGroup: group.colorGroup } },
+      data: { atLaundryQty: { decrement: group.quantity }, atResortQty: { increment: group.quantity }, returnedQty: { increment: group.quantity }, calculatedAt: new Date() },
+    });
+  }
+};
+
 const transaction = async (callback) => prisma.$transaction(callback);
 
 module.exports = {
@@ -235,5 +278,10 @@ module.exports = {
   createCountedMovements,
   upsertInventorySummaries,
   countRecordedMovements,
+  findRecordedMovements,
+  lockWorkCommand,
+  countReturnMovements,
+  createReturnMovements,
+  applyReturnedInventory,
   transaction,
 };

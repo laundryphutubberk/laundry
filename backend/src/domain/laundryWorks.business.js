@@ -63,6 +63,8 @@ const assertWorkStatusTransition = (currentStatus, nextStatus) => {
     || (currentStatus === 'ITEM_COUNTED' && nextStatus === 'TYPE_SORTED')
     || (currentStatus === 'TYPE_SORTED' && nextStatus === 'COLOR_SORTED')
     || (currentStatus === 'COLOR_SORTED' && nextStatus === 'DATA_RECORDED')
+    || (currentStatus === 'DATA_RECORDED' && nextStatus === 'RETURNED')
+    || (currentStatus === 'RETURNED' && nextStatus === 'CLOSED')
   ) {
     throw createBusinessError('This Laundry Work transition requires its explicit operational command', 409);
   }
@@ -97,6 +99,21 @@ const aggregateRecordedCountLines = (countLines) => {
     groups.set(key, current);
   }
   return [...groups.values()];
+};
+
+const assertReturnCanComplete = ({ countLines, recordedMovements }) => {
+  assertTypeSortingCanComplete(countLines);
+  assertColorSortingCanComplete(countLines);
+  const recorded = aggregateRecordedCountLines(countLines);
+  if (!recordedMovements?.length) throw createBusinessError('Laundry Work has no recorded Inventory truth', 409);
+  const movementByKey = new Map(recordedMovements.map((movement) => [
+    `${movement.itemTypeId}:${String(movement.colorGroup || '').trim().toLowerCase()}`,
+    Number(movement.quantity || 0),
+  ]));
+  if (recorded.some((group) => movementByKey.get(`${group.itemTypeId}:${group.colorGroup.toLowerCase()}`) !== group.quantity)) {
+    throw createBusinessError('Laundry Work Count Lines do not match recorded Inventory truth', 409);
+  }
+  return recorded;
 };
 
 const formatBangkokDate = (date = new Date()) => {
@@ -163,6 +180,7 @@ module.exports = {
   assertTypeSortingCanComplete,
   assertColorSortingCanComplete,
   aggregateRecordedCountLines,
+  assertReturnCanComplete,
   buildWorkNoPrefix,
   buildNextWorkNo,
   buildCreateWorkData,

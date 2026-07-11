@@ -1,0 +1,13 @@
+{
+  "flow_id": "return-packing-work-closure",
+  "document_status": "DRAFT",
+  "work_status": "READY",
+  "scope": "RECORDED_INVENTORY_RETURN_AND_WORK_CLOSURE",
+  "binary_upload": "NOT_APPLICABLE",
+  "schema_change": "NOT_PROPOSED",
+  "api_contract_change": "APPROVED_EXPLICIT_RETURN_AND_CLOSURE_COMMANDS",
+  "current_gate": "FLOW_READY_FOR_TEST",
+  "blocked_by": [],
+  "known_gaps": ["No durable packing entity or state exists; packing remains operational preparation", "Human browser verification remains pending", "Frontend focused test and TypeScript check capabilities are unavailable"],
+  "updated_at": "2026-07-11T12:20:00+07:00"
+}
