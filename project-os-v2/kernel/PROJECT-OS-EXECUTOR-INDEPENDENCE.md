@@ -93,6 +93,66 @@ Project OS defines these replaceable execution concepts instead:
 
 The `Executor` assignment is replaceable. Capability, Blueprint, architecture, verification, traceability, and operating principles remain stable unless the underlying business or architecture truth changes.
 
+## Execution Contract Evolution
+
+### Canonical Interface
+
+The Execution Contract is the canonical interface between Project OS and every executor.
+
+A Command Pack is an Execution Contract. It is owned by Project OS, not by Codex or any other executor.
+
+The canonical execution model is:
+
+```text
+Business Capability
+    -> Blueprint
+    -> Execution Contract
+    -> Executor Assignment
+    -> Verification
+    -> Capability Completion
+```
+
+The Execution Contract remains stable when the executor changes. Only the Executor Assignment and executor-specific operating details may change.
+
+### Required Execution Fields
+
+Every execution activity should define:
+
+- Owner.
+- Executor.
+- Execution Contract.
+- Verification Contract.
+- Completion Gate.
+
+Executor selection is an operational decision. It is never an architectural dependency.
+
+### Preferred Terminology
+
+Preferred terminology for future documents is:
+
+- Execution Command Pack.
+- Execution Flow.
+- Execution Resume.
+- Execution Queue.
+- Execution Assignment.
+- Execution Completion.
+
+Legacy terminology containing `Codex` remains supported for backward compatibility. No mandatory documentation migration is required. Terminology should evolve naturally when existing documents are revised for substantive reasons.
+
+### Compatibility Rule
+
+Existing references such as `Codex Command Pack`, `Codex Big Flow`, or similar tool-specific labels remain valid historical and operational aliases when their meaning is clear.
+
+New architecture and kernel documents should prefer executor-independent terminology unless a rule applies specifically to Codex as the selected executor.
+
+Changing terminology must not alter Capability meaning, Blueprint truth, verification requirements, traceability, completion gates, or architecture.
+
+### Engineering Objective
+
+Keep Project OS independent of present and future implementation technology.
+
+Replacing Codex, Claude Code, Gemini CLI, Cursor Agents, Human developers, specialists, or future AI systems must require changing only execution assignment—not business architecture or durable Project OS knowledge.
+
 ## Executor Replacement Rule
 
 Changing an executor must require changing only execution assignment and executor-specific operating details.
@@ -136,4 +196,4 @@ Preserve organizational knowledge independently of implementation technology.
 
 Future executor replacement must require changing execution assignments, never reconstructing architectural knowledge.
 
-> Project OS preserves durable truth. Executors perform replaceable work against explicit contracts.
+> Project OS preserves durable truth. Execution Contracts define stable work. Executors perform replaceable assignments against explicit verification and completion gates.
