@@ -1,0 +1,17 @@
+{
+  "flow_id": "laundry-image",
+  "document_status": "APPROVED",
+  "work_status": "COMPLETED",
+  "scope": "METADATA_FLOW_ONLY",
+  "binary_upload": "DEFERRED",
+  "schema_change": "FORBIDDEN",
+  "api_contract_change": "FORBIDDEN",
+  "current_gate": "COMPLETED_WITH_APPROVED_EXCEPTION",
+  "blocked_by": [],
+  "known_gaps": [
+    "Binary upload provider and final file upload UX are deferred to a separate capability",
+    "V1 governance state does not reflect existing schema, migration, and verified implementation",
+    "Resort browser read-only was accepted without a separate human-observed run; backend isolation and frontend policy evidence passed"
+  ],
+  "updated_at": "2026-07-11T00:00:00+07:00"
+}

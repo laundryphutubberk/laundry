@@ -187,7 +187,7 @@ const runOperationalWriteSuccessTest = async () => {
   );
 };
 
-const runScopedStatusUpdateTest = async () => {
+const runResortStatusUpdateDeniedTest = async () => {
   const calls = [];
   const repository = {
     transaction: async (callback) => callback({ testClient: true }),
@@ -221,29 +221,77 @@ const runScopedStatusUpdateTest = async () => {
       clearModule('../src/services/laundryWorks.service');
       const { updateLaundryWorkStatus } = require('../src/services/laundryWorks.service');
 
-      const updated = await updateLaundryWorkStatus(
-        9,
+      await assertThrowsWithCode(
+        () => updateLaundryWorkStatus(
+          9,
+          {
+            toStatus: 'FACTORY_RECEIVED',
+            note: 'Factory received',
+          },
+          { actor: resortStaffActor },
+        ),
+        'AUTHORIZATION_POLICY_VIOLATION',
+      );
+      assert.equal(calls.length, 0);
+    },
+  );
+};
+
+const runAtomicLaundryIntakeTest = async () => {
+  const calls = [];
+  const repository = {
+    transaction: async (callback) => callback({ testClient: true }),
+    createLaundryWork: async ({ data, client }) => {
+      calls.push({ fn: 'createLaundryWork', data, client });
+      return {
+        id: 91,
+        ...data,
+        bags: undefined,
+        _count: { bags: data.bags?.create?.length || 0 },
+      };
+    },
+    createWorkStatusLog: async ({ data, client }) => {
+      calls.push({ fn: 'createWorkStatusLog', data, client });
+      return { id: 92, ...data };
+    },
+  };
+  const businessRepository = {
+    findResortById: async () => ({ id: 10, active: true }),
+    findLaundryWorkByWorkNo: async () => null,
+  };
+
+  await withMockedModules(
+    {
+      '../repositories/laundryWorks.repository': repository,
+      '../repositories/laundryWorksBusiness.repository': businessRepository,
+    },
+    async () => {
+      clearModule('../src/services/laundryWorks.service');
+      const { createLaundryWork } = require('../src/services/laundryWorks.service');
+
+      const created = await createLaundryWork(
         {
-          toStatus: 'FACTORY_RECEIVED',
-          note: 'Factory received',
+          resortId: 10,
+          workNo: 'LW-ATOMIC-001',
+          bagCount: 2,
+          currentStatus: 'DRAFT',
         },
-        { actor: resortStaffActor },
+        { actor: laundryStaffActor },
       );
 
-      assert.equal(updated.id, 9);
-      assert.equal(updated.currentStatus, 'FACTORY_RECEIVED');
-
-      const lookupCall = calls.find((call) => call.fn === 'findLaundryWorkByIdForUpdate');
-      assert.deepEqual(lookupCall.where, { resortId: 10 });
-      assert.deepEqual(lookupCall.client, { testClient: true });
-
-      const updateCall = calls.find((call) => call.fn === 'updateLaundryWorkStatus');
-      assert.equal(updateCall.toStatus, 'FACTORY_RECEIVED');
-
+      assert.equal(created.currentStatus, 'BAG_RECEIVED');
+      assert.equal(created.bagCount, 2);
+      const createCall = calls.find((call) => call.fn === 'createLaundryWork');
+      assert.deepEqual(createCall.client, { testClient: true });
+      assert.equal(createCall.data.createdById, laundryStaffActor.userId);
+      assert.deepEqual(
+        createCall.data.bags.create.map((bag) => bag.bagNo),
+        ['LW-ATOMIC-001-BAG-001', 'LW-ATOMIC-001-BAG-002'],
+      );
       const logCall = calls.find((call) => call.fn === 'createWorkStatusLog');
-      assert.equal(logCall.data.fromStatus, 'BAG_RECEIVED');
-      assert.equal(logCall.data.toStatus, 'FACTORY_RECEIVED');
-      assert.equal(logCall.data.note, 'Factory received');
+      assert.equal(logCall.data.changedById, laundryStaffActor.userId);
+      assert.equal(logCall.data.toStatus, 'BAG_RECEIVED');
+      assert.deepEqual(logCall.client, { testClient: true });
     },
   );
 };
@@ -285,7 +333,8 @@ const run = async () => {
   await runActorScopedReadServiceTest();
   await runOperationalWritePermissionTest();
   await runOperationalWriteSuccessTest();
-  await runScopedStatusUpdateTest();
+  await runResortStatusUpdateDeniedTest();
+  await runAtomicLaundryIntakeTest();
   await runMasterDataManagementPermissionTest();
 
   console.log('BE-07 representative service policy tests passed.');

@@ -104,15 +104,15 @@ model User {
   role          UserRole
   workspaceType WorkspaceType
 
-  resortId      Int?
-  resort        Resort?       @relation(fields: [resortId], references: [id])
+  resortId Int?
+  resort   Resort? @relation(fields: [resortId], references: [id])
 
-  active        Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdWorks  LaundryWork[] @relation("WorkCreatedBy")
-  issueReports  IssueReport[] @relation("IssueReportedBy")
+  createdWorks LaundryWork[] @relation("WorkCreatedBy")
+  issueReports IssueReport[] @relation("IssueReportedBy")
 
   @@index([resortId])
   @@index([workspaceType])
@@ -120,24 +120,24 @@ model User {
 }
 
 model Resort {
-  id           Int      @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   name         String
   contactName  String?
   contactPhone String?
   address      String?
-  active       Boolean  @default(true)
+  active       Boolean @default(true)
 
-  users        User[]
-  works        LaundryWork[]
-  bags         LaundryBag[]
-  countLines   LaundryCountLine[]
-  movements    LinenMovement[]
-  inventory    LinenInventorySummary[]
-  issues       IssueReport[]
-  workImages   LaundryWorkImage[]
+  users      User[]
+  works      LaundryWork[]
+  bags       LaundryBag[]
+  countLines LaundryCountLine[]
+  movements  LinenMovement[]
+  inventory  LinenInventorySummary[]
+  issues     IssueReport[]
+  workImages LaundryWorkImage[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([active])
 }
@@ -149,35 +149,35 @@ model LaundryItemType {
   weightPerPieceKg Decimal? @db.Decimal(6, 3)
   active           Boolean  @default(true)
 
-  countLines       LaundryCountLine[]
-  movements        LinenMovement[]
-  inventory        LinenInventorySummary[]
-  issues           IssueReport[]
+  countLines LaundryCountLine[]
+  movements  LinenMovement[]
+  inventory  LinenInventorySummary[]
+  issues     IssueReport[]
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([name, category])
   @@index([active])
 }
 
 model LaundryWork {
-  id            Int        @id @default(autoincrement())
-  workNo        String     @unique
+  id     Int    @id @default(autoincrement())
+  workNo String @unique
 
-  resortId      Int
-  resort        Resort     @relation(fields: [resortId], references: [id])
+  resortId Int
+  resort   Resort @relation(fields: [resortId], references: [id])
 
   bagCount      Int        @default(0)
   currentStatus WorkStatus @default(DRAFT)
   issueCount    Int        @default(0)
 
-  receivedDate  DateTime?
-  returnedAt    DateTime?
-  closedAt      DateTime?
+  receivedDate DateTime?
+  returnedAt   DateTime?
+  closedAt     DateTime?
 
-  createdById   Int?
-  createdBy     User?      @relation("WorkCreatedBy", fields: [createdById], references: [id])
+  createdById Int?
+  createdBy   User? @relation("WorkCreatedBy", fields: [createdById], references: [id])
 
   bags          LaundryBag[]
   countLines    LaundryCountLine[]
@@ -187,9 +187,9 @@ model LaundryWork {
   statusLogs    WorkStatusLog[]
   washLoadPlans WashLoadPlan[]
 
-  note          String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([resortId])
   @@index([currentStatus])
@@ -199,26 +199,26 @@ model LaundryWork {
 }
 
 model LaundryBag {
-  id          Int         @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  workId      Int
-  work        LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+  workId Int
+  work   LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
-  resortId    Int
-  resort      Resort      @relation(fields: [resortId], references: [id])
+  resortId Int
+  resort   Resort @relation(fields: [resortId], references: [id])
 
-  bagNo       String
-  status      BagStatus   @default(RECEIVED)
+  bagNo  String
+  status BagStatus @default(RECEIVED)
 
-  receivedAt  DateTime?
-  openedAt    DateTime?
-  note        String?
+  receivedAt DateTime?
+  openedAt   DateTime?
+  note       String?
 
-  countLines  LaundryCountLine[]
-  issues      IssueReport[]
+  countLines LaundryCountLine[]
+  issues     IssueReport[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([workId, bagNo])
   @@index([resortId])
@@ -228,29 +228,29 @@ model LaundryBag {
 }
 
 model LaundryCountLine {
-  id            Int             @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  workId        Int
-  work          LaundryWork     @relation(fields: [workId], references: [id], onDelete: Cascade)
+  workId Int
+  work   LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
-  bagId         Int?
-  bag           LaundryBag?     @relation(fields: [bagId], references: [id])
+  bagId Int?
+  bag   LaundryBag? @relation(fields: [bagId], references: [id])
 
-  resortId      Int
-  resort        Resort          @relation(fields: [resortId], references: [id])
+  resortId Int
+  resort   Resort @relation(fields: [resortId], references: [id])
 
-  itemTypeId    Int
-  itemType      LaundryItemType @relation(fields: [itemTypeId], references: [id])
+  itemTypeId Int
+  itemType   LaundryItemType @relation(fields: [itemTypeId], references: [id])
 
   colorGroup    String?
-  quantity      Int             @default(0)
-  issueQuantity Int             @default(0)
+  quantity      Int     @default(0)
+  issueQuantity Int     @default(0)
   note          String?
 
-  issues        IssueReport[]
+  issues IssueReport[]
 
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([workId])
   @@index([bagId])
@@ -260,23 +260,23 @@ model LaundryCountLine {
 }
 
 model LinenMovement {
-  id            Int             @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  resortId      Int
-  resort        Resort          @relation(fields: [resortId], references: [id])
+  resortId Int
+  resort   Resort @relation(fields: [resortId], references: [id])
 
-  workId        Int?
-  work          LaundryWork?    @relation(fields: [workId], references: [id])
+  workId Int?
+  work   LaundryWork? @relation(fields: [workId], references: [id])
 
-  itemTypeId    Int
-  itemType      LaundryItemType @relation(fields: [itemTypeId], references: [id])
+  itemTypeId Int
+  itemType   LaundryItemType @relation(fields: [itemTypeId], references: [id])
 
-  colorGroup    String?
-  movementType  MovementType
-  quantity      Int
+  colorGroup   String?
+  movementType MovementType
+  quantity     Int
 
-  occurredAt    DateTime        @default(now())
-  note          String?
+  occurredAt DateTime @default(now())
+  note       String?
 
   @@index([resortId])
   @@index([workId])
@@ -287,24 +287,24 @@ model LinenMovement {
 }
 
 model LinenInventorySummary {
-  id             Int             @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  resortId       Int
-  resort         Resort          @relation(fields: [resortId], references: [id])
+  resortId Int
+  resort   Resort @relation(fields: [resortId], references: [id])
 
-  itemTypeId     Int
-  itemType       LaundryItemType @relation(fields: [itemTypeId], references: [id])
+  itemTypeId Int
+  itemType   LaundryItemType @relation(fields: [itemTypeId], references: [id])
 
-  colorGroup     String?
+  colorGroup String?
 
-  totalKnownQty  Int             @default(0)
-  atResortQty    Int             @default(0)
-  atLaundryQty   Int             @default(0)
-  issueQty       Int             @default(0)
-  returnedQty    Int             @default(0)
+  totalKnownQty Int @default(0)
+  atResortQty   Int @default(0)
+  atLaundryQty  Int @default(0)
+  issueQty      Int @default(0)
+  returnedQty   Int @default(0)
 
-  calculatedAt   DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  calculatedAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([resortId, itemTypeId, colorGroup])
   @@index([resortId])
@@ -313,37 +313,37 @@ model LinenInventorySummary {
 }
 
 model IssueReport {
-  id            Int              @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  workId        Int
-  work          LaundryWork      @relation(fields: [workId], references: [id], onDelete: Cascade)
+  workId Int
+  work   LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
-  resortId      Int
-  resort        Resort           @relation(fields: [resortId], references: [id])
+  resortId Int
+  resort   Resort @relation(fields: [resortId], references: [id])
 
-  bagId         Int?
-  bag           LaundryBag?      @relation(fields: [bagId], references: [id], onDelete: SetNull)
+  bagId Int?
+  bag   LaundryBag? @relation(fields: [bagId], references: [id], onDelete: SetNull)
 
-  countLineId   Int?
-  countLine     LaundryCountLine? @relation(fields: [countLineId], references: [id], onDelete: SetNull)
+  countLineId Int?
+  countLine   LaundryCountLine? @relation(fields: [countLineId], references: [id], onDelete: SetNull)
 
-  itemTypeId    Int?
-  itemType      LaundryItemType? @relation(fields: [itemTypeId], references: [id])
+  itemTypeId Int?
+  itemType   LaundryItemType? @relation(fields: [itemTypeId], references: [id])
 
-  colorGroup    String?
-  issueType     IssueType
-  quantity      Int              @default(0)
-  description   String?
-  status        IssueStatus      @default(OPEN)
+  colorGroup  String?
+  issueType   IssueType
+  quantity    Int         @default(0)
+  description String?
+  status      IssueStatus @default(OPEN)
 
-  reportedById  Int?
-  reportedBy    User?            @relation("IssueReportedBy", fields: [reportedById], references: [id])
+  reportedById Int?
+  reportedBy   User? @relation("IssueReportedBy", fields: [reportedById], references: [id])
 
-  reportedAt    DateTime         @default(now())
-  resolvedAt    DateTime?
+  reportedAt DateTime  @default(now())
+  resolvedAt DateTime?
 
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([workId])
   @@index([resortId])
@@ -356,32 +356,32 @@ model IssueReport {
 }
 
 model LaundryWorkImage {
-  id           Int         @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  workId       Int
-  work         LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+  workId Int
+  work   LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
-  resortId     Int
-  resort       Resort      @relation(fields: [resortId], references: [id])
+  resortId Int
+  resort   Resort @relation(fields: [resortId], references: [id])
 
   url          String
   publicId     String?
-  provider     String      @default("LOCAL")
+  provider     String  @default("LOCAL")
   mimeType     String?
   originalName String?
   sizeBytes    Int?
 
   caption      String?
-  displayOrder Int         @default(0)
-  isCover      Boolean     @default(false)
+  displayOrder Int     @default(0)
+  isCover      Boolean @default(false)
 
   uploadedById Int?
-  uploadedAt   DateTime    @default(now())
+  uploadedAt   DateTime @default(now())
 
-  deletedAt    DateTime?
+  deletedAt DateTime?
 
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([workId])
   @@index([resortId])
@@ -391,16 +391,16 @@ model LaundryWorkImage {
 }
 
 model WorkStatusLog {
-  id            Int        @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  workId        Int
-  work          LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+  workId Int
+  work   LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
   fromStatus    WorkStatus?
   toStatus      WorkStatus
   changedById   Int?
   changedByName String?
-  changedAt     DateTime   @default(now())
+  changedAt     DateTime    @default(now())
   note          String?
 
   @@index([workId])
@@ -409,68 +409,68 @@ model WorkStatusLog {
 }
 
 model LaundryMachine {
-  id           Int      @id @default(autoincrement())
-  code         String   @unique
+  id           Int     @id @default(autoincrement())
+  code         String  @unique
   name         String
-  capacityKg   Decimal  @db.Decimal(6, 2)
-  displayOrder Int      @default(0)
-  active       Boolean  @default(true)
+  capacityKg   Decimal @db.Decimal(6, 2)
+  displayOrder Int     @default(0)
+  active       Boolean @default(true)
 
-  loadRules    LaundryMachineLoadRule[]
+  loadRules     LaundryMachineLoadRule[]
   washLoadPlans WashLoadPlan[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([active])
   @@index([displayOrder])
 }
 
 model LaundryMachineLoadRule {
-  id          Int             @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  machineId   Int
-  machine     LaundryMachine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  machineId Int
+  machine   LaundryMachine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
   name        String
-  minWeightKg Decimal         @db.Decimal(6, 2)
-  targetKg    Decimal         @db.Decimal(6, 2)
-  maxWeightKg Decimal         @db.Decimal(6, 2)
+  minWeightKg Decimal @db.Decimal(6, 2)
+  targetKg    Decimal @db.Decimal(6, 2)
+  maxWeightKg Decimal @db.Decimal(6, 2)
 
-  active      Boolean         @default(true)
+  active Boolean @default(true)
 
   washLoadPlans WashLoadPlan[]
 
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([machineId])
   @@index([active])
 }
 
 model WashLoadPlan {
-  id                  Int                     @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  workId              Int
-  work                LaundryWork             @relation(fields: [workId], references: [id], onDelete: Cascade)
+  workId Int
+  work   LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
 
-  machineId           Int
-  machine             LaundryMachine          @relation(fields: [machineId], references: [id])
+  machineId Int
+  machine   LaundryMachine @relation(fields: [machineId], references: [id])
 
-  loadRuleId          Int?
-  loadRule            LaundryMachineLoadRule? @relation(fields: [loadRuleId], references: [id])
+  loadRuleId Int?
+  loadRule   LaundryMachineLoadRule? @relation(fields: [loadRuleId], references: [id])
 
   loadNo              Int
   estimatedPieceCount Int
-  totalWeightKg       Decimal                 @db.Decimal(8, 2)
+  totalWeightKg       Decimal @db.Decimal(8, 2)
 
-  status              WashLoadStatus          @default(DRAFT)
-  fitStatus           WashLoadFitStatus       @default(UNCHECKED)
+  status    WashLoadStatus    @default(DRAFT)
+  fitStatus WashLoadFitStatus @default(UNCHECKED)
 
-  note                String?
+  note String?
 
-  createdAt           DateTime                @default(now())
-  updatedAt           DateTime                @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([workId, loadNo])
   @@index([workId])

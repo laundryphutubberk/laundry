@@ -45,6 +45,13 @@ const assertBagStatusTransition = (currentStatus, nextStatus) => {
   }
 };
 
+const assertWorkCanOpenBag = (work) => {
+  if (!work) throw createBusinessError('Laundry Work not found', 404);
+  if (!['FACTORY_RECEIVED', 'BAG_OPENED'].includes(work.currentStatus)) {
+    throw createBusinessError('Laundry Work is not ready to open bags');
+  }
+};
+
 const buildBagStatusUpdateData = ({ currentBag, payload }) => {
   assertBagStatusTransition(currentBag.status, payload.toStatus);
 
@@ -66,5 +73,6 @@ module.exports = {
   assertUniqueBagNo,
   getNextWorkStatusAfterBagReceived,
   shouldCreateFirstBagStatusLog,
+  assertWorkCanOpenBag,
   buildBagStatusUpdateData,
 };

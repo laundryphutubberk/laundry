@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { getWorkspaceContext } from '../../auth/authSession'
-import { laundryWorkApi, type ApiFailure, type LaundryWorkDetailDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
+import { laundryWorkApi, type ApiFailure, type LaundryItemTypeDTO, type LaundryWorkDetailDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
 import type { MutationFeedbackModel } from '../components/MutationFeedbackBanner'
 import { getLaundryWorkActionModel, type LaundryWorkPolicyAction } from '../policies/laundryWork.policy'
 import { createLaundryWorkDetailProjection } from '../projections/laundryWorkProjection'
@@ -38,13 +38,7 @@ const toButtonAction = (action: LaundryWorkPolicyAction, onClick?: () => void) =
 })
 
 const nextBackendStatusByCurrentStatus: Record<string, string> = {
-  DRAFT: 'BAG_RECEIVED',
   BAG_RECEIVED: 'FACTORY_RECEIVED',
-  FACTORY_RECEIVED: 'BAG_OPENED',
-  BAG_OPENED: 'ITEM_COUNTED',
-  ITEM_COUNTED: 'TYPE_SORTED',
-  TYPE_SORTED: 'COLOR_SORTED',
-  COLOR_SORTED: 'DATA_RECORDED',
   DATA_RECORDED: 'RETURNED',
   RETURNED: 'CLOSED',
 }
@@ -69,6 +63,9 @@ export function useLaundryWorkController() {
   const [isCreatingCountLine, setIsCreatingCountLine] = useState(false)
   const [isUpdatingCountLine, setIsUpdatingCountLine] = useState(false)
   const [isDeletingCountLine, setIsDeletingCountLine] = useState(false)
+  const [itemTypes, setItemTypes] = useState<LaundryItemTypeDTO[]>([])
+  const [isOpeningBag, setIsOpeningBag] = useState(false)
+  const continueInFlightRef = useRef(false)
 
   const sessionContext = useMemo(() => getWorkspaceContext(), [])
 
@@ -87,6 +84,10 @@ export function useLaundryWorkController() {
     if (result.ok) {
       setDetail(result.data)
       setError(null)
+      if (sessionContext.workspaceType === 'LAUNDRY') {
+        const itemTypeResult = await laundryWorkApi.listItemTypes(createRequestMeta('listLaundryItemTypes', sessionContext))
+        if (itemTypeResult.ok) setItemTypes(itemTypeResult.data)
+      }
     } else {
       setDetail(null)
       setError(result.error)
@@ -164,35 +165,68 @@ export function useLaundryWorkController() {
   )
 
   const continueWork = useCallback(async () => {
-    if (!policyActionModel.work.continue.allowed || !detail?.work.currentStatus) return
-
-    const toStatus = nextBackendStatusByCurrentStatus[detail.work.currentStatus]
-    if (!toStatus) return
+    if (!policyActionModel.work.continue.allowed || !detail?.work.currentStatus || continueInFlightRef.current) return
 
     const meta = createRequestMeta('updateLaundryWorkStatus', sessionContext)
     setIsContinuing(true)
+    continueInFlightRef.current = true
     setError(null)
+    setMutationFeedback(null)
     setRequestId(meta.requestId)
 
     try {
-      const result = await laundryWorkApi.updateLaundryWorkStatus({
-        workId,
-        toStatus,
-        meta,
-      })
+      const commandByStatus: Record<string, 'confirm-type-sorting' | 'confirm-color-sorting' | 'record-data'> = {
+        ITEM_COUNTED: 'confirm-type-sorting',
+        TYPE_SORTED: 'confirm-color-sorting',
+        COLOR_SORTED: 'record-data',
+      }
+      const command = commandByStatus[detail.work.currentStatus]
+      const result = detail.work.currentStatus === 'BAG_OPENED'
+        ? await laundryWorkApi.completeCounting({ workId, meta })
+        : command
+          ? await laundryWorkApi.runWorkCommand(command, { workId, meta })
+          : await laundryWorkApi.updateLaundryWorkStatus({
+            workId,
+            toStatus: nextBackendStatusByCurrentStatus[detail.work.currentStatus]!,
+            meta,
+          })
 
       setRequestId(result.meta.requestId)
 
       if (!result.ok) {
-        setError(result.error)
+        setMutationFeedback({
+          tone: 'error',
+          title: 'ไม่สามารถดำเนินการขั้นตอนถัดไปได้',
+          message: result.error.message,
+          requestId: result.meta.requestId,
+        })
         return
       }
 
       await loadDetail()
     } finally {
+      continueInFlightRef.current = false
       setIsContinuing(false)
     }
   }, [detail?.work.currentStatus, loadDetail, policyActionModel.work.continue.allowed, sessionContext, workId])
+
+  const openBag = useCallback(async (bagId: string | number) => {
+    if (!policyActionModel.bag.openBag.allowed) return
+    const meta = createRequestMeta('openLaundryBag', sessionContext)
+    setIsOpeningBag(true)
+    setMutationFeedback(null)
+    try {
+      const result = await laundryWorkApi.openBag({ workId, bagId, meta })
+      if (!result.ok) {
+        setMutationFeedback({ tone: 'error', title: 'เปิดถุงไม่สำเร็จ', message: result.error.message, requestId: result.meta.requestId })
+        return
+      }
+      await loadDetail()
+      setMutationFeedback({ tone: 'success', title: 'เปิดถุงแล้ว', message: 'พร้อมบันทึกรายการผ้าที่นับได้', requestId: result.meta.requestId })
+    } finally {
+      setIsOpeningBag(false)
+    }
+  }, [loadDetail, policyActionModel.bag.openBag.allowed, sessionContext, workId])
 
   const createBag = useCallback(
     async (input: { bagNo: string; note?: string }) => {
@@ -228,8 +262,8 @@ export function useLaundryWorkController() {
   )
 
   const createCountLine = useCallback(
-    async (input: { bagId?: string | number; itemTypeName: string; colorGroup?: string; quantity: number; note?: string }) => {
-      if (!policyActionModel.countLine.createCountLine.allowed) return
+    async (input: { bagId: string | number; itemTypeId: string | number; itemTypeName: string; colorGroup?: string; quantity: number; note?: string }) => {
+      if (!policyActionModel.countLine.updateCountLine.allowed) return
 
       const meta = createRequestMeta('createLaundryCountLine', sessionContext)
       setIsCreatingCountLine(true)
@@ -239,7 +273,7 @@ export function useLaundryWorkController() {
         const result = await laundryWorkApi.createLaundryCountLine({
           workId,
           bagId: input.bagId,
-          itemTypeName: input.itemTypeName,
+          itemTypeId: input.itemTypeId,
           colorGroup: input.colorGroup,
           quantity: input.quantity,
           note: input.note,
@@ -263,6 +297,12 @@ export function useLaundryWorkController() {
           message: `${input.itemTypeName} จำนวน ${input.quantity} ชิ้นถูกบันทึกเรียบร้อย`,
           requestId: result.meta.requestId,
         })
+      } catch (createError) {
+        setMutationFeedback({
+          tone: 'error',
+          title: 'เพิ่มรายการนับผ้าไม่สำเร็จ',
+          message: createError instanceof Error ? createError.message : 'Unexpected count-line error',
+        })
       } finally {
         setIsCreatingCountLine(false)
       }
@@ -273,7 +313,7 @@ export function useLaundryWorkController() {
   const updateCountLine = useCallback(
     async (
       lineId: string | number,
-      input: { bagId?: string | number | null; itemTypeName?: string; colorGroup?: string | null; quantity?: number; note?: string | null },
+      input: { bagId?: string | number; itemTypeId?: string | number; colorGroup?: string | null; quantity?: number; note?: string | null },
     ) => {
       if (!policyActionModel.countLine.createCountLine.allowed) return
 
@@ -309,12 +349,12 @@ export function useLaundryWorkController() {
         setIsUpdatingCountLine(false)
       }
     },
-    [loadDetail, policyActionModel.countLine.createCountLine.allowed, sessionContext],
+    [loadDetail, policyActionModel.countLine.updateCountLine.allowed, sessionContext],
   )
 
   const deleteCountLine = useCallback(
     async (lineId: string | number) => {
-      if (!policyActionModel.countLine.createCountLine.allowed) return
+      if (!policyActionModel.countLine.deleteCountLine.allowed) return
 
       const meta = createRequestMeta('deleteLaundryCountLine', sessionContext)
       setIsDeletingCountLine(true)
@@ -347,11 +387,12 @@ export function useLaundryWorkController() {
         setIsDeletingCountLine(false)
       }
     },
-    [loadDetail, policyActionModel.countLine.createCountLine.allowed, sessionContext],
+    [loadDetail, policyActionModel.countLine.deleteCountLine.allowed, sessionContext],
   )
 
   return {
     ...viewModel,
+    itemTypes,
     feedback: mutationFeedback
       ? {
           ...mutationFeedback,
@@ -371,6 +412,10 @@ export function useLaundryWorkController() {
           ...toButtonAction(policyActionModel.bag.createBag),
           onCreate: createBag,
         },
+        openBag: {
+          ...toButtonAction(policyActionModel.bag.openBag),
+          onOpen: openBag,
+        },
         canCreateBag: policyActionModel.bag.createBag.allowed,
       },
       countLine: {
@@ -382,8 +427,8 @@ export function useLaundryWorkController() {
         updateCountLine,
         deleteCountLine,
         canCreateCountLine: policyActionModel.countLine.createCountLine.allowed,
-        canUpdateCountLine: policyActionModel.countLine.createCountLine.allowed,
-        canDeleteCountLine: policyActionModel.countLine.createCountLine.allowed,
+        canUpdateCountLine: policyActionModel.countLine.updateCountLine.allowed,
+        canDeleteCountLine: policyActionModel.countLine.deleteCountLine.allowed,
       },
       issue: {
         createIssue: toButtonAction(policyActionModel.issue.createIssue),
@@ -396,9 +441,10 @@ export function useLaundryWorkController() {
     },
     state: {
       ...viewModel.state,
-      isBusy: loading || isContinuing || isCreatingBag || isCreatingCountLine || isUpdatingCountLine || isDeletingCountLine,
+      isBusy: loading || isContinuing || isCreatingBag || isOpeningBag || isCreatingCountLine || isUpdatingCountLine || isDeletingCountLine,
       isContinuing,
       isCreatingBag,
+      isOpeningBag,
       isCreatingCountLine,
       isUpdatingCountLine,
       isDeletingCountLine,

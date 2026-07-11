@@ -21,6 +21,24 @@ const assertWorkCanAcceptCountLine = (work) => {
   }
 };
 
+const assertWorkCountingIsOpen = (work) => {
+  if (!work) throw createBusinessError('Laundry Work not found', 404);
+  if (work.currentStatus !== 'BAG_OPENED') {
+    throw createBusinessError('Laundry Work counting is not open');
+  }
+};
+
+const assertCountLineUpdateAllowed = (work, payload = {}) => {
+  if (!work) throw createBusinessError('Laundry Work not found', 404);
+  if (work.currentStatus === 'BAG_OPENED') return;
+  if (!['ITEM_COUNTED', 'TYPE_SORTED'].includes(work.currentStatus)) {
+    throw createBusinessError('Laundry Count Line is immutable in the current Work status', 409);
+  }
+  if (payload.quantity !== undefined || payload.bagId !== undefined) {
+    throw createBusinessError('Counted quantity and Bag linkage are immutable after counting completion', 409);
+  }
+};
+
 const assertBagBelongsToWork = ({ bag, workId }) => {
   if (!bag) {
     throw createBusinessError('Laundry Bag not found', 404);
@@ -95,15 +113,44 @@ const buildUpdateCountLineData = ({ payload, itemType }) => {
   return data;
 };
 
+const assertUpdatedCountQuantities = ({ currentLine, payload }) => {
+  const quantity = payload.quantity === undefined ? currentLine.quantity : Number(payload.quantity);
+  const issueQuantity = payload.issueQuantity === undefined
+    ? currentLine.issueQuantity
+    : Number(payload.issueQuantity);
+  assertCountQuantities({ quantity, issueQuantity });
+};
+
+const normalizeColorGroup = (value) => {
+  const normalized = String(value || '').trim();
+  return normalized || null;
+};
+
+const assertUniqueCountDimension = (existingLine) => {
+  if (existingLine) throw createBusinessError('Count Line already exists for this Bag, Item Type, and color', 409);
+};
+
+const assertCountingCanComplete = (bags) => {
+  if (!bags || bags.length === 0) throw createBusinessError('Laundry Work has no Bags to complete', 409);
+  const incomplete = bags.find((bag) => bag.status !== 'OPENED' || Number(bag._count?.countLines || 0) === 0);
+  if (incomplete) throw createBusinessError('Every Bag must be opened and contain at least one Count Line', 409);
+};
+
 const shouldMoveWorkToItemCounted = (currentStatus) => currentStatus === 'BAG_OPENED';
 
 module.exports = {
   assertWorkCanAcceptCountLine,
+  assertWorkCountingIsOpen,
+  assertCountLineUpdateAllowed,
   assertBagBelongsToWork,
   assertBagCanAcceptCountLine,
   assertItemTypeCanBeCounted,
   assertCountQuantities,
   buildCreateCountLineData,
   buildUpdateCountLineData,
+  assertUpdatedCountQuantities,
+  normalizeColorGroup,
+  assertUniqueCountDimension,
+  assertCountingCanComplete,
   shouldMoveWorkToItemCounted,
 };

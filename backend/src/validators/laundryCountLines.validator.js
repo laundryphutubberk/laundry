@@ -20,26 +20,25 @@ const listLaundryCountLinesQuerySchema = z.object({
 });
 
 const createLaundryCountLineBodySchema = z.object({
-  bagId: z.coerce.number().int().positive().optional(),
-  itemTypeId: z.coerce.number().int().positive().optional(),
-  itemTypeName: z.string().trim().min(1).optional(),
+  bagId: z.coerce.number().int().positive(),
+  itemTypeId: z.coerce.number().int().positive(),
   colorGroup: z.string().trim().optional(),
   quantity: z.coerce.number().int().positive(),
   note: z.string().trim().optional(),
-}).refine((value) => value.itemTypeId || value.itemTypeName, {
-  message: 'itemTypeId or itemTypeName is required',
-  path: ['itemTypeName'],
 });
 
 const updateLaundryCountLineBodySchema = z.object({
-  bagId: z.coerce.number().int().positive().nullable().optional(),
+  bagId: z.coerce.number().int().positive().optional(),
   itemTypeId: z.coerce.number().int().positive().optional(),
-  itemTypeName: z.string().trim().min(1).optional(),
   colorGroup: z.string().trim().nullable().optional(),
   quantity: z.coerce.number().int().positive().optional(),
   note: z.string().trim().nullable().optional(),
 }).refine((value) => Object.keys(value).length > 0, {
   message: 'At least one field is required',
+});
+
+const completeLaundryCountingBodySchema = z.object({
+  note: z.string().trim().max(500).optional(),
 });
 
 const parseRequest = (schema, value) => {
@@ -62,4 +61,5 @@ module.exports = {
   listLaundryCountLinesQuerySchema,
   createLaundryCountLineBodySchema,
   updateLaundryCountLineBodySchema,
+  completeLaundryCountingBodySchema,
 };

@@ -51,8 +51,20 @@ const findLaundryWorkById = async ({ workId, where, client } = {}) => {
     },
     include: {
       ...buildWorkInclude(),
+      _count: {
+        select: {
+          bags: true,
+          issues: true,
+          movements: true,
+        },
+      },
       bags: true,
-      countLines: true,
+      countLines: {
+        include: {
+          itemType: true,
+          bag: true,
+        },
+      },
       issues: true,
       images: {
         where: {
@@ -143,6 +155,71 @@ const createWorkStatusLog = async ({ data, client } = {}) => {
   });
 };
 
+const findCountLinesForRecording = async ({ workId, client } = {}) => {
+  const db = getClient(client);
+  return db.laundryCountLine.findMany({
+    where: { workId: Number(workId) },
+    include: { itemType: true },
+    orderBy: { id: 'asc' },
+  });
+};
+
+const lockWorkDataRecording = async ({ workId, client } = {}) => {
+  const db = getClient(client);
+  const key = `laundry-work-record:${workId}`;
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))::text AS lock_result`;
+};
+
+const createCountedMovements = async ({ work, groups, client } = {}) => {
+  const db = getClient(client);
+  await db.linenMovement.createMany({
+    data: groups.map((group) => ({
+      resortId: work.resortId,
+      workId: work.id,
+      itemTypeId: group.itemTypeId,
+      colorGroup: group.colorGroup,
+      movementType: 'COUNTED_AT_LAUNDRY',
+      quantity: group.quantity,
+      note: 'Derived from recorded Laundry Work Count Lines',
+    })),
+  });
+};
+
+const upsertInventorySummaries = async ({ work, groups, client } = {}) => {
+  const db = getClient(client);
+  for (const group of groups) {
+    await db.linenInventorySummary.upsert({
+      where: {
+        resortId_itemTypeId_colorGroup: {
+          resortId: work.resortId,
+          itemTypeId: group.itemTypeId,
+          colorGroup: group.colorGroup,
+        },
+      },
+      create: {
+        resortId: work.resortId,
+        itemTypeId: group.itemTypeId,
+        colorGroup: group.colorGroup,
+        totalKnownQty: group.quantity,
+        atLaundryQty: group.quantity,
+        calculatedAt: new Date(),
+      },
+      update: {
+        totalKnownQty: { increment: group.quantity },
+        atLaundryQty: { increment: group.quantity },
+        calculatedAt: new Date(),
+      },
+    });
+  }
+};
+
+const countRecordedMovements = async ({ workId, client } = {}) => {
+  const db = getClient(client);
+  return db.linenMovement.count({
+    where: { workId: Number(workId), movementType: 'COUNTED_AT_LAUNDRY' },
+  });
+};
+
 const transaction = async (callback) => prisma.$transaction(callback);
 
 module.exports = {
@@ -153,5 +230,10 @@ module.exports = {
   updateLaundryWorkStatus,
   deleteLaundryWork,
   createWorkStatusLog,
+  findCountLinesForRecording,
+  lockWorkDataRecording,
+  createCountedMovements,
+  upsertInventorySummaries,
+  countRecordedMovements,
   transaction,
 };

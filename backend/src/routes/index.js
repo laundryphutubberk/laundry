@@ -23,6 +23,7 @@ const {
   setLaundryWorkImageCoverController,
   softDeleteLaundryWorkImageController,
 } = require('../controllers/laundryWorkImages.controller');
+const { listActiveLaundryItemTypesController } = require('../controllers/laundryItemTypes.controller');
 
 const router = express.Router();
 
@@ -41,6 +42,7 @@ router.use('/laundry/works/:workId/bags', authActorMiddleware, laundryBagsRoutes
 router.use('/laundry/works/:workId/count-lines', authActorMiddleware, laundryCountLinesRoutes);
 router.use('/laundry/works/:workId/issues', authActorMiddleware, laundryIssuesRoutes);
 router.use('/laundry/works/:workId/images', authActorMiddleware, laundryWorkImagesRoutes);
+router.get('/laundry/item-types', authActorMiddleware, listActiveLaundryItemTypesController);
 router.patch('/laundry/count-lines/:lineId', authActorMiddleware, updateLaundryCountLineController);
 router.delete('/laundry/count-lines/:lineId', authActorMiddleware, deleteLaundryCountLineController);
 router.patch('/laundry/issues/:issueId', authActorMiddleware, updateLaundryIssueController);

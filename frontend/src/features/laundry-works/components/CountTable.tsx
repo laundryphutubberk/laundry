@@ -32,6 +32,8 @@ export type CountTableRowActions = {
   deleting?: boolean
   onUpdate?: (row: CountTableRow) => void | Promise<void>
   onDelete?: (row: CountTableRow) => void | Promise<void>
+  classificationOnly?: boolean
+  itemTypes?: Array<{ id: string | number; name: string }>
 }
 
 export type CountTableProps = {
@@ -103,6 +105,7 @@ export function CountTable({
     setEditDraft({
       ...row,
       type: toEditableValue(row.type),
+      itemTypeId: row.itemTypeId,
       color: toEditableValue(row.color),
       quantity: toEditableValue(row.quantity),
     })
@@ -223,7 +226,18 @@ export function CountTable({
                 <tr key={row.id || index} className="text-slate-700 hover:bg-slate-50/80">
                   {tableColumns.map((column) => (
                     <td key={column.key} className={`px-6 py-[18px] ${alignClassName[column.align || 'left']}`}>
-                      {isEditing && ['type', 'color', 'quantity'].includes(column.key) ? (
+                      {isEditing && column.key === 'type' && rowActions?.itemTypes?.length ? (
+                        <select
+                          value={toEditableValue(editDraft.itemTypeId)}
+                          onChange={(event) => {
+                            const itemType = rowActions.itemTypes?.find((item) => String(item.id) === event.target.value)
+                            setEditDraft((current) => ({ ...current, itemTypeId: event.target.value, type: itemType?.name || current.type }))
+                          }}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-100"
+                        >
+                          {rowActions.itemTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                        </select>
+                      ) : isEditing && (column.key === 'color' || (column.key === 'quantity' && !rowActions?.classificationOnly)) ? (
                         <input
                           type={column.key === 'quantity' ? 'number' : 'text'}
                           min={column.key === 'quantity' ? 1 : undefined}

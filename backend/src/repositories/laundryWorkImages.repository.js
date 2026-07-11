@@ -36,7 +36,7 @@ const createLaundryWorkImage = async ({ data, client } = {}) => {
   return db.laundryWorkImage.create({ data });
 };
 
-const updateLaundryWorkImage = async ({ imageId, where, data, client } = {}) => {
+const updateLaundryWorkImage = async ({ imageId, where, data, client, includeDeleted = false } = {}) => {
   const db = getClient(client);
   const result = await db.laundryWorkImage.updateMany({
     where: {
@@ -48,7 +48,7 @@ const updateLaundryWorkImage = async ({ imageId, where, data, client } = {}) => 
   });
 
   if (!result.count) return null;
-  return findLaundryWorkImageById({ imageId, where, client: db });
+  return findLaundryWorkImageById({ imageId, where, client: db, includeDeleted });
 };
 
 const clearLaundryWorkCover = async ({ workId, resortId, excludeImageId, client } = {}) => {
@@ -74,6 +74,7 @@ const softDeleteLaundryWorkImage = async ({ imageId, where, client } = {}) =>
       isCover: false,
     },
     client,
+    includeDeleted: true,
   });
 
 const transaction = async (callback) => prisma.$transaction(callback);

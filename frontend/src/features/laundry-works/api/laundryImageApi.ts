@@ -167,9 +167,10 @@ export const laundryImageApi = {
     return result.ok ? { ...result, data: normalizeImage(result.data) } : result
   },
 
-  async softDelete(imageId: string | number, meta: LaundryWorkRequestMeta): Promise<ApiResult<{ deleted: true }>> {
+  async softDelete(imageId: string | number, meta: LaundryWorkRequestMeta): Promise<ApiResult<LaundryWorkImageDTO>> {
     if (!imageId) return missingIdResult('MISSING_IMAGE_ID', 'Missing Laundry Image id.', meta)
 
-    return request(`/laundry/images/${imageId}`, meta, { method: 'DELETE' })
+    const result = await request<any>(`/laundry/images/${imageId}`, meta, { method: 'DELETE' })
+    return result.ok ? { ...result, data: normalizeImage(result.data) } : result
   },
 }

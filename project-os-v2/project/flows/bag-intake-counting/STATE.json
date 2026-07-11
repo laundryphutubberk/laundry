@@ -1,0 +1,16 @@
+{
+  "flow_id": "bag-intake-counting",
+  "document_status": "APPROVED",
+  "work_status": "COMPLETED",
+  "scope": "BAG_OPEN_AND_ACTUAL_ITEM_COUNTING",
+  "binary_upload": "NOT_APPLICABLE",
+  "schema_change": "NOT_PROPOSED",
+  "api_contract_change": "APPROVED_EXPLICIT_COMMANDS_AND_TIGHTENED_WRITES",
+  "current_gate": "COMPLETED_WITH_APPROVED_EXCEPTION",
+  "blocked_by": [],
+  "known_gaps": [
+    "The local dataset has no permanent active Laundry Item Type; controlled browser verification uses temporary Master Data",
+    "Frontend has no TypeScript compiler/type-check script, so Vite build did not detect an undefined runtime identifier"
+  ],
+  "updated_at": "2026-07-11T02:40:00+07:00"
+}

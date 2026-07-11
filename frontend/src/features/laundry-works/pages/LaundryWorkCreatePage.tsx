@@ -37,10 +37,6 @@ function toIsoDateTime(value: string) {
   return date.toISOString()
 }
 
-function formatBagNo(workNo: string, index: number) {
-  return `${workNo}-BAG-${String(index).padStart(3, '0')}`
-}
-
 export function LaundryWorkCreatePage() {
   const navigate = useNavigate()
   const sessionContext = useMemo(() => getWorkspaceContext(), [])
@@ -100,24 +96,6 @@ export function LaundryWorkCreatePage() {
     return resort.id
   }
 
-  async function createInitialBags(workId: string | number, generatedWorkNo: string, count: number) {
-    for (let index = 1; index <= count; index += 1) {
-      const meta = createRequestMeta(sessionContext, 'createLaundryBag')
-      const result = await laundryWorkApi.createLaundryBag({
-        workId,
-        bagNo: formatBagNo(generatedWorkNo, index),
-        receivedAt: receivedDate ? toIsoDateTime(receivedDate) : new Date().toISOString(),
-        meta,
-      })
-
-      setRequestId(result.meta.requestId)
-
-      if (!result.ok) {
-        throw new Error(result.error.message)
-      }
-    }
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -134,10 +112,9 @@ export function LaundryWorkCreatePage() {
         meta,
         resortId: parsedResortId,
         workNo: workNo.trim() || undefined,
-        bagCount: 0,
+        bagCount: parsedBagCount,
         receivedDate: toIsoDateTime(receivedDate),
         note: note.trim() || undefined,
-        currentStatus: 'DRAFT',
       })
 
       setRequestId(result.meta.requestId)
@@ -146,10 +123,6 @@ export function LaundryWorkCreatePage() {
         setError(result.error)
         setLoading(false)
         return
-      }
-
-      if (parsedBagCount > 0) {
-        await createInitialBags(result.data.id, result.data.workNo, parsedBagCount)
       }
 
       navigate(`/workspace/laundry/works/${result.data.id}`, { replace: true })

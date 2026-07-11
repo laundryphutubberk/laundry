@@ -40,12 +40,63 @@ const assertInitialWorkStatus = (status) => {
   }
 };
 
+const resolveInitialWorkStatus = (bagCount) => (
+  Number(bagCount || 0) > 0 ? 'BAG_RECEIVED' : 'DRAFT'
+);
+
+const buildInitialBagData = ({ workNo, resortId, bagCount, receivedDate }) => {
+  const count = Number(bagCount || 0);
+  const receivedAt = receivedDate ? new Date(receivedDate) : new Date();
+
+  return Array.from({ length: count }, (_, index) => ({
+    resortId: Number(resortId),
+    bagNo: `${workNo}-BAG-${String(index + 1).padStart(3, '0')}`,
+    receivedAt,
+  }));
+};
+
 const assertWorkStatusTransition = (currentStatus, nextStatus) => {
+  if (
+    (currentStatus === 'DRAFT' && nextStatus === 'BAG_RECEIVED')
+    || (currentStatus === 'FACTORY_RECEIVED' && nextStatus === 'BAG_OPENED')
+    || (currentStatus === 'BAG_OPENED' && nextStatus === 'ITEM_COUNTED')
+    || (currentStatus === 'ITEM_COUNTED' && nextStatus === 'TYPE_SORTED')
+    || (currentStatus === 'TYPE_SORTED' && nextStatus === 'COLOR_SORTED')
+    || (currentStatus === 'COLOR_SORTED' && nextStatus === 'DATA_RECORDED')
+  ) {
+    throw createBusinessError('This Laundry Work transition requires its explicit operational command', 409);
+  }
+
   const allowedStatuses = WORK_STATUS_TRANSITIONS[currentStatus] || new Set();
 
   if (!allowedStatuses.has(nextStatus)) {
     throw createBusinessError(`Cannot change Laundry Work status from ${currentStatus} to ${nextStatus}`);
   }
+};
+
+const assertTypeSortingCanComplete = (countLines) => {
+  if (!countLines?.length) throw createBusinessError('Laundry Work has no Count Lines', 409);
+  if (countLines.some((line) => !line.itemType || line.itemType.active === false)) {
+    throw createBusinessError('Every Count Line must have an active Item Type', 409);
+  }
+};
+
+const assertColorSortingCanComplete = (countLines) => {
+  if (!countLines?.length || countLines.some((line) => !String(line.colorGroup || '').trim())) {
+    throw createBusinessError('Every Count Line must have a color before color sorting completes', 409);
+  }
+};
+
+const aggregateRecordedCountLines = (countLines) => {
+  const groups = new Map();
+  for (const line of countLines || []) {
+    const colorGroup = String(line.colorGroup || '').trim();
+    const key = `${line.itemTypeId}:${colorGroup.toLowerCase()}`;
+    const current = groups.get(key) || { itemTypeId: line.itemTypeId, colorGroup, quantity: 0 };
+    current.quantity += Number(line.quantity || 0);
+    groups.set(key, current);
+  }
+  return [...groups.values()];
 };
 
 const formatBangkokDate = (date = new Date()) => {
@@ -71,21 +122,34 @@ const buildNextWorkNo = ({ prefix, latestWorkNo } = {}) => {
   return `${prefix}${String(nextSequence).padStart(3, '0')}`;
 };
 
-const buildCreateWorkData = (payload, generatedWorkNo) => ({
-  workNo: payload.workNo || generatedWorkNo,
-  resortId: Number(payload.resortId),
-  bagCount: payload.bagCount ? Number(payload.bagCount) : 0,
-  receivedDate: payload.receivedDate ? new Date(payload.receivedDate) : null,
-  note: payload.note || null,
-  currentStatus: payload.currentStatus || 'DRAFT',
-});
+const buildCreateWorkData = (payload, generatedWorkNo, actor) => {
+  const workNo = payload.workNo || generatedWorkNo;
+  const bagCount = Number(payload.bagCount || 0);
+  const bags = buildInitialBagData({
+    workNo,
+    resortId: payload.resortId,
+    bagCount,
+    receivedDate: payload.receivedDate,
+  });
 
-const buildStatusLogData = ({ workId, fromStatus, payload }) => ({
+  return {
+    workNo,
+    resortId: Number(payload.resortId),
+    bagCount,
+    receivedDate: payload.receivedDate ? new Date(payload.receivedDate) : null,
+    note: payload.note || null,
+    currentStatus: resolveInitialWorkStatus(bagCount),
+    createdById: actor?.userId || null,
+    ...(bags.length > 0 ? { bags: { create: bags } } : {}),
+  };
+};
+
+const buildStatusLogData = ({ workId, fromStatus, payload, actor }) => ({
   workId: Number(workId),
   fromStatus,
   toStatus: payload.toStatus,
-  changedById: payload.changedById ? Number(payload.changedById) : null,
-  changedByName: payload.changedByName || null,
+  changedById: actor?.userId || null,
+  changedByName: actor?.displayName || null,
   note: payload.note || null,
 });
 
@@ -93,7 +157,12 @@ module.exports = {
   assertResortCanReceiveWork,
   assertUniqueWorkNo,
   assertInitialWorkStatus,
+  resolveInitialWorkStatus,
+  buildInitialBagData,
   assertWorkStatusTransition,
+  assertTypeSortingCanComplete,
+  assertColorSortingCanComplete,
+  aggregateRecordedCountLines,
   buildWorkNoPrefix,
   buildNextWorkNo,
   buildCreateWorkData,

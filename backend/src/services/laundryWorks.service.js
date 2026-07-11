@@ -17,7 +17,7 @@ const buildLaundryWorkWhere = ({ actor, status } = {}) => {
 };
 
 const buildActorLogContext = (actor) => ({
-  actorId: actor?.id,
+  actorId: actor?.userId,
   actorRole: actor?.role,
   workspaceType: actor?.workspaceType,
   actorResortId: actor?.resortId,
@@ -67,7 +67,7 @@ const getLaundryWorkById = async (workId, query = {}, context = {}) => {
 };
 
 const createLaundryWork = async (payload = {}, context = {}) => {
-  assertLaundryStaffActor(context.actor);
+  const actor = assertLaundryStaffActor(context.actor);
 
   if (!payload.resortId) {
     const error = new Error('resortId is required');
@@ -88,6 +88,10 @@ const createLaundryWork = async (payload = {}, context = {}) => {
 
     if (!payload.workNo) {
       const workNoPrefix = laundryWorksBusiness.buildWorkNoPrefix();
+      await laundryWorksBusinessRepository.lockLaundryWorkNumberPrefix({
+        workNoPrefix,
+        client: tx,
+      });
       const latestWork = await laundryWorksBusinessRepository.findLatestLaundryWorkByPrefix({
         workNoPrefix,
         client: tx,
@@ -99,17 +103,34 @@ const createLaundryWork = async (payload = {}, context = {}) => {
       });
     }
 
-    const data = laundryWorksBusiness.buildCreateWorkData(payload, generatedWorkNo);
+    const data = laundryWorksBusiness.buildCreateWorkData(payload, generatedWorkNo, actor);
     const existingWork = await laundryWorksBusinessRepository.findLaundryWorkByWorkNo({
       workNo: data.workNo,
       client: tx,
     });
     laundryWorksBusiness.assertUniqueWorkNo(existingWork);
 
-    return laundryWorksRepository.createLaundryWork({
+    const createdWork = await laundryWorksRepository.createLaundryWork({
       data,
       client: tx,
     });
+
+    if (createdWork.currentStatus === 'BAG_RECEIVED') {
+      await laundryWorksRepository.createWorkStatusLog({
+        data: laundryWorksBusiness.buildStatusLogData({
+          workId: createdWork.id,
+          fromStatus: 'DRAFT',
+          payload: {
+            toStatus: 'BAG_RECEIVED',
+            note: 'Initial bags received with Laundry Work creation',
+          },
+          actor,
+        }),
+        client: tx,
+      });
+    }
+
+    return createdWork;
   });
 
   logger.business('laundry.work.created', {
@@ -124,6 +145,8 @@ const createLaundryWork = async (payload = {}, context = {}) => {
 };
 
 const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
+  const actor = assertLaundryStaffActor(context.actor);
+
   if (!payload.toStatus) {
     const error = new Error('toStatus is required');
     error.statusCode = 400;
@@ -131,7 +154,7 @@ const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
   }
 
   const result = await laundryWorksRepository.transaction(async (tx) => {
-    const where = buildRequiredActorResortScopedWhere({ actor: context.actor });
+    const where = buildRequiredActorResortScopedWhere({ actor });
 
     const currentWork = await laundryWorksRepository.findLaundryWorkByIdForUpdate({
       workId,
@@ -166,6 +189,7 @@ const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
         workId,
         fromStatus: currentWork.currentStatus,
         payload,
+        actor,
       }),
       client: tx,
     });
@@ -177,7 +201,7 @@ const updateLaundryWorkStatus = async (workId, payload = {}, context = {}) => {
   });
 
   logger.business('laundry.work.status_changed', {
-    ...buildActorLogContext(context.actor),
+    ...buildActorLogContext(actor),
     workId: result.updatedWork.id,
     workNo: result.updatedWork.workNo,
     resortId: result.updatedWork.resortId,
@@ -245,10 +269,9 @@ const deleteOrCancelLaundryWork = async (workId, payload = {}, context = {}) => 
         fromStatus: currentWork.currentStatus,
         payload: {
           toStatus: 'CANCELLED',
-          changedById: actor.id,
-          changedByName: actor.displayName,
           note: payload.reason,
         },
+        actor,
       }),
       client: tx,
     });
@@ -267,10 +290,112 @@ const deleteOrCancelLaundryWork = async (workId, payload = {}, context = {}) => 
   return result;
 };
 
+const confirmLaundryWorkSorting = async (workId, stage, payload = {}, context = {}) => {
+  const actor = assertLaundryStaffActor(context.actor);
+  const config = stage === 'TYPE'
+    ? { fromStatus: 'ITEM_COUNTED', toStatus: 'TYPE_SORTED', validate: laundryWorksBusiness.assertTypeSortingCanComplete }
+    : { fromStatus: 'TYPE_SORTED', toStatus: 'COLOR_SORTED', validate: laundryWorksBusiness.assertColorSortingCanComplete };
+
+  return laundryWorksRepository.transaction(async (tx) => {
+    const where = buildRequiredActorResortScopedWhere({ actor });
+    const work = await laundryWorksRepository.findLaundryWorkByIdForUpdate({ workId, where, client: tx });
+    if (!work) {
+      const error = new Error('Laundry Work not found');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (work.currentStatus !== config.fromStatus) {
+      const error = new Error(`Laundry Work must be ${config.fromStatus} for this confirmation`);
+      error.statusCode = 409;
+      throw error;
+    }
+    const countLines = await laundryWorksRepository.findCountLinesForRecording({ workId, client: tx });
+    config.validate(countLines);
+    const updated = await laundryWorksRepository.updateLaundryWorkStatus({
+      workId,
+      where,
+      expectedStatus: config.fromStatus,
+      toStatus: config.toStatus,
+      client: tx,
+    });
+    if (!updated) {
+      const error = new Error('Laundry Work status changed during sorting confirmation');
+      error.statusCode = 409;
+      throw error;
+    }
+    await laundryWorksRepository.createWorkStatusLog({
+      data: {
+        workId: Number(workId),
+        fromStatus: config.fromStatus,
+        toStatus: config.toStatus,
+        changedById: actor.userId,
+        note: payload.note || `${stage} sorting confirmed`,
+      },
+      client: tx,
+    });
+    return updated;
+  });
+};
+
+const recordLaundryWorkData = async (workId, payload = {}, context = {}) => {
+  const actor = assertLaundryStaffActor(context.actor);
+  return laundryWorksRepository.transaction(async (tx) => {
+    await laundryWorksRepository.lockWorkDataRecording({ workId, client: tx });
+    const where = buildRequiredActorResortScopedWhere({ actor });
+    const work = await laundryWorksRepository.findLaundryWorkByIdForUpdate({ workId, where, client: tx });
+    if (!work) {
+      const error = new Error('Laundry Work not found');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (work.currentStatus !== 'COLOR_SORTED') {
+      const error = new Error('Laundry Work must be COLOR_SORTED before data recording');
+      error.statusCode = 409;
+      throw error;
+    }
+    if (await laundryWorksRepository.countRecordedMovements({ workId, client: tx })) {
+      const error = new Error('Laundry Work data has already been recorded');
+      error.statusCode = 409;
+      throw error;
+    }
+    const countLines = await laundryWorksRepository.findCountLinesForRecording({ workId, client: tx });
+    laundryWorksBusiness.assertTypeSortingCanComplete(countLines);
+    laundryWorksBusiness.assertColorSortingCanComplete(countLines);
+    const groups = laundryWorksBusiness.aggregateRecordedCountLines(countLines);
+    await laundryWorksRepository.createCountedMovements({ work, groups, client: tx });
+    await laundryWorksRepository.upsertInventorySummaries({ work, groups, client: tx });
+    const updated = await laundryWorksRepository.updateLaundryWorkStatus({
+      workId,
+      where,
+      expectedStatus: 'COLOR_SORTED',
+      toStatus: 'DATA_RECORDED',
+      client: tx,
+    });
+    if (!updated) {
+      const error = new Error('Laundry Work status changed during data recording');
+      error.statusCode = 409;
+      throw error;
+    }
+    await laundryWorksRepository.createWorkStatusLog({
+      data: {
+        workId: Number(workId),
+        fromStatus: 'COLOR_SORTED',
+        toStatus: 'DATA_RECORDED',
+        changedById: actor.userId,
+        note: payload.note || 'Work data recorded to Inventory',
+      },
+      client: tx,
+    });
+    return { work: updated, movementsCreated: groups.length, groups };
+  });
+};
+
 module.exports = {
   listLaundryWorks,
   getLaundryWorkById,
   createLaundryWork,
   updateLaundryWorkStatus,
   deleteOrCancelLaundryWork,
+  confirmLaundryWorkSorting,
+  recordLaundryWorkData,
 };

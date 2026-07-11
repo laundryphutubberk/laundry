@@ -23,17 +23,18 @@ const toPositiveQuantity = (value: CountTableRow['quantity']) => {
   return Number.isFinite(quantity) && quantity > 0 ? quantity : undefined
 }
 
-function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId, feedback }: LaundryWorkRuntimeHostRenderProps) {
+function LaundryWorkDetailContent({ projection, actions, state, loading, error, empty, requestId, feedback, itemTypes }: LaundryWorkRuntimeHostRenderProps) {
   const handleUpdateCountLine = async (row: CountTableRow) => {
     if (!row.id) return
 
     const quantity = toPositiveQuantity(row.quantity)
     if (!quantity) return
 
+    const classificationOnly = ['ITEM_COUNTED', 'TYPE_SORTED'].includes(projection.work?.currentStatus || '')
     await actions.countLine.updateCountLine(row.id, {
-      itemTypeName: typeof row.type === 'string' && row.type.trim() ? row.type.trim() : undefined,
+      itemTypeId: row.itemTypeId,
       colorGroup: typeof row.color === 'string' && row.color.trim() ? row.color.trim() : undefined,
-      quantity,
+      ...(classificationOnly ? {} : { quantity }),
     })
   }
 
@@ -118,7 +119,7 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
 
             <BagPanel bags={projection.bags} actions={actions.bag} state={state} />
 
-            <CountEntryPanel bags={projection.bags} action={actions.countLine.createCountLine} loading={state.isCreatingCountLine} error={null} />
+            <CountEntryPanel bags={projection.bags.filter((bag) => bag.status === 'OPENED')} itemTypes={itemTypes} action={actions.countLine.createCountLine} loading={state.isCreatingCountLine} error={null} />
 
             <CountTable
               rows={projection.countRows}
@@ -133,6 +134,8 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
                 deleting: state.isDeletingCountLine,
                 onUpdate: handleUpdateCountLine,
                 onDelete: handleDeleteCountLine,
+                classificationOnly: ['ITEM_COUNTED', 'TYPE_SORTED'].includes(projection.work?.currentStatus || ''),
+                itemTypes,
               }}
             />
 

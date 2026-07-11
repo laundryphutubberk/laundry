@@ -110,6 +110,14 @@ const createWorkStatusLog = async ({ data, client } = {}) => {
   });
 };
 
+const updateWorkAfterFirstBagOpened = async ({ workId, client } = {}) => {
+  const db = getClient(client);
+  return db.laundryWork.updateMany({
+    where: { id: Number(workId), currentStatus: 'FACTORY_RECEIVED' },
+    data: { currentStatus: 'BAG_OPENED' },
+  });
+};
+
 const updateLaundryBagStatus = async ({ bagId, expectedStatus, data, client } = {}) => {
   const db = getClient(client);
 
@@ -143,6 +151,7 @@ module.exports = {
   createLaundryBag,
   incrementLaundryWorkBagCount,
   createWorkStatusLog,
+  updateWorkAfterFirstBagOpened,
   updateLaundryBagStatus,
   transaction,
 };

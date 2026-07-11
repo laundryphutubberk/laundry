@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "project-os-v2/execution-state.schema.json",
+  "title": "Project OS V2 Execution State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project_os_version",
+    "state_version",
+    "project",
+    "status",
+    "authority",
+    "active_stage",
+    "active_flow",
+    "blocked_by",
+    "v1_policy",
+    "git_policy",
+    "updated_at"
+  ],
+  "properties": {
+    "project_os_version": { "type": "string", "minLength": 1 },
+    "state_version": { "type": "integer", "minimum": 1 },
+    "project": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["NOT_STARTED", "DISCOVERY", "DESIGNING", "READY", "IN_PROGRESS", "BLOCKED", "IMPLEMENTED_PENDING_VERIFICATION", "VERIFIED", "COMPLETED"]
+    },
+    "authority": { "enum": ["PILOT_NON_AUTHORITATIVE", "ACTIVE"] },
+    "active_stage": { "type": "string", "minLength": 1 },
+    "active_flow": { "type": ["string", "null"] },
+    "blocked_by": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "v1_policy": { "enum": ["NOT_APPLICABLE", "READ_ONLY_REFERENCE", "LEGACY_READ_ONLY"] },
+    "git_policy": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

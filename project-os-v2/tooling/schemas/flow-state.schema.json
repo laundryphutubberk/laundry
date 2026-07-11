@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "project-os-v2/flow-state.schema.json",
+  "title": "Project OS V2 Flow State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "flow_id",
+    "document_status",
+    "work_status",
+    "scope",
+    "binary_upload",
+    "schema_change",
+    "api_contract_change",
+    "current_gate",
+    "blocked_by",
+    "known_gaps",
+    "updated_at"
+  ],
+  "properties": {
+    "flow_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "document_status": { "enum": ["DRAFT", "PROPOSED", "APPROVED", "ACTIVE", "SUPERSEDED", "ARCHIVED"] },
+    "work_status": { "enum": ["NOT_STARTED", "DISCOVERY", "DESIGNING", "READY", "IN_PROGRESS", "BLOCKED", "IMPLEMENTED_PENDING_VERIFICATION", "VERIFIED", "COMPLETED"] },
+    "scope": { "type": "string", "minLength": 1 },
+    "binary_upload": { "type": "string", "minLength": 1 },
+    "schema_change": { "type": "string", "minLength": 1 },
+    "api_contract_change": { "type": "string", "minLength": 1 },
+    "current_gate": { "type": "string", "minLength": 1 },
+    "blocked_by": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "known_gaps": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

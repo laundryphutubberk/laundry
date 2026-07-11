@@ -1,10 +1,7 @@
 const laundryWorkImagesRepository = require('../repositories/laundryWorkImages.repository');
 const laundryWorksRepository = require('../repositories/laundryWorks.repository');
 const { logger } = require('../core/observability');
-const {
-  assertLaundryStaffActor,
-  assertLaundryManagementActor,
-} = require('../policies/authorization.policy');
+const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 
 const buildImageWhere = ({ actor, workId } = {}) => {
@@ -97,7 +94,7 @@ const createLaundryWorkImage = async (workId, payload = {}, context = {}) => {
 };
 
 const updateLaundryWorkImage = async (imageId, payload = {}, context = {}) => {
-  const actor = assertLaundryManagementActor(context.actor);
+  const actor = assertLaundryStaffActor(context.actor);
   const where = buildImageWhere({ actor });
 
   const image = await laundryWorkImagesRepository.transaction(async (tx) => {
@@ -129,7 +126,7 @@ const updateLaundryWorkImage = async (imageId, payload = {}, context = {}) => {
 };
 
 const setLaundryWorkImageCover = async (imageId, context = {}) => {
-  const actor = assertLaundryManagementActor(context.actor);
+  const actor = assertLaundryStaffActor(context.actor);
   const where = buildImageWhere({ actor });
 
   const image = await laundryWorkImagesRepository.transaction(async (tx) => {
@@ -169,7 +166,7 @@ const setLaundryWorkImageCover = async (imageId, context = {}) => {
 };
 
 const softDeleteLaundryWorkImage = async (imageId, context = {}) => {
-  const actor = assertLaundryManagementActor(context.actor);
+  const actor = assertLaundryStaffActor(context.actor);
   const where = buildImageWhere({ actor });
 
   const image = await laundryWorkImagesRepository.transaction(async (tx) => {

@@ -4,12 +4,14 @@ const {
   listLaundryBags,
   getLaundryBagById,
   createLaundryBag,
+  updateLaundryBagStatus,
 } = require('../services/laundryBags.service');
 const {
   parseRequest,
   listLaundryBagsQuerySchema,
   getLaundryBagQuerySchema,
   createLaundryBagBodySchema,
+  updateLaundryBagStatusBodySchema,
 } = require('../validators/laundryBags.validator');
 
 const listLaundryBagsController = async (req, res, next) => {
@@ -42,8 +44,19 @@ const createLaundryBagController = async (req, res, next) => {
   }
 };
 
+const updateLaundryBagStatusController = async (req, res, next) => {
+  try {
+    const body = parseRequest(updateLaundryBagStatusBodySchema, req.body);
+    const bag = await updateLaundryBagStatus(req.params.workId, req.params.bagId, body, getRequestPolicyContext(req));
+    return sendSuccess(res, bag);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   listLaundryBagsController,
   getLaundryBagController,
   createLaundryBagController,
+  updateLaundryBagStatusController,
 };

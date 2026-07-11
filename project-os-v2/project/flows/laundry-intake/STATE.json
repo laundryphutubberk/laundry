@@ -1,0 +1,13 @@
+{
+  "flow_id": "laundry-intake",
+  "document_status": "APPROVED",
+  "work_status": "COMPLETED",
+  "scope": "WORK_CREATION_AND_INITIAL_BAG_INTAKE",
+  "binary_upload": "NOT_APPLICABLE",
+  "schema_change": "NOT_PROPOSED",
+  "api_contract_change": "APPROVED_BACKWARD_COMPATIBLE_EXTENSION",
+  "current_gate": "COMPLETED",
+  "blocked_by": [],
+  "known_gaps": [],
+  "updated_at": "2026-07-11T01:30:00+07:00"
+}

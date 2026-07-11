@@ -16,7 +16,7 @@ const buildLaundryBagWhere = ({ actor, status } = {}) => {
 };
 
 const buildActorLogContext = (actor) => ({
-  actorId: actor?.id,
+  actorId: actor?.userId,
   actorRole: actor?.role,
   workspaceType: actor?.workspaceType,
   actorResortId: actor?.resortId,
@@ -92,7 +92,7 @@ const getLaundryBagById = async (workId, bagId, query = {}, context = {}) => {
 };
 
 const createLaundryBag = async (workId, payload = {}, context = {}) => {
-  assertLaundryStaffActor(context.actor);
+  const actor = assertLaundryStaffActor(context.actor);
 
   const bag = await laundryBagsRepository.transaction(async (tx) => {
     const work = await assertWorkAccessible(tx, workId, {}, context);
@@ -135,6 +135,7 @@ const createLaundryBag = async (workId, payload = {}, context = {}) => {
           workId: work.id,
           fromStatus: 'DRAFT',
           toStatus: 'BAG_RECEIVED',
+          changedById: actor.userId,
           note: 'First bag received',
         },
         client: tx,
@@ -157,10 +158,11 @@ const createLaundryBag = async (workId, payload = {}, context = {}) => {
 };
 
 const updateLaundryBagStatus = async (workId, bagId, payload = {}, context = {}) => {
-  assertLaundryStaffActor(context.actor);
+  const actor = assertLaundryStaffActor(context.actor);
 
   const result = await laundryBagsRepository.transaction(async (tx) => {
-    await assertWorkAccessible(tx, workId, {}, context);
+    const work = await assertWorkAccessible(tx, workId, {}, context);
+    if (payload.toStatus === 'OPENED') laundryBagsBusiness.assertWorkCanOpenBag(work);
 
     const currentBag = await laundryBagsRepository.findLaundryBagById({
       where: {
@@ -189,6 +191,25 @@ const updateLaundryBagStatus = async (workId, bagId, payload = {}, context = {})
       throw error;
     }
 
+    if (payload.toStatus === 'OPENED' && work.currentStatus === 'FACTORY_RECEIVED') {
+      const workUpdate = await laundryBagsRepository.updateWorkAfterFirstBagOpened({ workId: work.id, client: tx });
+      if (workUpdate.count === 0) {
+        const error = new Error('Laundry Work status changed during bag open');
+        error.statusCode = 409;
+        throw error;
+      }
+      await laundryBagsRepository.createWorkStatusLog({
+        data: {
+          workId: work.id,
+          fromStatus: 'FACTORY_RECEIVED',
+          toStatus: 'BAG_OPENED',
+          changedById: actor.userId,
+          note: `Bag ${updatedBag.bagNo} opened`,
+        },
+        client: tx,
+      });
+    }
+
     return {
       currentBag,
       updatedBag,
@@ -196,7 +217,7 @@ const updateLaundryBagStatus = async (workId, bagId, payload = {}, context = {})
   });
 
   logger.business('laundry.bag.status_changed', {
-    ...buildActorLogContext(context.actor),
+    ...buildActorLogContext(actor),
     workId: result.updatedBag.workId,
     bagId: result.updatedBag.id,
     bagNo: result.updatedBag.bagNo,

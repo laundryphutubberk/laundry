@@ -6,6 +6,8 @@ const {
   createLaundryWork,
   updateLaundryWorkStatus,
   deleteOrCancelLaundryWork,
+  confirmLaundryWorkSorting,
+  recordLaundryWorkData,
 } = require('../services/laundryWorks.service');
 const {
   parseRequest,
@@ -15,6 +17,7 @@ const {
   createLaundryWorkBodySchema,
   updateLaundryWorkStatusBodySchema,
   deleteLaundryWorkBodySchema,
+  laundryWorkCommandBodySchema,
 } = require('../validators/laundryWorks.validator');
 
 const listLaundryWorksController = async (req, res, next) => {
@@ -70,10 +73,37 @@ const deleteLaundryWorkController = async (req, res, next) => {
   }
 };
 
+const confirmLaundryWorkTypeSortingController = async (req, res, next) => {
+  try {
+    const params = parseRequest(workIdParamSchema, req.params);
+    const body = parseRequest(laundryWorkCommandBodySchema, req.body);
+    return sendSuccess(res, await confirmLaundryWorkSorting(params.workId, 'TYPE', body, getRequestPolicyContext(req)));
+  } catch (error) { return next(error); }
+};
+
+const confirmLaundryWorkColorSortingController = async (req, res, next) => {
+  try {
+    const params = parseRequest(workIdParamSchema, req.params);
+    const body = parseRequest(laundryWorkCommandBodySchema, req.body);
+    return sendSuccess(res, await confirmLaundryWorkSorting(params.workId, 'COLOR', body, getRequestPolicyContext(req)));
+  } catch (error) { return next(error); }
+};
+
+const recordLaundryWorkDataController = async (req, res, next) => {
+  try {
+    const params = parseRequest(workIdParamSchema, req.params);
+    const body = parseRequest(laundryWorkCommandBodySchema, req.body);
+    return sendSuccess(res, await recordLaundryWorkData(params.workId, body, getRequestPolicyContext(req)));
+  } catch (error) { return next(error); }
+};
+
 module.exports = {
   listLaundryWorksController,
   getLaundryWorkController,
   createLaundryWorkController,
   updateLaundryWorkStatusController,
   deleteLaundryWorkController,
+  confirmLaundryWorkTypeSortingController,
+  confirmLaundryWorkColorSortingController,
+  recordLaundryWorkDataController,
 };

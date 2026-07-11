@@ -309,7 +309,7 @@ const runOperationalWriteAllowRouteTest = async () => {
   );
 };
 
-const runScopedStatusUpdateRouteTest = async () => {
+const runResortStatusUpdateDenyRouteTest = async () => {
   const calls = [];
   const token = createToken({
     userId: 3,
@@ -342,7 +342,7 @@ const runScopedStatusUpdateRouteTest = async () => {
         assert.equal(response.statusCode, 403);
         assert.equal(response.body.success, false);
         assert.equal(response.body.meta.code, 'AUTHORIZATION_POLICY_VIOLATION');
-        assert.equal(calls.some((call) => call.fn === 'updateLaundryWorkStatus'), false);
+        assert.equal(calls.length, 0);
       } finally {
         await close(server);
       }
@@ -355,7 +355,7 @@ const run = async () => {
   await runActorScopedListRouteTest();
   await runOperationalWriteDenyRouteTest();
   await runOperationalWriteAllowRouteTest();
-  await runScopedStatusUpdateRouteTest();
+  await runResortStatusUpdateDenyRouteTest();
 
   console.log('BE-07 HTTP policy integration tests passed.');
 };

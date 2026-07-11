@@ -18,6 +18,11 @@ export type BagPanelActions = {
     disabled?: boolean
     onCreate?: (input: { bagNo: string; note?: string }) => void | Promise<void>
   }
+  openBag?: {
+    label: string
+    disabled?: boolean
+    onOpen?: (bagId: string | number) => void | Promise<void>
+  }
 }
 
 export type BagPanelProps = {
@@ -153,6 +158,16 @@ export function BagPanel({ bags = [], actions, loading = false, error = null, st
                       </p>
                       <p className="break-words">{bag.note || 'ไม่มีหมายเหตุถุง'}</p>
                     </div>
+                    {bag.status === 'RECEIVED' && actions?.openBag ? (
+                      <button
+                        type="button"
+                        disabled={actions.openBag.disabled}
+                        onClick={() => actions.openBag?.onOpen?.(bag.id)}
+                        className="mt-3 rounded-xl bg-blue-700 px-3 py-2 text-xs font-black text-white disabled:bg-slate-300"
+                      >
+                        {actions.openBag.label}
+                      </button>
+                    ) : null}
                   </article>
                 </li>
               )

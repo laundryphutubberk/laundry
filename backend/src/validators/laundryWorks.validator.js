@@ -51,6 +51,10 @@ const deleteLaundryWorkBodySchema = z.object({
   reason: z.string().trim().min(1).max(500),
 });
 
+const laundryWorkCommandBodySchema = z.object({
+  note: z.string().trim().max(500).optional(),
+});
+
 const parseRequest = (schema, value) => {
   const result = schema.safeParse(value);
 
@@ -72,4 +76,5 @@ module.exports = {
   createLaundryWorkBodySchema,
   updateLaundryWorkStatusBodySchema,
   deleteLaundryWorkBodySchema,
+  laundryWorkCommandBodySchema,
 };

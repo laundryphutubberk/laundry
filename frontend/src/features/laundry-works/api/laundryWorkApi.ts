@@ -53,16 +53,23 @@ export type LaundryWorkBackendCapability = {
   detail: true
   create: true
   statusTransition: true
+  sortingDataRecording: {
+    confirmType: true
+    confirmColor: true
+    recordData: true
+  }
   bags: {
     list: true
     detail: true
     create: true
+    open: true
   }
   countLines: {
     list: true
     create: true
     update: true
     delete: true
+    complete: true
   }
   issue: {
     list: false
@@ -88,16 +95,23 @@ export const laundryWorkBackendCapability: LaundryWorkBackendCapability = {
   detail: true,
   create: true,
   statusTransition: true,
+  sortingDataRecording: {
+    confirmType: true,
+    confirmColor: true,
+    recordData: true,
+  },
   bags: {
     list: true,
     detail: true,
     create: true,
+    open: true,
   },
   countLines: {
     list: true,
     create: true,
     update: true,
     delete: true,
+    complete: true,
   },
   issue: {
     list: false,
@@ -145,6 +159,7 @@ export type LaundryBagDTO = {
 
 export type LaundryCountLineDTO = {
   id: string | number
+  itemTypeId?: string | number
   bagId?: string | number | null
   bagNo?: string
   itemTypeName?: string
@@ -154,6 +169,12 @@ export type LaundryCountLineDTO = {
   weight?: string | number | null
   issueQuantity?: number
   note?: string | null
+}
+
+export type LaundryItemTypeDTO = {
+  id: string | number
+  name: string
+  category?: string | null
 }
 
 export type IssueReportDTO = {
@@ -253,8 +274,8 @@ export type ListLaundryCountLinesInput = {
 
 export type CreateLaundryCountLineInput = {
   workId?: string | number
-  bagId?: string | number
-  itemTypeName: string
+  bagId: string | number
+  itemTypeId: string | number
   colorGroup?: string
   quantity: number
   note?: string
@@ -264,10 +285,22 @@ export type CreateLaundryCountLineInput = {
 export type UpdateLaundryCountLineInput = {
   lineId?: string | number
   bagId?: string | number | null
-  itemTypeName?: string
+  itemTypeId?: string | number
   colorGroup?: string | null
   quantity?: number
   note?: string | null
+  meta: LaundryWorkRequestMeta
+}
+
+export type OpenLaundryBagInput = {
+  workId?: string | number
+  bagId?: string | number
+  meta: LaundryWorkRequestMeta
+}
+
+export type CompleteLaundryCountingInput = {
+  workId?: string | number
+  note?: string
   meta: LaundryWorkRequestMeta
 }
 
@@ -282,6 +315,12 @@ export type UpdateLaundryWorkStatusInput = {
   note?: string
   changedById?: number
   changedByName?: string
+  meta: LaundryWorkRequestMeta
+}
+
+export type LaundryWorkCommandInput = {
+  workId?: string | number
+  note?: string
   meta: LaundryWorkRequestMeta
 }
 
@@ -376,21 +415,121 @@ function missingIdResult<T>(code: string, message: string, meta: LaundryWorkRequ
   }
 }
 
+function mapResult<TInput, TOutput>(result: ApiResult<TInput>, mapper: (input: TInput) => TOutput): ApiResult<TOutput> {
+  if (!result.ok) return result
+  return { ...result, data: mapper(result.data) }
+}
+
+function normalizeWork(raw: any): LaundryWorkDTO {
+  return {
+    id: raw.id,
+    workNo: raw.workNo,
+    resortId: raw.resortId,
+    resortName: raw.resortName || raw.resort?.name || '-',
+    bagCount: raw.bagCount ?? raw._count?.bags ?? 0,
+    currentStatus: raw.currentStatus,
+    issueCount: raw.issueCount ?? raw._count?.issues ?? 0,
+    receivedDate: raw.receivedDate,
+    returnedAt: raw.returnedAt,
+    closedAt: raw.closedAt,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+    note: raw.note,
+  }
+}
+
+function normalizeBag(raw: any): LaundryBagDTO {
+  return {
+    id: raw.id,
+    bagNo: raw.bagNo,
+    status: raw.status,
+    note: raw.note,
+    receivedAt: raw.receivedAt,
+    openedAt: raw.openedAt,
+  }
+}
+
+function normalizeCountLine(raw: any): LaundryCountLineDTO {
+  return {
+    id: raw.id,
+    itemTypeId: raw.itemTypeId,
+    bagId: raw.bagId,
+    bagNo: raw.bagNo || raw.bag?.bagNo,
+    itemTypeName: raw.itemTypeName || raw.itemType?.name,
+    category: raw.category || raw.itemType?.category,
+    colorGroup: raw.colorGroup,
+    quantity: raw.quantity,
+    issueQuantity: raw.issueQuantity,
+    weight: raw.weight,
+    note: raw.note,
+  }
+}
+
+function normalizeImage(raw: any): LaundryWorkImageDTO {
+  return {
+    id: raw.id,
+    workId: raw.workId,
+    resortId: raw.resortId,
+    url: raw.url,
+    publicId: raw.publicId,
+    provider: raw.provider || 'UNKNOWN',
+    mimeType: raw.mimeType,
+    originalName: raw.originalName,
+    sizeBytes: raw.sizeBytes == null ? null : Number(raw.sizeBytes),
+    caption: raw.caption,
+    displayOrder: Number(raw.displayOrder || 0),
+    isCover: Boolean(raw.isCover),
+    uploadedById: raw.uploadedById,
+    uploadedAt: raw.uploadedAt,
+    deletedAt: raw.deletedAt,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  }
+}
+
+function normalizeDetail(raw: any): LaundryWorkDetailDTO {
+  return {
+    work: normalizeWork(raw),
+    bags: (raw.bags || []).map(normalizeBag),
+    countLines: (raw.countLines || []).map(normalizeCountLine),
+    issues: (raw.issues || []).map((issue: any) => ({
+      id: issue.id,
+      issueType: issue.issueType,
+      description: issue.description,
+      quantity: issue.quantity,
+      itemTypeName: issue.itemTypeName || issue.itemType?.name,
+      status: issue.status,
+      reportedAt: issue.reportedAt,
+      reportedBy: issue.reportedBy || issue.reportedByName,
+    })),
+    images: (raw.images || []).filter((image: any) => !image.deletedAt).map(normalizeImage),
+    statusLogs: (raw.statusLogs || []).map((log: any) => ({
+      id: log.id,
+      toStatus: log.toStatus,
+      note: log.note,
+      changedAt: log.changedAt,
+      changedByName: log.changedByName,
+    })),
+  }
+}
+
 export const laundryWorkApi = {
   capability: laundryWorkBackendCapability,
 
-  list({ status, skip, take, meta }: ListLaundryWorksInput) {
+  async list({ status, skip, take, meta }: ListLaundryWorksInput): Promise<ApiResult<LaundryWorkListResult>> {
     const query = new URLSearchParams()
     if (status) query.set('status', status)
     if (skip !== undefined) query.set('skip', String(skip))
     if (take !== undefined) query.set('take', String(take))
     const suffix = query.size ? `?${query.toString()}` : ''
-    return request<LaundryWorkListResult>(`/laundry/works${suffix}`, meta)
+    const result = await request<any[]>(`/laundry/works${suffix}`, meta)
+    return mapResult(result, (items) => ({ items: (items || []).map(normalizeWork), pagination: result.meta.pagination }))
   },
 
-  detail({ workId, meta }: GetLaundryWorkDetailInput) {
+  async detail({ workId, meta }: GetLaundryWorkDetailInput): Promise<ApiResult<LaundryWorkDetailDTO>> {
     if (!workId) return Promise.resolve(missingIdResult<LaundryWorkDetailDTO>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
-    return request<LaundryWorkDetailDTO>(`/laundry/works/${workId}`, meta)
+    const result = await request<any>(`/laundry/works/${workId}`, meta)
+    return mapResult(result, normalizeDetail)
   },
 
   create({ meta, ...input }: CreateLaundryWorkInput) {
@@ -400,6 +539,18 @@ export const laundryWorkApi = {
   createBag({ workId, meta, ...input }: CreateLaundryBagInput) {
     if (!workId) return Promise.resolve(missingIdResult<LaundryBagDTO>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
     return request<LaundryBagDTO>(`/laundry/works/${workId}/bags`, meta, { method: 'POST', body: JSON.stringify(input) })
+  },
+
+  openBag({ workId, bagId, meta }: OpenLaundryBagInput) {
+    if (!workId || !bagId) return Promise.resolve(missingIdResult<LaundryBagDTO>('MISSING_BAG_CONTEXT', 'Missing Work or Bag id.', meta))
+    return request<LaundryBagDTO>(`/laundry/works/${workId}/bags/${bagId}/status`, meta, {
+      method: 'PATCH',
+      body: JSON.stringify({ toStatus: 'OPENED' }),
+    })
+  },
+
+  listItemTypes(meta: LaundryWorkRequestMeta) {
+    return request<LaundryItemTypeDTO[]>('/laundry/item-types', meta)
   },
 
   listCountLines({ workId, bagId, skip, take, meta }: ListLaundryCountLinesInput) {
@@ -427,8 +578,59 @@ export const laundryWorkApi = {
     return request<{ id: string | number; deleted: boolean }>(`/laundry/count-lines/${lineId}`, meta, { method: 'DELETE' })
   },
 
+  completeCounting({ workId, meta, note }: CompleteLaundryCountingInput) {
+    if (!workId) return Promise.resolve(missingIdResult<LaundryWorkDTO>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
+    return request<LaundryWorkDTO>(`/laundry/works/${workId}/count-lines/complete`, meta, {
+      method: 'POST',
+      body: JSON.stringify({ note }),
+    })
+  },
+
   updateStatus({ workId, meta, ...input }: UpdateLaundryWorkStatusInput) {
     if (!workId) return Promise.resolve(missingIdResult<LaundryWorkDTO>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
     return request<LaundryWorkDTO>(`/laundry/works/${workId}/status`, meta, { method: 'PATCH', body: JSON.stringify(input) })
+  },
+
+  runWorkCommand(command: 'confirm-type-sorting' | 'confirm-color-sorting' | 'record-data', { workId, meta, note }: LaundryWorkCommandInput) {
+    if (!workId) return Promise.resolve(missingIdResult<any>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
+    return request<any>(`/laundry/works/${workId}/${command}`, meta, { method: 'POST', body: JSON.stringify({ note }) })
+  },
+
+  // Compatibility surface retained for existing controllers/pages while the
+  // shorter command names above remain the canonical implementation methods.
+  listLaundryWorks(input: ListLaundryWorksInput) {
+    return laundryWorkApi.list(input)
+  },
+
+  getLaundryWorkDetail(input: GetLaundryWorkDetailInput) {
+    return laundryWorkApi.detail(input)
+  },
+
+  createLaundryWork(input: CreateLaundryWorkInput) {
+    return laundryWorkApi.create(input)
+  },
+
+  createLaundryBag(input: CreateLaundryBagInput) {
+    return laundryWorkApi.createBag(input)
+  },
+
+  listLaundryCountLines(input: ListLaundryCountLinesInput) {
+    return laundryWorkApi.listCountLines(input)
+  },
+
+  createLaundryCountLine(input: CreateLaundryCountLineInput) {
+    return laundryWorkApi.createCountLine(input)
+  },
+
+  updateLaundryCountLine(input: UpdateLaundryCountLineInput) {
+    return laundryWorkApi.updateCountLine(input)
+  },
+
+  deleteLaundryCountLine(input: DeleteLaundryCountLineInput) {
+    return laundryWorkApi.deleteCountLine(input)
+  },
+
+  updateLaundryWorkStatus(input: UpdateLaundryWorkStatusInput) {
+    return laundryWorkApi.updateStatus(input)
   },
 }

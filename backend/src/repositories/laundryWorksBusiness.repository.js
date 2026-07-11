@@ -40,8 +40,14 @@ const findLatestLaundryWorkByPrefix = async ({ workNoPrefix, client } = {}) => {
   });
 };
 
+const lockLaundryWorkNumberPrefix = async ({ workNoPrefix, client } = {}) => {
+  const db = getClient(client);
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${workNoPrefix}))::text AS lock_result`;
+};
+
 module.exports = {
   findResortById,
   findLaundryWorkByWorkNo,
   findLatestLaundryWorkByPrefix,
+  lockLaundryWorkNumberPrefix,
 };

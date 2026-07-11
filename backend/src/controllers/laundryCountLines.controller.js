@@ -5,6 +5,7 @@ const {
   createLaundryCountLine,
   updateLaundryCountLine,
   deleteLaundryCountLine,
+  completeLaundryCounting,
 } = require('../services/laundryCountLines.service');
 const {
   parseRequest,
@@ -13,6 +14,7 @@ const {
   listLaundryCountLinesQuerySchema,
   createLaundryCountLineBodySchema,
   updateLaundryCountLineBodySchema,
+  completeLaundryCountingBodySchema,
 } = require('../validators/laundryCountLines.validator');
 
 const listLaundryCountLinesController = async (req, res, next) => {
@@ -58,9 +60,21 @@ const deleteLaundryCountLineController = async (req, res, next) => {
   }
 };
 
+const completeLaundryCountingController = async (req, res, next) => {
+  try {
+    const params = parseRequest(positiveIntParamSchema, req.params);
+    const body = parseRequest(completeLaundryCountingBodySchema, req.body);
+    const work = await completeLaundryCounting(params.workId, body, getRequestPolicyContext(req));
+    return sendSuccess(res, work);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   listLaundryCountLinesController,
   createLaundryCountLineController,
   updateLaundryCountLineController,
   deleteLaundryCountLineController,
+  completeLaundryCountingController,
 };

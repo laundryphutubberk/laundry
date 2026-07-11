@@ -78,6 +78,28 @@ const resolveItemType = async ({ itemTypeId, itemTypeName, client } = {}) => {
   return findOrCreateItemTypeByName({ itemTypeName, client });
 };
 
+const lockCountLineDimension = async ({ workId, bagId, itemTypeId, colorGroup, client } = {}) => {
+  const db = getClient(client);
+  const key = `${workId}:${bagId}:${itemTypeId}:${String(colorGroup || '').trim().toLowerCase()}`;
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${key}))::text AS lock_result`;
+};
+
+const findDuplicateCountLine = async ({ workId, bagId, itemTypeId, colorGroup, excludeLineId, client } = {}) => {
+  const db = getClient(client);
+  const normalizedColor = String(colorGroup || '').trim();
+  return db.laundryCountLine.findFirst({
+    where: {
+      workId: Number(workId),
+      bagId: Number(bagId),
+      itemTypeId: Number(itemTypeId),
+      ...(normalizedColor
+        ? { colorGroup: { equals: normalizedColor, mode: 'insensitive' } }
+        : { OR: [{ colorGroup: null }, { colorGroup: '' }] }),
+      ...(excludeLineId ? { id: { not: Number(excludeLineId) } } : {}),
+    },
+  });
+};
+
 const listLaundryCountLines = async ({ where, skip, take, client } = {}) => {
   const db = getClient(client);
 
@@ -165,6 +187,28 @@ const createWorkStatusLog = async ({ data, client } = {}) => {
   return db.workStatusLog.create({ data });
 };
 
+const listBagsForCountingCompletion = async ({ workId, client } = {}) => {
+  const db = getClient(client);
+  return db.laundryBag.findMany({
+    where: { workId: Number(workId) },
+    include: { _count: { select: { countLines: true } } },
+  });
+};
+
+const completeCounting = async ({ workId, expectedStatus, client } = {}) => {
+  const db = getClient(client);
+  const workUpdate = await db.laundryWork.updateMany({
+    where: { id: Number(workId), currentStatus: expectedStatus },
+    data: { currentStatus: 'ITEM_COUNTED' },
+  });
+  if (workUpdate.count === 0) return null;
+  await db.laundryBag.updateMany({
+    where: { workId: Number(workId), status: 'OPENED' },
+    data: { status: 'COUNTED' },
+  });
+  return db.laundryWork.findUnique({ where: { id: Number(workId) } });
+};
+
 const transaction = async (callback) => prisma.$transaction(callback);
 
 module.exports = {
@@ -173,6 +217,8 @@ module.exports = {
   findItemTypeById,
   findOrCreateItemTypeByName,
   resolveItemType,
+  lockCountLineDimension,
+  findDuplicateCountLine,
   listLaundryCountLines,
   findLaundryCountLineById,
   createLaundryCountLine,
@@ -180,5 +226,7 @@ module.exports = {
   deleteLaundryCountLine,
   updateWorkAfterCountLine,
   createWorkStatusLog,
+  listBagsForCountingCompletion,
+  completeCounting,
   transaction,
 };

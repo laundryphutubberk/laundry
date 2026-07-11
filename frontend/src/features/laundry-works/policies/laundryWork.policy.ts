@@ -31,9 +31,12 @@ export type LaundryWorkPolicyActionModel = {
   }
   bag: {
     createBag: LaundryWorkPolicyAction
+    openBag: LaundryWorkPolicyAction
   }
   countLine: {
     createCountLine: LaundryWorkPolicyAction
+    updateCountLine: LaundryWorkPolicyAction
+    deleteCountLine: LaundryWorkPolicyAction
   }
   issue: {
     createIssue: LaundryWorkPolicyAction
@@ -58,13 +61,7 @@ const deny = (label: string, reasonCode: string, message: string): LaundryWorkPo
 
 function getNextBackendStatus(currentStatus?: string) {
   const transitions: Record<string, string> = {
-    DRAFT: 'BAG_RECEIVED',
     BAG_RECEIVED: 'FACTORY_RECEIVED',
-    FACTORY_RECEIVED: 'BAG_OPENED',
-    BAG_OPENED: 'ITEM_COUNTED',
-    ITEM_COUNTED: 'TYPE_SORTED',
-    TYPE_SORTED: 'COLOR_SORTED',
-    COLOR_SORTED: 'DATA_RECORDED',
     DATA_RECORDED: 'RETURNED',
     RETURNED: 'CLOSED',
   }
@@ -72,7 +69,7 @@ function getNextBackendStatus(currentStatus?: string) {
   return transitions[currentStatus || '']
 }
 
-const countLineStatuses = new Set(['BAG_OPENED', 'ITEM_COUNTED', 'TYPE_SORTED', 'COLOR_SORTED'])
+const countLineStatuses = new Set(['BAG_OPENED'])
 
 export function getLaundryWorkActionModel({
   workId,
@@ -90,7 +87,10 @@ export function getLaundryWorkActionModel({
   const terminalWork = ['CLOSED', 'CANCELLED'].includes(detail?.work.currentStatus || '')
   const backendStatusTransitionReady = Boolean(capability?.statusTransition)
   const nextBackendStatus = getNextBackendStatus(detail?.work.currentStatus)
-  const canContinueByBackend = backendStatusTransitionReady && Boolean(nextBackendStatus)
+  const explicitCountCompletion = detail?.work.currentStatus === 'BAG_OPENED' && capability?.countLines.complete
+  const explicitSortingCommand = ['ITEM_COUNTED', 'TYPE_SORTED', 'COLOR_SORTED'].includes(detail?.work.currentStatus || '')
+    && Boolean(capability?.sortingDataRecording)
+  const canContinueByBackend = explicitCountCompletion || explicitSortingCommand || (backendStatusTransitionReady && Boolean(nextBackendStatus))
   const countLineStatusReady = countLineStatuses.has(detail?.work.currentStatus || '')
 
   const boundaryDenyReason = missingWorkspace
@@ -126,6 +126,14 @@ export function getLaundryWorkActionModel({
           ? deny('เพิ่มรายการนับผ้า', 'WORK_STATUS_NOT_READY', 'Laundry Work must be opened before count lines can be recorded.')
           : allow('เพิ่มรายการนับผ้า')
 
+  const classificationUpdateReady = ['BAG_OPENED', 'ITEM_COUNTED', 'TYPE_SORTED'].includes(detail?.work.currentStatus || '')
+  const updateCountLineAction = !boundaryDenyReason && !wrongWorkspaceForMutation && classificationUpdateReady
+    ? allow('แก้ไขรายการ')
+    : deny('แก้ไขรายการ', 'COUNT_LINE_UPDATE_NOT_READY', 'Count Line cannot be updated in the current state.')
+  const deleteCountLineAction = !boundaryDenyReason && !wrongWorkspaceForMutation && detail?.work.currentStatus === 'BAG_OPENED'
+    ? allow('ลบรายการ')
+    : deny('ลบรายการ', 'COUNT_LINE_DELETE_NOT_READY', 'Count Line cannot be deleted after counting completion.')
+
   return {
     work: {
       back: allow('ย้อนกลับ'),
@@ -147,9 +155,15 @@ export function getLaundryWorkActionModel({
                 ? boundaryDenyReason?.[1] || 'Action is not allowed.'
                 : 'Bag creation endpoint is not available in backend contract.',
             ),
+      openBag:
+        canMutate && !wrongWorkspaceForMutation && capability?.bags.open && ['FACTORY_RECEIVED', 'BAG_OPENED'].includes(detail?.work.currentStatus || '')
+          ? allow('เปิดถุง')
+          : deny('เปิดถุง', 'BAG_OPEN_NOT_READY', 'Laundry Work or Bag is not ready to open.'),
     },
     countLine: {
       createCountLine: createCountLineAction,
+      updateCountLine: updateCountLineAction,
+      deleteCountLine: deleteCountLineAction,
     },
     issue: {
       createIssue:

@@ -1,0 +1,16 @@
+{
+  "flow_id": "sorting-data-recording",
+  "document_status": "DRAFT",
+  "work_status": "READY",
+  "scope": "TYPE_COLOR_CONFIRMATION_AND_INVENTORY_TRUTH_PUBLICATION",
+  "binary_upload": "NOT_APPLICABLE",
+  "schema_change": "NOT_PROPOSED",
+  "api_contract_change": "APPROVED_EXPLICIT_CONFIRMATION_AND_RECORDING_COMMANDS",
+  "current_gate": "FLOW_READY_FOR_TEST",
+  "blocked_by": [],
+  "known_gaps": [
+    "Human browser confirmation, classification correction, blocker, recording, and refresh verification remains pending",
+    "Frontend TypeScript type-check gate remains unavailable (MISSING_CAPABILITY)"
+  ],
+  "updated_at": "2026-07-11T09:20:00+07:00"
+}

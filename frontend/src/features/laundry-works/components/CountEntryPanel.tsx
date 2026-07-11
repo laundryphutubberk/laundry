@@ -12,7 +12,8 @@ export type CountEntryAction = {
   disabled?: boolean
   loading?: boolean
   onCreate?: (input: {
-    bagId?: string | number
+    bagId: string | number
+    itemTypeId: string | number
     itemTypeName: string
     colorGroup?: string
     quantity: number
@@ -22,6 +23,7 @@ export type CountEntryAction = {
 
 export type CountEntryPanelProps = {
   bags?: CountEntryBagOption[]
+  itemTypes?: Array<{ id: string | number; name: string; category?: string | null }>
   action?: CountEntryAction
   loading?: boolean
   error?: string | null
@@ -30,7 +32,7 @@ export type CountEntryPanelProps = {
 const fieldClassName =
   'h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400'
 
-export function CountEntryPanel({ bags = [], action, loading = false, error = null }: CountEntryPanelProps) {
+export function CountEntryPanel({ bags = [], itemTypes = [], action, loading = false, error = null }: CountEntryPanelProps) {
   const fieldIdPrefix = useId()
   const bagFieldId = `${fieldIdPrefix}-bag`
   const itemTypeFieldId = `${fieldIdPrefix}-item-type`
@@ -45,16 +47,21 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
   const [quantity, setQuantity] = useState('')
   const [note, setNote] = useState('')
 
-  const hasRequiredValues = Boolean(itemTypeName.trim() && Number(quantity) > 0)
+  const normalizedItemTypeName = itemTypeName.trim()
+  const selectedItemType = itemTypes.find((itemType) => (
+    itemType.name === normalizedItemTypeName
+    || itemType.name.startsWith(`${normalizedItemTypeName} `)
+  ))
+  const hasRequiredValues = Boolean(bagId && selectedItemType && Number(quantity) > 0)
   const canSubmit = Boolean(action?.onCreate && hasRequiredValues && !action?.disabled && !action?.loading)
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const submitCountLine = async () => {
     if (!canSubmit) return
 
     await action?.onCreate?.({
-      bagId: bagId || undefined,
-      itemTypeName: itemTypeName.trim(),
+      bagId,
+      itemTypeId: selectedItemType?.id || '',
+      itemTypeName: selectedItemType?.name || '',
       colorGroup: colorGroup.trim() || undefined,
       quantity: Number(quantity),
       note: note.trim() || undefined,
@@ -64,6 +71,11 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
     setColorGroup('')
     setQuantity('')
     setNote('')
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    await submitCountLine()
   }
 
   if (loading) {
@@ -136,9 +148,13 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
             required
             maxLength={120}
             autoComplete="off"
+            list={`${itemTypeFieldId}-options`}
             aria-describedby={guidanceId}
             className={fieldClassName}
           />
+          <datalist id={`${itemTypeFieldId}-options`}>
+            {itemTypes.map((itemType) => <option key={itemType.id} value={itemType.name} />)}
+          </datalist>
         </div>
 
         <div className="grid min-w-0 gap-1.5 text-sm xl:col-span-3">
@@ -198,7 +214,8 @@ export function CountEntryPanel({ bags = [], action, loading = false, error = nu
 
         <div className="flex min-w-0 items-end md:col-span-2 xl:col-span-2">
           <button
-            type="submit"
+            type="button"
+            onClick={() => void submitCountLine()}
             disabled={!canSubmit}
             aria-describedby={guidanceId}
             className="h-11 w-full rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
