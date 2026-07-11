@@ -1,6 +1,6 @@
 # FE-05 / Laundry Work / Classification Cell
 
-Status: ACTIVE
+Status: SUCCESS_PATH_VERIFIED
 Role: Specialized Completion Cell
 Owner: FE-05 State Domain
 
@@ -48,26 +48,38 @@ This cell must not:
 
 Complete the Classification Save path observed during human testing:
 
-- editing a Count Line currently accepts a Color value;
-- clicking Save exits edit mode;
-- the entered value is discarded;
-- no API request is issued;
-- no error feedback is shown.
+- editing a Count Line accepted a Color value;
+- clicking Save exited edit mode;
+- the entered value was discarded;
+- no API request was issued;
+- no error feedback was shown.
+
+The original no-API regression is now resolved. Human runtime validation on 2026-07-11 confirmed:
+
+- one `PATCH /api/laundry/count-lines/:lineId` request returned `200`;
+- backend emitted `laundry.count_line.updated`;
+- Work Detail reloaded from the server;
+- the refreshed Count Table displayed the saved value;
+- quantity and Bag linkage remained unchanged.
+
+Evidence:
+
+- `validation/2026-07-11-classification-save-success.md`
 
 ## Completion Contract
 
 The classification save flow is complete only when:
 
-1. Save emits one classification mutation request.
-2. Only allowed classification fields are sent.
-3. Quantity and Bag linkage remain immutable.
-4. Edit mode closes only after confirmed success.
-5. Failed mutation keeps the row editable and shows a user-safe error.
-6. Controls lock while the request is pending.
-7. Duplicate submissions are prevented.
-8. UI refreshes from server truth after success.
-9. Available frontend lint/build/tests pass.
-10. Human retest confirms the observed failure is resolved.
+1. Save emits one classification mutation request. — VERIFIED
+2. Only allowed classification fields are sent. — VERIFIED FOR SUCCESS PATH
+3. Quantity and Bag linkage remain immutable. — VERIFIED
+4. Edit mode closes only after confirmed success. — SUCCESS PATH VERIFIED; FAILURE PATH PENDING
+5. Failed mutation keeps the row editable and shows a user-safe error. — PENDING
+6. Controls lock while the request is pending. — PENDING CONTROLLED TEST
+7. Duplicate submissions are prevented. — PENDING CONTROLLED TEST
+8. UI refreshes from server truth after success. — VERIFIED
+9. Available frontend lint/build/tests pass. — PENDING FINAL HARDENING
+10. Human retest confirms the observed failure is resolved. — VERIFIED
 
 ## Routing Rule
 
