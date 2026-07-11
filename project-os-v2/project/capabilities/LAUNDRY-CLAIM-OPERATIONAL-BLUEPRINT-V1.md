@@ -1,6 +1,6 @@
 # Laundry Claim Operational Capability V1 Blueprint
 
-Status: LOCKED
+Status: APPROVED
 Owner: Project Owner / Chief Architect
 Authority: Business and architecture source of truth for Laundry Claim V1
 

@@ -103,11 +103,11 @@ An Operational Capability must identify:
 
 Prefer:
 
-> Implement Laundry Issue Operational Capability.
+> Implement the Issue Management Operational Capability.
 
 over:
 
-> Implement Laundry Issue CRUD.
+> Implement Issue Management CRUD.
 
 A Codex Command Pack must describe the end-to-end capability across all required layers, which may include:
 
