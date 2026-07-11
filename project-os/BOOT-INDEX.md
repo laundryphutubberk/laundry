@@ -51,6 +51,7 @@ Project Boot must not select the current task, current execution domain, or impl
 | 13 | `project-os/11-boot/BOOT.md` | Boot principle and readiness rules | ✅ |
 | 14 | `project-os/ai-task-handbook/AI-TASK-HANDBOOK.md` | AI task execution guide | Recommended |
 | 15 | `project-os/ai-task-handbook/PERMANENT-AI-ROLES.md` | Permanent AI roles and boundaries | Recommended |
+| 16 | `project-os/ai-task-handbook/CODEX-PROJECT-OS-COLLABORATION-MODEL.md` | Codex-first implementation, Human testing, Task completion, Git coordination, audit and elevation | ✅ |
 
 ---
 
