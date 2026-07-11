@@ -390,6 +390,46 @@ const recordLaundryWorkData = async (workId, payload = {}, context = {}) => {
   });
 };
 
+const confirmLaundryWorkReturn = async (workId, payload = {}, context = {}) => {
+  const actor = assertLaundryStaffActor(context.actor);
+  const result = await laundryWorksRepository.transaction(async (tx) => {
+    await laundryWorksRepository.lockWorkCommand({ workId, command: 'return', client: tx });
+    const where = buildRequiredActorResortScopedWhere({ actor });
+    const work = await laundryWorksRepository.findLaundryWorkByIdForUpdate({ workId, where, client: tx });
+    if (!work) { const error = new Error('Laundry Work not found'); error.statusCode = 404; throw error; }
+    if (work.currentStatus !== 'DATA_RECORDED') { const error = new Error('Laundry Work must be DATA_RECORDED before return'); error.statusCode = 409; throw error; }
+    if (await laundryWorksRepository.countReturnMovements({ workId, client: tx })) { const error = new Error('Laundry Work return has already been confirmed'); error.statusCode = 409; throw error; }
+    const countLines = await laundryWorksRepository.findCountLinesForRecording({ workId, client: tx });
+    const recordedMovements = await laundryWorksRepository.findRecordedMovements({ workId, client: tx });
+    const groups = laundryWorksBusiness.assertReturnCanComplete({ countLines, recordedMovements });
+    await laundryWorksRepository.createReturnMovements({ work, groups, client: tx });
+    await laundryWorksRepository.applyReturnedInventory({ work, groups, client: tx });
+    const updated = await laundryWorksRepository.updateLaundryWorkStatus({ workId, where, expectedStatus: 'DATA_RECORDED', toStatus: 'RETURNED', timestamps: { returnedAt: new Date() }, client: tx });
+    if (!updated) { const error = new Error('Laundry Work status changed during return confirmation'); error.statusCode = 409; throw error; }
+    await laundryWorksRepository.createWorkStatusLog({ data: { workId: Number(workId), fromStatus: 'DATA_RECORDED', toStatus: 'RETURNED', changedById: actor.userId, changedByName: actor.displayName || null, note: payload.note || 'Laundry Work returned to Resort' }, client: tx });
+    return { work: updated, movementsCreated: groups.length };
+  });
+  logger.business('laundry.work.returned', { ...buildActorLogContext(actor), workId: result.work.id, resortId: result.work.resortId });
+  return result;
+};
+
+const closeLaundryWork = async (workId, payload = {}, context = {}) => {
+  const actor = assertLaundryStaffActor(context.actor);
+  const work = await laundryWorksRepository.transaction(async (tx) => {
+    await laundryWorksRepository.lockWorkCommand({ workId, command: 'close', client: tx });
+    const where = buildRequiredActorResortScopedWhere({ actor });
+    const current = await laundryWorksRepository.findLaundryWorkByIdForUpdate({ workId, where, client: tx });
+    if (!current) { const error = new Error('Laundry Work not found'); error.statusCode = 404; throw error; }
+    if (current.currentStatus !== 'RETURNED') { const error = new Error('Laundry Work must be RETURNED before closure'); error.statusCode = 409; throw error; }
+    const updated = await laundryWorksRepository.updateLaundryWorkStatus({ workId, where, expectedStatus: 'RETURNED', toStatus: 'CLOSED', timestamps: { closedAt: new Date() }, client: tx });
+    if (!updated) { const error = new Error('Laundry Work status changed during closure'); error.statusCode = 409; throw error; }
+    await laundryWorksRepository.createWorkStatusLog({ data: { workId: Number(workId), fromStatus: 'RETURNED', toStatus: 'CLOSED', changedById: actor.userId, changedByName: actor.displayName || null, note: payload.note || 'Laundry Work closed' }, client: tx });
+    return updated;
+  });
+  logger.business('laundry.work.closed', { ...buildActorLogContext(actor), workId: work.id, resortId: work.resortId });
+  return work;
+};
+
 module.exports = {
   listLaundryWorks,
   getLaundryWorkById,
@@ -398,4 +438,6 @@ module.exports = {
   deleteOrCancelLaundryWork,
   confirmLaundryWorkSorting,
   recordLaundryWorkData,
+  confirmLaundryWorkReturn,
+  closeLaundryWork,
 };

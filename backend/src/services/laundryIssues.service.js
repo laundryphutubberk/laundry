@@ -18,7 +18,7 @@ const buildActorLogContext = (actor) => ({
   actorResortId: actor?.resortId,
 });
 
-const assertWorkExists = async ({ workId, actor, client }) => {
+const getAccessibleWork = async ({ workId, actor, client }) => {
   const work = await laundryWorksRepository.findLaundryWorkById({
     workId,
     where: buildRequiredActorResortScopedWhere({ actor }),
@@ -31,6 +31,10 @@ const assertWorkExists = async ({ workId, actor, client }) => {
     throw error;
   }
 
+  return work;
+};
+
+const assertWorkAllowsIssueMutation = (work) => {
   if (['CLOSED', 'CANCELLED'].includes(work.currentStatus)) {
     const error = new Error('Issues cannot be changed on closed or cancelled Laundry Work');
     error.statusCode = 409;
@@ -38,6 +42,11 @@ const assertWorkExists = async ({ workId, actor, client }) => {
   }
 
   return work;
+};
+
+const getMutableAccessibleWork = async ({ workId, actor, client }) => {
+  const work = await getAccessibleWork({ workId, actor, client });
+  return assertWorkAllowsIssueMutation(work);
 };
 
 const assertIssueLinks = async ({ work, bagId, countLineId, client }) => {
@@ -83,7 +92,7 @@ const assertIssueLinks = async ({ work, bagId, countLineId, client }) => {
 
 const listLaundryIssues = async (workId, query = {}, context = {}) => {
   const actor = assertLaundryStaffActor(context.actor);
-  await assertWorkExists({ workId, actor });
+  await getAccessibleWork({ workId, actor });
 
   return laundryIssuesRepository.listLaundryIssues({
     where: buildIssueWhere({ actor, workId, status: query.status }),
@@ -94,7 +103,7 @@ const createLaundryIssue = async (workId, payload = {}, context = {}) => {
   const actor = assertLaundryStaffActor(context.actor);
 
   const issue = await laundryIssuesRepository.transaction(async (tx) => {
-    const work = await assertWorkExists({ workId, actor, client: tx });
+    const work = await getMutableAccessibleWork({ workId, actor, client: tx });
     const { countLine } = await assertIssueLinks({
       work,
       bagId: payload.bagId,
@@ -168,7 +177,7 @@ const updateLaundryIssue = async (issueId, payload = {}, context = {}) => {
       throw error;
     }
 
-    const work = await assertWorkExists({ workId: current.workId, actor, client: tx });
+    const work = await getMutableAccessibleWork({ workId: current.workId, actor, client: tx });
     const nextBagId = payload.bagId === undefined ? current.bagId : payload.bagId;
     const nextCountLineId = payload.countLineId === undefined ? current.countLineId : payload.countLineId;
     const { countLine } = await assertIssueLinks({
@@ -234,6 +243,8 @@ const resolveLaundryIssue = async (issueId, payload = {}, context = {}) => {
       error.statusCode = 404;
       throw error;
     }
+
+    await getMutableAccessibleWork({ workId: current.workId, actor, client: tx });
 
     if (current.status === 'RESOLVED') return current;
     if (current.status === 'CANCELLED') {

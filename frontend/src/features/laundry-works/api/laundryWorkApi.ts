@@ -58,6 +58,10 @@ export type LaundryWorkBackendCapability = {
     confirmColor: true
     recordData: true
   }
+  returnClosure: {
+    confirmReturn: true
+    closeWork: true
+  }
   bags: {
     list: true
     detail: true
@@ -99,6 +103,10 @@ export const laundryWorkBackendCapability: LaundryWorkBackendCapability = {
     confirmType: true,
     confirmColor: true,
     recordData: true,
+  },
+  returnClosure: {
+    confirmReturn: true,
+    closeWork: true,
   },
   bags: {
     list: true,
@@ -591,7 +599,7 @@ export const laundryWorkApi = {
     return request<LaundryWorkDTO>(`/laundry/works/${workId}/status`, meta, { method: 'PATCH', body: JSON.stringify(input) })
   },
 
-  runWorkCommand(command: 'confirm-type-sorting' | 'confirm-color-sorting' | 'record-data', { workId, meta, note }: LaundryWorkCommandInput) {
+  runWorkCommand(command: 'confirm-type-sorting' | 'confirm-color-sorting' | 'record-data' | 'confirm-return' | 'close', { workId, meta, note }: LaundryWorkCommandInput) {
     if (!workId) return Promise.resolve(missingIdResult<any>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
     return request<any>(`/laundry/works/${workId}/${command}`, meta, { method: 'POST', body: JSON.stringify({ note }) })
   },
