@@ -14,9 +14,11 @@ const {
 } = require('../controllers/laundryWorks.controller');
 
 const router = express.Router();
+const { getLaundryWorkTimelineController } = require('../controllers/laundryTimeline.controller');
 
 router.get('/', listLaundryWorksController);
 router.get('/:workId', getLaundryWorkController);
+router.get('/:workId/timeline', getLaundryWorkTimelineController);
 router.post('/', createLaundryWorkController);
 router.patch('/:workId/status', updateLaundryWorkStatusController);
 router.post('/:workId/confirm-type-sorting', confirmLaundryWorkTypeSortingController);
