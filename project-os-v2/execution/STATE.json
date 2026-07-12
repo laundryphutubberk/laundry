@@ -4,10 +4,10 @@
   "project": "laundry-os-v2-pilot",
   "status": "IMPLEMENTED_PENDING_VERIFICATION",
   "authority": "PILOT_NON_AUTHORITATIVE",
-  "active_stage": "READY_FOR_GOOGLE_IDENTITY_PERSISTENCE",
-  "active_flow": "authentication-google-verification-foundation-v1",
+  "active_stage": "READY_FOR_GOOGLE_LINKING_STAGE",
+  "active_flow": "authentication-user-identity-persistence-v1",
   "blocked_by": [],
   "v1_policy": "READ_ONLY_REFERENCE",
   "git_policy": "NO_COMMIT_OR_PUSH_WITHOUT_EXPLICIT_AUTHORIZATION",
-  "updated_at": "2026-07-12T17:00:00+07:00"
+  "updated_at": "2026-07-12T18:30:00+07:00"
 }

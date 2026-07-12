@@ -89,6 +89,10 @@ enum ClaimStatus {
   RESOLVED
 }
 
+enum IdentityProvider {
+  GOOGLE
+}
+
 enum WashLoadStatus {
   DRAFT
   PLANNED
@@ -122,10 +126,33 @@ model User {
   createdWorks LaundryWork[] @relation("WorkCreatedBy")
   issueReports IssueReport[] @relation("IssueReportedBy")
   deviceSessions DeviceSession[]
+  identities UserIdentity[]
 
   @@index([resortId])
   @@index([workspaceType])
   @@index([role])
+}
+
+model UserIdentity {
+  id              String           @id @default(uuid())
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        IdentityProvider
+  providerSubject String
+  providerEmail   String?
+  emailVerified   Boolean          @default(false)
+  displayName     String?
+  avatarUrl       String?
+  linkedAt        DateTime         @default(now())
+  lastUsedAt      DateTime?
+  unlinkedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([provider, providerSubject])
+  @@index([userId])
+  @@index([providerEmail])
+  @@index([unlinkedAt])
 }
 
 model DeviceSession {

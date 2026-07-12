@@ -44,7 +44,8 @@
     "cleanup:laundry-image-browser": "node scripts/cleanup-laundry-image-browser.js",
     "verify:be07": "node scripts/verify-be07.js",
     "verify:auth-device-session": "node scripts/verify-auth-device-session.js",
-    "verify:auth-google-foundation": "node scripts/verify-auth-google-foundation.js"
+    "verify:auth-google-foundation": "node scripts/verify-auth-google-foundation.js",
+    "verify:auth-user-identity-db": "node scripts/verify-auth-user-identity-db.js"
   },
   "keywords": [],
   "author": "",
