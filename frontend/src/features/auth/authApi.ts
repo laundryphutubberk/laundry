@@ -73,6 +73,9 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
   const request = () => fetch(input, { ...init, headers, credentials: 'include' })
   const response = await request()
   if (response.status !== 401) return response
+  const cloned = response.clone()
+  const body = await cloned.json().catch(() => ({}))
+  if (body?.meta?.code !== 'AUTHENTICATION_REQUIRED') return response
   refreshPromise ||= refreshSession().finally(() => { refreshPromise = null })
   const session = await refreshPromise
   if (!session) return response
