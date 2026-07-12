@@ -43,7 +43,8 @@
     "seed:laundry-image-browser": "node scripts/seed-laundry-image-browser.js",
     "cleanup:laundry-image-browser": "node scripts/cleanup-laundry-image-browser.js",
     "verify:be07": "node scripts/verify-be07.js",
-    "verify:auth-device-session": "node scripts/verify-auth-device-session.js"
+    "verify:auth-device-session": "node scripts/verify-auth-device-session.js",
+    "verify:auth-google-foundation": "node scripts/verify-auth-google-foundation.js"
   },
   "keywords": [],
   "author": "",
@@ -56,6 +57,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "google-auth-library": "^10.9.0",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.11.0",
