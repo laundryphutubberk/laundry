@@ -1,4 +1,5 @@
 import type { ApiResult, IssueReportDTO, LaundryWorkRequestMeta } from './laundryWorkApi'
+import { authenticatedFetch } from '../../auth/authApi'
 
 export type LaundryIssueDTO = IssueReportDTO & {
   workId?: string | number
@@ -57,7 +58,7 @@ async function request<T>(path: string, meta: LaundryWorkRequestMeta, init: Requ
     if (meta.workspaceType) headers.set('X-Workspace-Type', meta.workspaceType)
     if (meta.resortId) headers.set('X-Resort-Id', String(meta.resortId))
 
-    const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+    const response = await authenticatedFetch(`${API_BASE_URL}${path}`, { ...init, headers })
     const envelope = await response.json().catch(() => ({}))
     const requestId = envelope?.meta?.requestId || meta.requestId
 

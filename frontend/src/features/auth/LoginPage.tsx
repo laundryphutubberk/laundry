@@ -1,13 +1,15 @@
 import { FormEvent, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { login } from './authApi'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [rememberDevice, setRememberDevice] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -16,8 +18,9 @@ export function LoginPage() {
     setError(null)
 
     try {
-      await login({ email, password })
-      navigate('/workspace/laundry/works', { replace: true })
+      await login({ email, password, rememberDevice, deviceLabel: navigator.userAgent })
+      const returnTo = searchParams.get('returnTo')
+      navigate(returnTo?.startsWith('/workspace/') ? returnTo : '/workspace/laundry/works', { replace: true })
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'Login failed')
     } finally {
@@ -42,6 +45,11 @@ export function LoginPage() {
             autoComplete="email"
             required
           />
+        </label>
+
+        <label className="mt-4 flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+          <input type="checkbox" checked={rememberDevice} onChange={(event) => setRememberDevice(event.target.checked)} disabled={loading} className="mt-0.5 h-5 w-5" />
+          <span className="text-sm font-semibold text-slate-700">จดจำอุปกรณ์ส่วนตัวนี้ <span className="block font-normal text-slate-500">คุณยังออกจากระบบหรือเพิกถอนอุปกรณ์ได้ และเซสชันจะหมดอายุ</span></span>
         </label>
 
         <label className="mt-4 block">

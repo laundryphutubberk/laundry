@@ -6,6 +6,8 @@ const roleSchema = z.enum(['LAUNDRY_OWNER', 'LAUNDRY_MANAGER', 'LAUNDRY_STAFF', 
 const loginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(1),
+  rememberDevice: z.boolean().optional().default(false),
+  deviceLabel: z.string().trim().max(120).optional(),
 });
 
 const registerSchema = z

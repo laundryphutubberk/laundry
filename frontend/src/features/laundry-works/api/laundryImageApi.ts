@@ -1,4 +1,5 @@
 import type { ApiResult, LaundryWorkImageDTO, LaundryWorkRequestMeta } from './laundryWorkApi'
+import { authenticatedFetch } from '../../auth/authApi'
 
 export type { LaundryWorkImageDTO } from './laundryWorkApi'
 
@@ -86,7 +87,7 @@ async function request<T>(path: string, meta: LaundryWorkRequestMeta, init: Requ
     if (meta.workspaceType) headers.set('X-Workspace-Type', meta.workspaceType)
     if (meta.resortId) headers.set('X-Resort-Id', String(meta.resortId))
 
-    const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+    const response = await authenticatedFetch(`${API_BASE_URL}${path}`, { ...init, headers })
     const envelope = await response.json().catch(() => ({}))
     const requestId = envelope?.meta?.requestId || meta.requestId
 
@@ -164,7 +165,7 @@ export const laundryImageApi = {
       if (token) headers.set('Authorization', `Bearer ${token}`)
       if (meta.workspaceType) headers.set('X-Workspace-Type', meta.workspaceType)
       if (meta.resortId) headers.set('X-Resort-Id', String(meta.resortId))
-      const response = await fetch(`${API_BASE_URL}/laundry/works/${workId}/images`, { method: 'POST', headers, body })
+      const response = await authenticatedFetch(`${API_BASE_URL}/laundry/works/${workId}/images`, { method: 'POST', headers, body })
       const envelope = await response.json().catch(() => ({}))
       const requestId = envelope?.meta?.requestId || meta.requestId
       if (!response.ok || envelope?.success === false) return {

@@ -121,10 +121,35 @@ model User {
 
   createdWorks LaundryWork[] @relation("WorkCreatedBy")
   issueReports IssueReport[] @relation("IssueReportedBy")
+  deviceSessions DeviceSession[]
 
   @@index([resortId])
   @@index([workspaceType])
   @@index([role])
+}
+
+model DeviceSession {
+  id                String   @id @default(uuid())
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId          String
+  credentialHash    String
+  previousHash      String?
+  rotationCounter   Int      @default(0)
+  deviceLabel       String?
+  userAgent         String?
+  createdAt         DateTime @default(now())
+  lastUsedAt        DateTime @default(now())
+  idleExpiresAt     DateTime
+  absoluteExpiresAt DateTime
+  revokedAt         DateTime?
+  compromisedAt     DateTime?
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([idleExpiresAt])
+  @@index([absoluteExpiresAt])
+  @@index([revokedAt])
 }
 
 model Resort {
