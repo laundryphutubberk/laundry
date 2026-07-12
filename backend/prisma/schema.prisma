@@ -93,6 +93,11 @@ enum IdentityProvider {
   GOOGLE
 }
 
+enum StepUpPurpose {
+  LINK_IDENTITY
+  UNLINK_IDENTITY
+}
+
 enum WashLoadStatus {
   DRAFT
   PLANNED
@@ -127,6 +132,9 @@ model User {
   issueReports IssueReport[] @relation("IssueReportedBy")
   deviceSessions DeviceSession[]
   identities UserIdentity[]
+  identityLinkIntents IdentityLinkIntent[]
+  identityUnlinkIntents IdentityUnlinkIntent[]
+  stepUpGrants StepUpGrant[]
 
   @@index([resortId])
   @@index([workspaceType])
@@ -148,11 +156,70 @@ model UserIdentity {
   unlinkedAt      DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  unlinkIntents   IdentityUnlinkIntent[]
 
   @@unique([provider, providerSubject])
   @@index([userId])
   @@index([providerEmail])
   @@index([unlinkedAt])
+}
+
+model IdentityLinkIntent {
+  id              String           @id @default(uuid())
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        IdentityProvider
+  providerSubject String
+  providerEmail   String?
+  emailVerified   Boolean          @default(false)
+  displayName     String?
+  avatarUrl       String?
+  sessionContext  String
+  attemptCount    Int              @default(0)
+  createdAt       DateTime         @default(now())
+  expiresAt       DateTime
+  confirmedAt     DateTime?
+  consumedAt      DateTime?
+  cancelledAt     DateTime?
+  supersededAt    DateTime?
+
+  @@index([userId])
+  @@index([provider, providerSubject])
+  @@index([expiresAt])
+}
+
+model StepUpGrant {
+  id             String        @id @default(uuid())
+  userId         Int
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose        StepUpPurpose
+  targetId       String
+  secretHash     String
+  sessionContext String
+  createdAt      DateTime      @default(now())
+  expiresAt      DateTime
+  consumedAt     DateTime?
+
+  @@index([userId])
+  @@index([purpose, targetId])
+  @@index([expiresAt])
+}
+
+model IdentityUnlinkIntent {
+  id             String       @id @default(uuid())
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  identityId     String
+  identity       UserIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  sessionContext String
+  createdAt      DateTime     @default(now())
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  cancelledAt    DateTime?
+
+  @@index([userId])
+  @@index([identityId])
+  @@index([expiresAt])
 }
 
 model DeviceSession {
