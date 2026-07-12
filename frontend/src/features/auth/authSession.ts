@@ -39,6 +39,20 @@ export function getAuthToken() {
   return window.localStorage.getItem(TOKEN_KEY) || undefined
 }
 
+export function hasUnexpiredAuthToken() {
+  const token = getAuthToken()
+  if (!token) return false
+
+  try {
+    const encodedPayload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const paddedPayload = encodedPayload.padEnd(Math.ceil(encodedPayload.length / 4) * 4, '=')
+    const payload = JSON.parse(window.atob(paddedPayload)) as { exp?: number }
+    return typeof payload.exp === 'number' && payload.exp * 1000 > Date.now()
+  } catch (_error) {
+    return false
+  }
+}
+
 export function getAuthSession(): AuthSession | null {
   const raw = window.localStorage.getItem(SESSION_KEY)
   if (!raw) return null

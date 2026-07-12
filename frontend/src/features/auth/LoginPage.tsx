@@ -1,7 +1,8 @@
 import { FormEvent, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { login } from './authApi'
+import { getAuthSession } from './authSession'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -11,6 +12,8 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [rememberDevice, setRememberDevice] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const returnTo = searchParams.get('returnTo')
+  const authenticatedDestination = returnTo?.startsWith('/workspace/') ? returnTo : '/workspace/laundry/works'
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -19,14 +22,15 @@ export function LoginPage() {
 
     try {
       await login({ email, password, rememberDevice, deviceLabel: navigator.userAgent })
-      const returnTo = searchParams.get('returnTo')
-      navigate(returnTo?.startsWith('/workspace/') ? returnTo : '/workspace/laundry/works', { replace: true })
+      navigate(authenticatedDestination, { replace: true })
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'Login failed')
     } finally {
       setLoading(false)
     }
   }
+
+  if (getAuthSession()) return <Navigate to={authenticatedDestination} replace />
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">

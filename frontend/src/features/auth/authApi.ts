@@ -1,4 +1,4 @@
-import { clearAuthSession, getAuthToken, saveAuthSession, type AuthSession } from './authSession'
+import { clearAuthSession, getAuthToken, hasUnexpiredAuthToken, saveAuthSession, type AuthSession } from './authSession'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -40,9 +40,10 @@ async function submitAuth(path: string, input: LoginInput | RegisterInput, fallb
   return session
 }
 
-export async function refreshSession(): Promise<AuthSession | null> {
+export async function refreshSession(options: { preserveValidAccessSession?: boolean } = {}): Promise<AuthSession | null> {
   const response = await fetch(`${API_BASE_URL}/auth/session/refresh`, { method: 'POST', credentials: 'include' })
   if (!response.ok) {
+    if (options.preserveValidAccessSession && hasUnexpiredAuthToken()) return null
     clearAuthSession()
     if (window.location.pathname.startsWith('/workspace/')) {
       const returnTo = `${window.location.pathname}${window.location.search}`
