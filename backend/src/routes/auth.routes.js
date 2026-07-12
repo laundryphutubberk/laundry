@@ -8,6 +8,7 @@ const { createAuthRateLimit } = require('../middlewares/authRateLimit.middleware
 const router = express.Router();
 
 router.post('/login', authController.login);
+router.post('/google/login', createAuthRateLimit({ limit: 10, key: 'google-login' }), authController.googleLogin);
 router.post('/register', authController.register);
 router.post('/session/refresh', authController.refresh);
 router.post('/logout', authController.logout);

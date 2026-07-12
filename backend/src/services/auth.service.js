@@ -5,6 +5,8 @@ const crypto = require('crypto');
 const { env } = require('../config/env');
 const authRepository = require('../repositories/auth.repository');
 const { logger } = require('../core/observability');
+const { createGoogleIdentityVerificationService } = require('./googleIdentityVerification.service');
+const { createUserIdentityService } = require('./userIdentity.service');
 
 const createAuthError = () => {
   const error = new Error('Invalid email or password');
@@ -72,6 +74,13 @@ const createPersistentDeviceSession = async (user, metadata = {}) => {
   return { credential: `${record.id}.${credential}`, sessionId: record.id };
 };
 
+const issueSession = async (user, rememberDevice, metadata = {}) => {
+  const accessSession = createSession(user);
+  if (!rememberDevice) return accessSession;
+  const persistent = await createPersistentDeviceSession(user, metadata);
+  return { ...accessSession, ...persistent };
+};
+
 const parseSessionCredential = (raw) => {
   if (!raw || typeof raw !== 'string') throw createSessionError('AUTH_SESSION_REQUIRED', 'Device session is required');
   const separator = raw.indexOf('.');
@@ -132,10 +141,35 @@ const login = async ({ email, password, rememberDevice, deviceLabel }, metadata 
     throw createAuthError();
   }
 
-  const accessSession = createSession(user);
-  if (!rememberDevice) return accessSession;
-  const persistent = await createPersistentDeviceSession(user, { ...metadata, deviceLabel });
-  return { ...accessSession, ...persistent };
+  return issueSession(user, rememberDevice, { ...metadata, deviceLabel });
+};
+
+const googleLogin = async ({ idToken, rememberDevice, deviceLabel }, metadata = {}) => {
+  const googleVerifier = createGoogleIdentityVerificationService();
+  const identityService = createUserIdentityService();
+
+  const verified = await googleVerifier.verify(idToken);
+
+  let identity;
+  try {
+    identity = await identityService.findActive(verified.provider, verified.providerSubject);
+  } catch (error) {
+    if (error.code === 'IDENTITY_NOT_FOUND' || error.code === 'IDENTITY_REVOKED') {
+      logger.security('auth.google.login_failed', { reason: 'linked_identity_not_eligible' });
+      throw createSessionError('GOOGLE_LOGIN_FAILED', 'Google login is not available for this account', 401);
+    }
+    throw error;
+  }
+
+  const user = await authRepository.findActiveUserById(identity.userId);
+  if (!user) {
+    logger.security('auth.google.login_failed', { reason: 'linked_identity_not_eligible' });
+    throw createSessionError('GOOGLE_LOGIN_FAILED', 'Google login is not available for this account', 401);
+  }
+
+  logger.security('auth.google.login_succeeded', { userId: user.id });
+
+  return issueSession(user, rememberDevice, { ...metadata, deviceLabel });
 };
 
 const logoutCurrent = async (rawCredential) => {
@@ -184,6 +218,7 @@ const register = async ({ email, password, displayName, role, workspaceType, res
 
 module.exports = {
   login,
+  googleLogin,
   register,
   refreshDeviceSession,
   logoutCurrent,

@@ -21,6 +21,16 @@ const findActiveUserByEmail = async (email) => {
   });
 };
 
+const findActiveUserById = async (id) => {
+  return prisma.user.findFirst({
+    where: {
+      id,
+      active: true,
+    },
+    select: userSelect,
+  });
+};
+
 const findUserByEmail = async (email) => {
   return prisma.user.findUnique({
     where: {
@@ -93,6 +103,7 @@ const findOwnedDeviceSession = (id, userId) => prisma.deviceSession.findFirst({
 
 module.exports = {
   findActiveUserByEmail,
+  findActiveUserById,
   findUserByEmail,
   createUser,
   createDeviceSession,

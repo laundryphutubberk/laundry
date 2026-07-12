@@ -1,6 +1,6 @@
 const authService = require('../services/auth.service');
 const { sendSuccess } = require('../core/httpResponse');
-const { validateLoginInput, validateRegisterInput } = require('../validators/auth.validator');
+const { validateLoginInput, validateRegisterInput, validateGoogleLoginInput } = require('../validators/auth.validator');
 const { env } = require('../config/env');
 
 const cookieOptions = () => ({
@@ -26,6 +26,18 @@ const login = async (req, res, next) => {
   try {
     const input = validateLoginInput(req.body);
     const session = await authService.login(input, { userAgent: req.get('user-agent') });
+    if (session.credential) setSessionCookie(res, session.credential);
+
+    return sendSuccess(res, publicSession(session));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const googleLogin = async (req, res, next) => {
+  try {
+    const input = validateGoogleLoginInput(req.body);
+    const session = await authService.googleLogin(input, { userAgent: req.get('user-agent') });
     if (session.credential) setSessionCookie(res, session.credential);
 
     return sendSuccess(res, publicSession(session));
@@ -93,6 +105,7 @@ const register = async (req, res, next) => {
 
 module.exports = {
   login,
+  googleLogin,
   register,
   refresh,
   logout,

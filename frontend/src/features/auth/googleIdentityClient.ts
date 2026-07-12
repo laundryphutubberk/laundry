@@ -22,6 +22,28 @@ function loadGoogleIdentity() {
   })
 }
 
+export function isGoogleIdentityConfigured(): boolean {
+  return !!import.meta.env.VITE_GOOGLE_CLIENT_ID
+}
+
+export async function ensureGoogleIdentityAvailable(): Promise<boolean> {
+  if (!isGoogleIdentityConfigured()) return false
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  try {
+    await Promise.race([
+      loadGoogleIdentity(),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('timeout')), 5000)
+      }),
+    ])
+    return !!window.google?.accounts
+  } catch {
+    return false
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId)
+  }
+}
+
 export async function requestGoogleIdentityCredential() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
   if (!clientId) throw new Error('Google Identity is not configured for this environment')

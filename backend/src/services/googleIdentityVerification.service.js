@@ -14,7 +14,6 @@ const createGoogleIdentityVerificationService = ({ adapter = defaultAdapter } = 
       const identity = await adapter.verifyIdToken(idToken);
       logger.security('auth.google.token_verified', {
         provider: identity.provider,
-        providerSubject: identity.providerSubject,
         emailVerified: identity.emailVerified,
       });
       return identity;

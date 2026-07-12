@@ -5,7 +5,8 @@ import App from './App.jsx'
 import { refreshSession } from './features/auth/authApi'
 
 async function bootstrap() {
-  await refreshSession({ preserveValidAccessSession: true })
+  const session = await refreshSession()
+  if (!session && window.location.pathname.startsWith('/workspace/')) return
   createRoot(document.getElementById('root')).render(
     <StrictMode><App /></StrictMode>,
   )

@@ -43,7 +43,7 @@ export type ResolveLaundryIssueInput = {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function getToken(meta: LaundryWorkRequestMeta) {
-  return meta.token || window.localStorage.getItem('laundry.auth.token') || window.localStorage.getItem('authToken') || window.localStorage.getItem('token') || undefined
+  return meta.token
 }
 
 async function request<T>(path: string, meta: LaundryWorkRequestMeta, init: RequestInit = {}): Promise<ApiResult<T>> {

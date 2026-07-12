@@ -45,12 +45,7 @@ function buildMeta(requestId: string, source: 'backend' | 'client-normalized' = 
 }
 
 function getAuthToken(meta: LaundryWorkRequestMeta) {
-  if (meta.token) return meta.token
-  if (typeof window === 'undefined') return undefined
-  return window.localStorage.getItem('laundry.auth.token')
-    || window.localStorage.getItem('authToken')
-    || window.localStorage.getItem('token')
-    || undefined
+  return meta.token
 }
 
 function normalizeImage(raw: any): LaundryWorkImageDTO {

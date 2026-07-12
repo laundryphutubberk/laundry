@@ -49,15 +49,7 @@ export type LaundryImageMutationInput = {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function getToken(meta: LaundryWorkRequestMeta) {
-  if (meta.token) return meta.token
-  if (typeof window === 'undefined') return undefined
-
-  return (
-    window.localStorage.getItem('laundry.auth.token') ||
-    window.localStorage.getItem('authToken') ||
-    window.localStorage.getItem('token') ||
-    undefined
-  )
+  return meta.token
 }
 
 function createClientFailure<T>(meta: LaundryWorkRequestMeta, code: string, message: string): ApiResult<T> {

@@ -25,18 +25,27 @@ export type AuthSession = {
 const TOKEN_KEY = 'laundry.auth.token'
 const SESSION_KEY = 'laundry.auth.session'
 
-export function saveAuthSession(session: AuthSession) {
-  window.localStorage.setItem(TOKEN_KEY, session.token)
-  window.localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-}
-
-export function clearAuthSession() {
+function clearLegacyAuthStorage() {
   window.localStorage.removeItem(TOKEN_KEY)
   window.localStorage.removeItem(SESSION_KEY)
 }
 
+clearLegacyAuthStorage()
+
+export function saveAuthSession(session: AuthSession) {
+  clearLegacyAuthStorage()
+  window.sessionStorage.setItem(TOKEN_KEY, session.token)
+  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session))
+}
+
+export function clearAuthSession() {
+  window.sessionStorage.removeItem(TOKEN_KEY)
+  window.sessionStorage.removeItem(SESSION_KEY)
+  clearLegacyAuthStorage()
+}
+
 export function getAuthToken() {
-  return window.localStorage.getItem(TOKEN_KEY) || undefined
+  return window.sessionStorage.getItem(TOKEN_KEY) || undefined
 }
 
 export function hasUnexpiredAuthToken() {
@@ -54,7 +63,7 @@ export function hasUnexpiredAuthToken() {
 }
 
 export function getAuthSession(): AuthSession | null {
-  const raw = window.localStorage.getItem(SESSION_KEY)
+  const raw = window.sessionStorage.getItem(SESSION_KEY)
   if (!raw) return null
 
   try {
