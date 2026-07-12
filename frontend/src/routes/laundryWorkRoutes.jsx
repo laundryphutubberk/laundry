@@ -5,6 +5,7 @@ import { LaundryWorkCreatePage } from '../features/laundry-works/pages/LaundryWo
 import { LaundryWorkListPage } from '../features/laundry-works/pages/LaundryWorkListPage'
 import { LaundryWorkDetailPage } from '../features/laundry-works/pages/LaundryWorkDetailPage'
 import { ResortListPage } from '../features/resorts/ResortListPage'
+import { IdentityManagementPage } from '../features/auth/IdentityManagementPage'
 
 export const laundryWorkRoutes = [
   {
@@ -30,6 +31,10 @@ export const laundryWorkRoutes = [
       {
         path: 'resorts',
         element: <ResortListPage />,
+      },
+      {
+        path: 'security',
+        element: <IdentityManagementPage />,
       },
     ],
   },
