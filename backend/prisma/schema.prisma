@@ -38,6 +38,47 @@ enum WorkspaceType {
   RESORT
 }
 
+enum OnboardingStatus {
+  NOT_REQUIRED
+  PENDING
+  COMPLETED
+  BLOCKED
+}
+
+enum TenantStatus {
+  PROVISIONING
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum LaundryWorkspaceStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum BranchStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum TenantRole {
+  OWNER
+  MANAGER
+  STAFF
+  ACCOUNTANT
+  DRIVER
+}
+
+enum TenantMembershipStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REVOKED
+}
+
 enum WorkStatus {
   DRAFT
   BAG_RECEIVED
@@ -81,6 +122,23 @@ enum IssueStatus {
   CANCELLED
 }
 
+enum ClaimStatus {
+  OPEN
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  RESOLVED
+}
+
+enum IdentityProvider {
+  GOOGLE
+}
+
+enum StepUpPurpose {
+  LINK_IDENTITY
+  UNLINK_IDENTITY
+}
+
 enum WashLoadStatus {
   DRAFT
   PLANNED
@@ -99,10 +157,11 @@ enum WashLoadFitStatus {
 model User {
   id            Int           @id @default(autoincrement())
   email         String        @unique
-  passwordHash  String
+  passwordHash  String?
   displayName   String?
-  role          UserRole
-  workspaceType WorkspaceType
+  role          UserRole?
+  workspaceType WorkspaceType?
+  onboardingStatus OnboardingStatus @default(NOT_REQUIRED)
 
   resortId Int?
   resort   Resort? @relation(fields: [resortId], references: [id])
@@ -113,10 +172,200 @@ model User {
 
   createdWorks LaundryWork[] @relation("WorkCreatedBy")
   issueReports IssueReport[] @relation("IssueReportedBy")
+  deviceSessions DeviceSession[]
+  identities UserIdentity[]
+  identityLinkIntents IdentityLinkIntent[]
+  identityUnlinkIntents IdentityUnlinkIntent[]
+  stepUpGrants StepUpGrant[]
+  tenantMemberships TenantMembership[]
+  createdTenants Tenant[] @relation("TenantCreatedBy")
 
   @@index([resortId])
   @@index([workspaceType])
   @@index([role])
+}
+
+model Tenant {
+  id               String       @id @default(uuid())
+  slug             String       @unique
+  displayName      String
+  legalName        String?
+  timezone         String
+  status           TenantStatus @default(PROVISIONING)
+  createdById      Int?
+  createdBy        User?        @relation("TenantCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  suspendedAt      DateTime?
+  suspensionReason String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  laundryWorkspace LaundryWorkspace?
+  branches         Branch[]
+  memberships      TenantMembership[]
+
+  @@index([status])
+  @@index([createdById])
+}
+
+model LaundryWorkspace {
+  id          String                   @id @default(uuid())
+  tenantId    String                   @unique
+  tenant      Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  status      LaundryWorkspaceStatus   @default(ACTIVE)
+  displayName String?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  branches Branch[]
+
+  @@unique([id, tenantId])
+  @@index([status])
+}
+
+model Branch {
+  id                 String          @id @default(uuid())
+  tenantId           String
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  laundryWorkspaceId String
+  laundryWorkspace   LaundryWorkspace @relation(fields: [laundryWorkspaceId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  code               String
+  name               String
+  timezone           String?
+  address            String?
+  isDefault          Boolean         @default(false)
+  status             BranchStatus    @default(ACTIVE)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@index([laundryWorkspaceId])
+}
+
+model TenantMembership {
+  id            String                 @id @default(uuid())
+  tenantId      String
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId        Int
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          TenantRole
+  status        TenantMembershipStatus @default(PENDING)
+  version       Int                    @default(1)
+  positionTitle String?
+  activatedAt   DateTime?
+  suspendedAt   DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@unique([tenantId, userId])
+  @@index([userId, status])
+  @@index([tenantId, status, role])
+}
+
+model UserIdentity {
+  id              String           @id @default(uuid())
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        IdentityProvider
+  providerSubject String
+  providerEmail   String?
+  emailVerified   Boolean          @default(false)
+  displayName     String?
+  avatarUrl       String?
+  linkedAt        DateTime         @default(now())
+  lastUsedAt      DateTime?
+  unlinkedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  unlinkIntents   IdentityUnlinkIntent[]
+
+  @@unique([provider, providerSubject])
+  @@index([userId])
+  @@index([providerEmail])
+  @@index([unlinkedAt])
+}
+
+model IdentityLinkIntent {
+  id              String           @id @default(uuid())
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        IdentityProvider
+  providerSubject String
+  providerEmail   String?
+  emailVerified   Boolean          @default(false)
+  displayName     String?
+  avatarUrl       String?
+  sessionContext  String
+  attemptCount    Int              @default(0)
+  createdAt       DateTime         @default(now())
+  expiresAt       DateTime
+  confirmedAt     DateTime?
+  consumedAt      DateTime?
+  cancelledAt     DateTime?
+  supersededAt    DateTime?
+
+  @@index([userId])
+  @@index([provider, providerSubject])
+  @@index([expiresAt])
+}
+
+model StepUpGrant {
+  id             String        @id @default(uuid())
+  userId         Int
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose        StepUpPurpose
+  targetId       String
+  secretHash     String
+  sessionContext String
+  createdAt      DateTime      @default(now())
+  expiresAt      DateTime
+  consumedAt     DateTime?
+
+  @@index([userId])
+  @@index([purpose, targetId])
+  @@index([expiresAt])
+}
+
+model IdentityUnlinkIntent {
+  id             String       @id @default(uuid())
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  identityId     String
+  identity       UserIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  sessionContext String
+  createdAt      DateTime     @default(now())
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  cancelledAt    DateTime?
+
+  @@index([userId])
+  @@index([identityId])
+  @@index([expiresAt])
+}
+
+model DeviceSession {
+  id                String   @id @default(uuid())
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId          String
+  credentialHash    String
+  previousHash      String?
+  rotationCounter   Int      @default(0)
+  deviceLabel       String?
+  userAgent         String?
+  createdAt         DateTime @default(now())
+  lastUsedAt        DateTime @default(now())
+  idleExpiresAt     DateTime
+  absoluteExpiresAt DateTime
+  revokedAt         DateTime?
+  compromisedAt     DateTime?
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([idleExpiresAt])
+  @@index([absoluteExpiresAt])
+  @@index([revokedAt])
 }
 
 model Resort {
@@ -345,6 +594,8 @@ model IssueReport {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  claim LaundryClaim?
+
   @@index([workId])
   @@index([resortId])
   @@index([bagId])
@@ -353,6 +604,30 @@ model IssueReport {
   @@index([colorGroup])
   @@index([status])
   @@index([reportedAt])
+}
+
+model LaundryClaim {
+  id Int @id @default(autoincrement())
+
+  issueId Int         @unique
+  issue   IssueReport @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  status         ClaimStatus @default(OPEN)
+  claimReason    String
+  reviewNote     String?
+  resolutionNote String?
+
+  createdById  Int?
+  reviewedById Int?
+  resolvedById Int?
+  reviewedAt   DateTime?
+  resolvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model LaundryWorkImage {

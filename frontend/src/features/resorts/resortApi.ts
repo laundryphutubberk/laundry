@@ -1,4 +1,5 @@
 import { getWorkspaceContext } from '../auth/authSession'
+import { authenticatedFetch } from '../auth/authApi'
 
 type ApiEnvelope<T> = {
   success?: boolean
@@ -55,7 +56,7 @@ async function requestResort<T>(path: string, init: RequestInit = {}): Promise<T
   if (session.token) headers.set('Authorization', `Bearer ${session.token}`)
   if (session.workspaceType) headers.set('X-Workspace-Type', session.workspaceType)
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
   })
@@ -69,7 +70,7 @@ async function requestResort<T>(path: string, init: RequestInit = {}): Promise<T
 }
 
 export async function listResorts(): Promise<ResortListResult> {
-  const response = await fetch(`${API_BASE_URL}/resorts?active=true&take=100`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/resorts?active=true&take=100`, {
     headers: {
       Authorization: `Bearer ${getWorkspaceContext().token}`,
       'X-Request-Id': createRequestId(),

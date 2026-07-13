@@ -1,3 +1,5 @@
+import { authenticatedFetch } from '../../auth/authApi'
+
 export type WorkspaceType = 'LAUNDRY' | 'RESORT'
 
 export type LaundryWorkRequestMeta = {
@@ -58,6 +60,10 @@ export type LaundryWorkBackendCapability = {
     confirmColor: true
     recordData: true
   }
+  returnClosure: {
+    confirmReturn: true
+    closeWork: true
+  }
   bags: {
     list: true
     detail: true
@@ -82,7 +88,7 @@ export type LaundryWorkBackendCapability = {
     update: true
     setCover: true
     softDelete: true
-    binaryUploadAdapter: false
+    binaryUploadAdapter: true
   }
   history: {
     fromDetailStatusLogs: true
@@ -99,6 +105,10 @@ export const laundryWorkBackendCapability: LaundryWorkBackendCapability = {
     confirmType: true,
     confirmColor: true,
     recordData: true,
+  },
+  returnClosure: {
+    confirmReturn: true,
+    closeWork: true,
   },
   bags: {
     list: true,
@@ -124,7 +134,7 @@ export const laundryWorkBackendCapability: LaundryWorkBackendCapability = {
     update: true,
     setCover: true,
     softDelete: true,
-    binaryUploadAdapter: false,
+    binaryUploadAdapter: true,
   },
   history: {
     fromDetailStatusLogs: true,
@@ -348,7 +358,7 @@ type BackendEnvelope<T> = {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function getToken(meta: LaundryWorkRequestMeta) {
-  return meta.token || window.localStorage.getItem('laundry.auth.token') || window.localStorage.getItem('authToken') || window.localStorage.getItem('token') || undefined
+  return meta.token
 }
 
 async function request<T>(path: string, meta: LaundryWorkRequestMeta, init: RequestInit = {}): Promise<ApiResult<T>> {
@@ -363,7 +373,7 @@ async function request<T>(path: string, meta: LaundryWorkRequestMeta, init: Requ
     if (meta.workspaceType) headers.set('X-Workspace-Type', meta.workspaceType)
     if (meta.resortId) headers.set('X-Resort-Id', String(meta.resortId))
 
-    const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+    const response = await authenticatedFetch(`${API_BASE_URL}${path}`, { ...init, headers })
     const envelope = await response.json().catch(() => ({})) as BackendEnvelope<T>
     const requestId = envelope.meta?.requestId || meta.requestId
 
@@ -591,7 +601,7 @@ export const laundryWorkApi = {
     return request<LaundryWorkDTO>(`/laundry/works/${workId}/status`, meta, { method: 'PATCH', body: JSON.stringify(input) })
   },
 
-  runWorkCommand(command: 'confirm-type-sorting' | 'confirm-color-sorting' | 'record-data', { workId, meta, note }: LaundryWorkCommandInput) {
+  runWorkCommand(command: 'confirm-type-sorting' | 'confirm-color-sorting' | 'record-data' | 'confirm-return' | 'close', { workId, meta, note }: LaundryWorkCommandInput) {
     if (!workId) return Promise.resolve(missingIdResult<any>('MISSING_WORK_ID', 'Missing Laundry Work id.', meta))
     return request<any>(`/laundry/works/${workId}/${command}`, meta, { method: 'POST', body: JSON.stringify({ note }) })
   },

@@ -7,6 +7,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "verify": "node tooling/verify-project-os.mjs"
+    "verify": "node tooling/verify-project-os.mjs",
+    "verify:deployment": "node tooling/verify-deployment-architecture.mjs"
   }
 }

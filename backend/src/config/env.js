@@ -9,6 +9,29 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32),
   ENABLE_DEV_ACTOR_HEADER: z.coerce.boolean().default(false),
+  AUTH_ACCESS_TOKEN_TTL: z.string().default('15m'),
+  AUTH_SESSION_IDLE_DAYS: z.coerce.number().int().positive().default(14),
+  AUTH_SESSION_ABSOLUTE_DAYS: z.coerce.number().int().positive().default(30),
+  AUTH_COOKIE_NAME: z.string().min(1).default('laundry_device_session'),
+  CORS_ORIGINS: z.string().default('http://localhost:5173,http://127.0.0.1:5173'),
+  GOOGLE_IDENTITY_ENABLED: z.preprocess(
+    (value) => (value === undefined ? undefined : String(value).toLowerCase() === 'true'),
+    z.boolean().default(false),
+  ),
+  GOOGLE_CLIENT_ID: z.string().trim().optional(),
+  AUTH_GOOGLE_REGISTRATION_MODE: z.enum([
+    'DISABLED',
+    'INVITATION_ONLY',
+    'PUBLIC_LAUNDRY_ONBOARDING',
+  ]).optional(),
+}).superRefine((value, ctx) => {
+  if (value.GOOGLE_IDENTITY_ENABLED && !value.GOOGLE_CLIENT_ID) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['GOOGLE_CLIENT_ID'],
+      message: 'GOOGLE_CLIENT_ID is required when Google Identity verification is enabled',
+    });
+  }
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -22,5 +45,9 @@ if (!parsed.success) {
 }
 
 module.exports = {
-  env: parsed.data,
+  env: {
+    ...parsed.data,
+    AUTH_GOOGLE_REGISTRATION_MODE: parsed.data.AUTH_GOOGLE_REGISTRATION_MODE
+      || (parsed.data.NODE_ENV === 'production' ? 'DISABLED' : 'PUBLIC_LAUNDRY_ONBOARDING'),
+  },
 };

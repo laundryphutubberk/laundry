@@ -24,6 +24,7 @@ const {
   softDeleteLaundryWorkImageController,
 } = require('../controllers/laundryWorkImages.controller');
 const { listActiveLaundryItemTypesController } = require('../controllers/laundryItemTypes.controller');
+const claims = require('../controllers/laundryClaims.controller');
 
 const router = express.Router();
 
@@ -51,5 +52,12 @@ router.patch('/laundry/images/:imageId', authActorMiddleware, updateLaundryWorkI
 router.patch('/laundry/images/:imageId/cover', authActorMiddleware, setLaundryWorkImageCoverController);
 router.delete('/laundry/images/:imageId', authActorMiddleware, softDeleteLaundryWorkImageController);
 router.use('/laundry/works', authActorMiddleware, laundryWorksRoutes);
+router.get('/laundry/works/:workId/claims', authActorMiddleware, claims.list);
+router.get('/laundry/claims/:claimId', authActorMiddleware, claims.detail);
+router.post('/laundry/issues/:issueId/claim', authActorMiddleware, claims.create);
+router.post('/laundry/claims/:claimId/start-review', authActorMiddleware, claims.startReview);
+router.post('/laundry/claims/:claimId/approve', authActorMiddleware, claims.approve);
+router.post('/laundry/claims/:claimId/reject', authActorMiddleware, claims.reject);
+router.post('/laundry/claims/:claimId/resolve', authActorMiddleware, claims.resolve);
 
 module.exports = router;

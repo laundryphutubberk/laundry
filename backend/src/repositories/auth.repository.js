@@ -9,12 +9,23 @@ const userSelect = {
   workspaceType: true,
   resortId: true,
   active: true,
+  onboardingStatus: true,
 };
 
 const findActiveUserByEmail = async (email) => {
   return prisma.user.findFirst({
     where: {
       email: email.toLowerCase(),
+      active: true,
+    },
+    select: userSelect,
+  });
+};
+
+const findActiveUserById = async (id) => {
+  return prisma.user.findFirst({
+    where: {
+      id,
       active: true,
     },
     select: userSelect,
@@ -45,8 +56,86 @@ const createUser = async ({ email, passwordHash, displayName, role, workspaceTyp
   });
 };
 
+const createDeviceSession = (data) => prisma.deviceSession.create({ data });
+
+const hasActiveIdentity = async (userId) => (await prisma.userIdentity.count({
+  where: { userId, unlinkedAt: null },
+})) > 0;
+
+const createPasswordlessOnboardingUserWithIdentity = ({ user, identity }) => prisma.$transaction(async (tx) => {
+  const createdUser = await tx.user.create({
+    data: {
+      ...user,
+      passwordHash: null,
+      role: null,
+      workspaceType: null,
+      resortId: null,
+      onboardingStatus: 'PENDING',
+      active: true,
+    },
+    select: userSelect,
+  });
+  await tx.userIdentity.create({ data: { ...identity, userId: createdUser.id } });
+  return createdUser;
+});
+
+const findDeviceSessionById = (id) => prisma.deviceSession.findUnique({
+  where: { id },
+  include: { user: { select: userSelect } },
+});
+
+const rotateDeviceSession = (id, expectedHash, data) => prisma.deviceSession.updateMany({
+  where: { id, credentialHash: expectedHash, revokedAt: null },
+  data,
+});
+
+const revokeDeviceSession = (id, revokedAt = new Date()) => prisma.deviceSession.updateMany({
+  where: { id, revokedAt: null },
+  data: { revokedAt },
+});
+
+const revokeAllDeviceSessions = (userId, revokedAt = new Date()) => prisma.deviceSession.updateMany({
+  where: { userId, revokedAt: null },
+  data: { revokedAt },
+});
+
+const revokeSessionFamily = (familyId, data) => prisma.deviceSession.updateMany({
+  where: { familyId, revokedAt: null },
+  data,
+});
+
+const listDeviceSessions = (userId) => prisma.deviceSession.findMany({
+  where: { userId },
+  orderBy: { lastUsedAt: 'desc' },
+  select: {
+    id: true,
+    deviceLabel: true,
+    createdAt: true,
+    lastUsedAt: true,
+    idleExpiresAt: true,
+    absoluteExpiresAt: true,
+    revokedAt: true,
+  },
+});
+
+const findOwnedDeviceSession = (id, userId) => prisma.deviceSession.findFirst({
+  where: { id, userId },
+  select: { id: true, userId: true, revokedAt: true },
+});
+
 module.exports = {
   findActiveUserByEmail,
+  findActiveUserById,
   findUserByEmail,
   createUser,
+  createDeviceSession,
+  hasActiveIdentity,
+  createPasswordlessOnboardingUserWithIdentity,
+  findDeviceSessionById,
+  rotateDeviceSession,
+  revokeDeviceSession,
+  revokeAllDeviceSessions,
+  revokeSessionFamily,
+  listDeviceSessions,
+  findOwnedDeviceSession,
 };

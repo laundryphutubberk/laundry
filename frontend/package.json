@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "verify:auth-google-registration": "node scripts/verify-auth-google-registration.mjs",
     "lint": "eslint .",
     "verify:architecture": "node scripts/verify-architecture.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify:auth-linking-ux": "node scripts/verify-auth-linking-ux.mjs"
+    ,"verify:auth-onboarding-foundation": "node scripts/verify-auth-onboarding-foundation.mjs"
   },
   "dependencies": {
     "axios": "^1.18.1",

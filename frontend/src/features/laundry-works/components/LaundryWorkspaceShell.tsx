@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 
-import { clearAuthSession, getAuthSession } from '../../auth/authSession'
+import { getAuthSession } from '../../auth/authSession'
+import { logoutCurrentDevice } from '../../auth/authApi'
 
 export type LaundryWorkspaceShellProps = {
   children: ReactNode
@@ -68,8 +69,8 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
   const workspaceLabel = workspaceLabels[workspaceType] || workspaceType || 'Workspace'
   const avatarLabel = Array.from(displayName)[0]?.toUpperCase() || 'ผ'
 
-  const handleLogout = () => {
-    clearAuthSession()
+  const handleLogout = async () => {
+    await logoutCurrentDevice()
     navigate('/login', { replace: true })
   }
 
@@ -141,7 +142,15 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
                   <button
                     type="button"
                     role="menuitem"
-                    onClick={handleLogout}
+                    onClick={() => { setUserMenuOpen(false); navigate('/workspace/laundry/security') }}
+                    className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    วิธีเข้าสู่ระบบและความปลอดภัย
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => void handleLogout()}
                     className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm font-bold text-red-700 transition hover:bg-red-50"
                   >
                     ออกจากระบบ

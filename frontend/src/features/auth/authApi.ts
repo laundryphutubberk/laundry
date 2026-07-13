@@ -1,10 +1,12 @@
-import { saveAuthSession, type AuthSession } from './authSession'
+import { clearAuthSession, getAuthToken, saveAuthSession, type AuthSession } from './authSession'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 export type LoginInput = {
   email: string
   password: string
+  rememberDevice?: boolean
+  deviceLabel?: string
 }
 
 export type RegisterInput = {
@@ -16,19 +18,41 @@ export type RegisterInput = {
   resortId?: number
 }
 
-async function submitAuth(path: string, input: LoginInput | RegisterInput, fallbackMessage: string): Promise<AuthSession> {
+export type GoogleLoginInput = {
+  idToken: string
+  rememberDevice?: boolean
+  deviceLabel?: string
+}
+
+export type GoogleRegisterInput = GoogleLoginInput
+
+export class AuthRequestError extends Error {
+  constructor(
+    message: string,
+    public code?: string
+  ) {
+    super(message)
+    this.name = 'AuthRequestError'
+  }
+}
+
+async function submitAuth(path: string, input: LoginInput | RegisterInput | GoogleLoginInput, fallbackMessage: string): Promise<AuthSession> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(input),
+    credentials: 'include',
   })
 
   const envelope = await response.json().catch(() => ({}))
 
   if (!response.ok || envelope.success === false) {
-    throw new Error(envelope.error?.message || response.statusText || fallbackMessage)
+    throw new AuthRequestError(
+      envelope.error?.message || response.statusText || fallbackMessage,
+      envelope.meta?.code
+    )
   }
 
   const session = envelope.data as AuthSession
@@ -37,10 +61,60 @@ async function submitAuth(path: string, input: LoginInput | RegisterInput, fallb
   return session
 }
 
+export async function refreshSession(): Promise<AuthSession | null> {
+  const response = await fetch(`${API_BASE_URL}/auth/session/refresh`, { method: 'POST', credentials: 'include' })
+  if (!response.ok) {
+    clearAuthSession()
+    if (window.location.pathname.startsWith('/workspace/')) {
+      const returnTo = `${window.location.pathname}${window.location.search}`
+      window.location.assign(`/login?returnTo=${encodeURIComponent(returnTo)}`)
+    }
+    return null
+  }
+  const envelope = await response.json().catch(() => ({}))
+  const session = envelope.data as AuthSession
+  saveAuthSession(session)
+  return session
+}
+
+export async function logoutCurrentDevice() {
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' })
+  } finally {
+    clearAuthSession()
+  }
+}
+
+let refreshPromise: Promise<AuthSession | null> | null = null
+export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const headers = new Headers(init.headers)
+  const token = getAuthToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const request = () => fetch(input, { ...init, headers, credentials: 'include' })
+  const response = await request()
+  if (response.status !== 401) return response
+  const cloned = response.clone()
+  const body = await cloned.json().catch(() => ({}))
+  if (body?.meta?.code !== 'AUTHENTICATION_REQUIRED') return response
+  refreshPromise ||= refreshSession().finally(() => { refreshPromise = null })
+  const session = await refreshPromise
+  if (!session) return response
+  headers.set('Authorization', `Bearer ${session.token}`)
+  return request()
+}
+
 export async function login(input: LoginInput): Promise<AuthSession> {
   return submitAuth('/auth/login', input, 'Login failed')
 }
 
 export async function register(input: RegisterInput): Promise<AuthSession> {
   return submitAuth('/auth/register', input, 'Registration failed')
+}
+
+export async function googleLogin(input: GoogleLoginInput): Promise<AuthSession> {
+  return submitAuth('/auth/google/login', input, 'Google login failed')
+}
+
+export async function googleRegister(input: GoogleRegisterInput): Promise<AuthSession> {
+  return submitAuth('/auth/google/register', input, 'Google registration failed')
 }

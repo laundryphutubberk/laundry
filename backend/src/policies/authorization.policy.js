@@ -21,6 +21,10 @@ const LAUNDRY_STAFF_ROLES = Object.freeze([
 const assertLaundryWorkspaceActor = (actor) => {
   const validActor = assertValidActor(actor);
 
+  if (validActor.onboardingStatus === 'PENDING' || validActor.hasBusinessContext === false) {
+    throw Object.assign(new Error('Onboarding is required before operational access'), { statusCode: 403, code: 'ONBOARDING_REQUIRED' });
+  }
+
   if (validActor.workspaceType !== WORKSPACE_TYPES.LAUNDRY) {
     throw createAuthorizationError('Laundry workspace access is required');
   }

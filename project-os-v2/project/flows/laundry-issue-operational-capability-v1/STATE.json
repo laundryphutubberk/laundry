@@ -1,0 +1,13 @@
+{
+  "flow_id": "laundry-issue-operational-capability-v1",
+  "document_status": "DRAFT",
+  "work_status": "READY",
+  "scope": "LAUNDRY_ISSUE_OPERATIONAL_CAPABILITY_V1",
+  "binary_upload": "NOT_APPLICABLE",
+  "schema_change": "NOT_PROPOSED",
+  "api_contract_change": "NOT_PROPOSED",
+  "current_gate": "FLOW_READY_FOR_TEST",
+  "blocked_by": [],
+  "known_gaps": ["Human browser verification remains pending", "Issue images cannot be linked to an individual Issue in the existing schema", "Frontend focused test and dedicated TypeScript check capabilities are unavailable"],
+  "updated_at": "2026-07-11T15:25:00+07:00"
+}

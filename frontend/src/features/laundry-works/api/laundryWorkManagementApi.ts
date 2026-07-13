@@ -1,4 +1,5 @@
 import type { ApiResult, LaundryWorkDTO, LaundryWorkRequestMeta } from './laundryWorkApi'
+import { authenticatedFetch } from '../../auth/authApi'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -53,7 +54,7 @@ export async function removeLaundryWork({ workId, reason, meta }: RemoveLaundryW
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/laundry/works/${workId}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/laundry/works/${workId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

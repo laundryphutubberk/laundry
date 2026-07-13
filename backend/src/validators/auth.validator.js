@@ -6,6 +6,8 @@ const roleSchema = z.enum(['LAUNDRY_OWNER', 'LAUNDRY_MANAGER', 'LAUNDRY_STAFF', 
 const loginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(1),
+  rememberDevice: z.boolean().optional().default(false),
+  deviceLabel: z.string().trim().max(120).optional(),
 });
 
 const registerSchema = z
@@ -35,10 +37,18 @@ const registerSchema = z
     }
   });
 
+const googleLoginSchema = z.object({
+  idToken: z.string().min(1),
+  rememberDevice: z.boolean().optional().default(false),
+  deviceLabel: z.string().trim().max(120).optional(),
+}).strict();
+
 const validateLoginInput = (payload) => loginSchema.parse(payload || {});
 const validateRegisterInput = (payload) => registerSchema.parse(payload || {});
+const validateGoogleLoginInput = (payload) => googleLoginSchema.parse(payload || {});
 
 module.exports = {
   validateLoginInput,
   validateRegisterInput,
+  validateGoogleLoginInput,
 };

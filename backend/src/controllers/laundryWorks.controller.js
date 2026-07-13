@@ -8,6 +8,8 @@ const {
   deleteOrCancelLaundryWork,
   confirmLaundryWorkSorting,
   recordLaundryWorkData,
+  confirmLaundryWorkReturn,
+  closeLaundryWork,
 } = require('../services/laundryWorks.service');
 const {
   parseRequest,
@@ -97,6 +99,22 @@ const recordLaundryWorkDataController = async (req, res, next) => {
   } catch (error) { return next(error); }
 };
 
+const confirmLaundryWorkReturnController = async (req, res, next) => {
+  try {
+    const params = parseRequest(workIdParamSchema, req.params);
+    const body = parseRequest(laundryWorkCommandBodySchema, req.body);
+    return sendSuccess(res, await confirmLaundryWorkReturn(params.workId, body, getRequestPolicyContext(req)));
+  } catch (error) { return next(error); }
+};
+
+const closeLaundryWorkController = async (req, res, next) => {
+  try {
+    const params = parseRequest(workIdParamSchema, req.params);
+    const body = parseRequest(laundryWorkCommandBodySchema, req.body);
+    return sendSuccess(res, await closeLaundryWork(params.workId, body, getRequestPolicyContext(req)));
+  } catch (error) { return next(error); }
+};
+
 module.exports = {
   listLaundryWorksController,
   getLaundryWorkController,
@@ -106,4 +124,6 @@ module.exports = {
   confirmLaundryWorkTypeSortingController,
   confirmLaundryWorkColorSortingController,
   recordLaundryWorkDataController,
+  confirmLaundryWorkReturnController,
+  closeLaundryWorkController,
 };

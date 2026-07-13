@@ -37,13 +37,22 @@ const normalizeActor = (actor = {}) => {
     return null;
   }
 
-  return {
+  const normalized = {
     userId: toPositiveIntegerOrNull(actor.userId || actor.id),
     role: actor.role || null,
     workspaceType: actor.workspaceType || null,
     resortId: toPositiveIntegerOrNull(actor.resortId),
     active: actor.active !== undefined ? Boolean(actor.active) : null,
   };
+
+  if (actor.onboardingStatus !== undefined || actor.hasBusinessContext !== undefined) {
+    normalized.onboardingStatus = actor.onboardingStatus || 'NOT_REQUIRED';
+    normalized.hasBusinessContext = actor.hasBusinessContext !== undefined
+      ? actor.hasBusinessContext === true
+      : Boolean(actor.role && actor.workspaceType);
+  }
+
+  return normalized;
 };
 
 const assertValidActor = (actor) => {
@@ -55,16 +64,20 @@ const assertValidActor = (actor) => {
     throw createActorError('Actor userId is required');
   }
 
+  if (actor.active !== true) {
+    throw createActorError('Actor is not active', 403);
+  }
+
+  if (actor.onboardingStatus === 'PENDING' && actor.hasBusinessContext === false && !actor.role && !actor.workspaceType && !actor.resortId) {
+    return actor;
+  }
+
   if (!Object.values(USER_ROLES).includes(actor.role)) {
     throw createActorError('Actor role is invalid', 403);
   }
 
   if (!Object.values(WORKSPACE_TYPES).includes(actor.workspaceType)) {
     throw createActorError('Actor workspaceType is invalid', 403);
-  }
-
-  if (actor.active !== true) {
-    throw createActorError('Actor is not active', 403);
   }
 
   if (actor.workspaceType === WORKSPACE_TYPES.RESORT && !actor.resortId) {

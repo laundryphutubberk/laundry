@@ -12,6 +12,8 @@ import { WorkSummaryCards } from '../components/WorkSummaryCards'
 import { WorkTimeline } from '../components/WorkTimeline'
 import { LaundryImageRuntimePanel } from '../runtime/LaundryImageRuntimePanel'
 import { LaundryIssueRuntimePanel } from '../runtime/LaundryIssueRuntimePanel'
+import { LaundryTimelineRuntimePanel } from '../runtime/LaundryTimelineRuntimePanel'
+import { LaundryClaimRuntimePanel } from '../runtime/LaundryClaimRuntimePanel'
 import { LaundryWorkRuntimeHost, type LaundryWorkRuntimeHostRenderProps } from '../runtime/LaundryWorkRuntimeHost'
 
 const pageClassName = 'min-h-screen bg-slate-100/70'
@@ -152,6 +154,8 @@ function LaundryWorkDetailContent({ projection, actions, state, loading, error, 
               />
             </div>
 
+            <LaundryTimelineRuntimePanel workId={projection.work?.id} />
+            <LaundryClaimRuntimePanel workId={projection.work?.id} workStatus={projection.work?.currentStatus} />
             <HistoryPanel events={projection.history} />
           </div>
         </div>

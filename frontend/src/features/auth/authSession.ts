@@ -1,19 +1,23 @@
 export type AuthSessionActor = {
   userId?: number | string
   role?: string
-  workspaceType?: 'LAUNDRY' | 'RESORT'
+  workspaceType?: 'LAUNDRY' | 'RESORT' | null
   resortId?: number
   active?: boolean
+  onboardingStatus?: 'NOT_REQUIRED' | 'PENDING' | 'COMPLETED' | 'BLOCKED'
+  hasBusinessContext?: boolean
 }
 
 export type AuthSessionUser = {
   id: number | string
   email: string
   displayName?: string | null
-  role: string
-  workspaceType: 'LAUNDRY' | 'RESORT'
+  role: string | null
+  workspaceType: 'LAUNDRY' | 'RESORT' | null
   resortId?: number | null
   active: boolean
+  onboardingStatus?: 'NOT_REQUIRED' | 'PENDING' | 'COMPLETED' | 'BLOCKED'
+  hasBusinessContext?: boolean
 }
 
 export type AuthSession = {
@@ -25,22 +29,45 @@ export type AuthSession = {
 const TOKEN_KEY = 'laundry.auth.token'
 const SESSION_KEY = 'laundry.auth.session'
 
-export function saveAuthSession(session: AuthSession) {
-  window.localStorage.setItem(TOKEN_KEY, session.token)
-  window.localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-}
-
-export function clearAuthSession() {
+function clearLegacyAuthStorage() {
   window.localStorage.removeItem(TOKEN_KEY)
   window.localStorage.removeItem(SESSION_KEY)
 }
 
+clearLegacyAuthStorage()
+
+export function saveAuthSession(session: AuthSession) {
+  clearLegacyAuthStorage()
+  window.sessionStorage.setItem(TOKEN_KEY, session.token)
+  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session))
+}
+
+export function clearAuthSession() {
+  window.sessionStorage.removeItem(TOKEN_KEY)
+  window.sessionStorage.removeItem(SESSION_KEY)
+  clearLegacyAuthStorage()
+}
+
 export function getAuthToken() {
-  return window.localStorage.getItem(TOKEN_KEY) || undefined
+  return window.sessionStorage.getItem(TOKEN_KEY) || undefined
+}
+
+export function hasUnexpiredAuthToken() {
+  const token = getAuthToken()
+  if (!token) return false
+
+  try {
+    const encodedPayload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const paddedPayload = encodedPayload.padEnd(Math.ceil(encodedPayload.length / 4) * 4, '=')
+    const payload = JSON.parse(window.atob(paddedPayload)) as { exp?: number }
+    return typeof payload.exp === 'number' && payload.exp * 1000 > Date.now()
+  } catch (_error) {
+    return false
+  }
 }
 
 export function getAuthSession(): AuthSession | null {
-  const raw = window.localStorage.getItem(SESSION_KEY)
+  const raw = window.sessionStorage.getItem(SESSION_KEY)
   if (!raw) return null
 
   try {
@@ -62,4 +89,12 @@ export function getWorkspaceContext() {
     workspaceType: session?.actor?.workspaceType || session?.user?.workspaceType,
     resortId: session?.actor?.resortId || session?.user?.resortId || undefined,
   }
+}
+
+export function hasBusinessContext(session: AuthSession | null = getAuthSession()) {
+  return session?.actor?.hasBusinessContext ?? session?.user?.hasBusinessContext ?? Boolean(session?.user?.role && session?.user?.workspaceType)
+}
+
+export function getAuthenticatedDestination(session: AuthSession, operationalDestination = '/workspace/laundry/works') {
+  return hasBusinessContext(session) ? operationalDestination : '/onboarding'
 }
