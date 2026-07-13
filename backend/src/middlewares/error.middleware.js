@@ -16,9 +16,14 @@ const buildErrorMeta = (error) => {
 };
 
 const errorMiddleware = (error, req, res, _next) => {
-  const statusCode = error.statusCode || 500;
-  const message = statusCode === 500 ? 'Internal server error' : error.message;
-  const meta = statusCode === 500 ? undefined : buildErrorMeta(error);
+  const isRequestValidationError = error?.name === 'ZodError' && Array.isArray(error.issues);
+  const statusCode = isRequestValidationError ? 400 : (error.statusCode || 500);
+  const message = isRequestValidationError
+    ? 'Invalid request payload'
+    : (statusCode === 500 ? 'Internal server error' : error.message);
+  const meta = isRequestValidationError
+    ? { code: 'VALIDATION_ERROR' }
+    : (statusCode === 500 ? undefined : buildErrorMeta(error));
   const statusFamily = `${Math.floor(statusCode / 100)}xx`;
 
   incrementCounter('app_errors_total', {
@@ -33,7 +38,7 @@ const errorMiddleware = (error, req, res, _next) => {
     errorName: error.name || 'Error',
     errorCode: error.code,
     message,
-    stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
+    stack: process.env.NODE_ENV === 'production' || isRequestValidationError ? undefined : error.stack,
   });
 
   return sendFailure(res, { message }, statusCode, meta);

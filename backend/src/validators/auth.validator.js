@@ -2,12 +2,21 @@ const { z } = require('zod');
 
 const workspaceTypeSchema = z.enum(['LAUNDRY', 'RESORT']);
 const roleSchema = z.enum(['LAUNDRY_OWNER', 'LAUNDRY_MANAGER', 'LAUNDRY_STAFF', 'RESORT_OWNER', 'RESORT_STAFF']);
+const deviceLabelSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string') return value;
+
+    const normalized = value.trim();
+    return normalized ? normalized.slice(0, 120) : undefined;
+  },
+  z.string().max(120).optional(),
+);
 
 const loginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(1),
   rememberDevice: z.boolean().optional().default(false),
-  deviceLabel: z.string().trim().max(120).optional(),
+  deviceLabel: deviceLabelSchema,
 });
 
 const registerSchema = z
@@ -40,7 +49,7 @@ const registerSchema = z
 const googleLoginSchema = z.object({
   idToken: z.string().min(1),
   rememberDevice: z.boolean().optional().default(false),
-  deviceLabel: z.string().trim().max(120).optional(),
+  deviceLabel: deviceLabelSchema,
 }).strict();
 
 const validateLoginInput = (payload) => loginSchema.parse(payload || {});
