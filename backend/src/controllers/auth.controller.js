@@ -7,7 +7,7 @@ const { validateGoogleRegisterInput } = require('../validators/googleRegister.va
 const cookieOptions = () => ({
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
   path: '/api/auth',
   maxAge: env.AUTH_SESSION_ABSOLUTE_DAYS * 24 * 60 * 60 * 1000,
 });
@@ -126,4 +126,5 @@ module.exports = {
   listSessions,
   revokeSession,
   readCookie,
+  cookieOptions,
 };
