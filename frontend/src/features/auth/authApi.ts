@@ -24,6 +24,8 @@ export type GoogleLoginInput = {
   deviceLabel?: string
 }
 
+export type GoogleRegisterInput = GoogleLoginInput
+
 export class AuthRequestError extends Error {
   constructor(
     message: string,
@@ -111,4 +113,8 @@ export async function register(input: RegisterInput): Promise<AuthSession> {
 
 export async function googleLogin(input: GoogleLoginInput): Promise<AuthSession> {
   return submitAuth('/auth/google/login', input, 'Google login failed')
+}
+
+export async function googleRegister(input: GoogleRegisterInput): Promise<AuthSession> {
+  return submitAuth('/auth/google/register', input, 'Google registration failed')
 }

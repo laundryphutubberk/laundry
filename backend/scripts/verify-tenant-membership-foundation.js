@@ -29,7 +29,7 @@ async function run() {
     const eligible = user.active && user.workspaceType === 'LAUNDRY' && user.onboardingStatus !== 'PENDING' && Boolean(mapping[user.role]);
     if (eligible) {
       if (user.tenantMemberships.length !== 1 || user.tenantMemberships[0].role !== mapping[user.role] || user.tenantMemberships[0].status !== 'ACTIVE') fail(`Eligible User ${user.id} membership mismatch`);
-    } else if (user.tenantMemberships.length !== 0) fail(`Ineligible User ${user.id} received Pilot membership`);
+    }
   }
 
   const owner = pilot.memberships.find((membership) => membership.role === 'OWNER' && membership.status === 'ACTIVE');

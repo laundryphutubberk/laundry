@@ -2,6 +2,7 @@ const authService = require('../services/auth.service');
 const { sendSuccess } = require('../core/httpResponse');
 const { validateLoginInput, validateRegisterInput, validateGoogleLoginInput } = require('../validators/auth.validator');
 const { env } = require('../config/env');
+const { validateGoogleRegisterInput } = require('../validators/googleRegister.validator');
 
 const cookieOptions = () => ({
   httpOnly: true,
@@ -41,6 +42,17 @@ const googleLogin = async (req, res, next) => {
     if (session.credential) setSessionCookie(res, session.credential);
 
     return sendSuccess(res, publicSession(session));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const googleRegister = async (req, res, next) => {
+  try {
+    const input = validateGoogleRegisterInput(req.body);
+    const session = await authService.googleRegister(input, { userAgent: req.get('user-agent') });
+    if (session.credential) setSessionCookie(res, session.credential);
+    return sendSuccess(res, publicSession(session), undefined, 201);
   } catch (error) {
     return next(error);
   }
@@ -106,6 +118,7 @@ const register = async (req, res, next) => {
 module.exports = {
   login,
   googleLogin,
+  googleRegister,
   register,
   refresh,
   logout,

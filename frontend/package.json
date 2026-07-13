@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "verify:auth-google-registration": "node scripts/verify-auth-google-registration.mjs",
     "lint": "eslint .",
     "verify:architecture": "node scripts/verify-architecture.mjs",
     "preview": "vite preview",

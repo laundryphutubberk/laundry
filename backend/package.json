@@ -48,7 +48,8 @@
     "verify:auth-user-identity-db": "node scripts/verify-auth-user-identity-db.js",
     "verify:auth-identity-linking-http": "node scripts/verify-auth-identity-linking-http.js",
     "verify:auth-onboarding-foundation": "node scripts/verify-auth-onboarding-foundation.js",
-    "verify:tenant-membership-foundation": "node scripts/verify-tenant-membership-foundation.js"
+    "verify:tenant-membership-foundation": "node scripts/verify-tenant-membership-foundation.js",
+    "verify:auth-google-registration": "node scripts/verify-auth-google-registration.js"
   },
   "keywords": [],
   "author": "",

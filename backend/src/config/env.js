@@ -19,6 +19,11 @@ const envSchema = z.object({
     z.boolean().default(false),
   ),
   GOOGLE_CLIENT_ID: z.string().trim().optional(),
+  AUTH_GOOGLE_REGISTRATION_MODE: z.enum([
+    'DISABLED',
+    'INVITATION_ONLY',
+    'PUBLIC_LAUNDRY_ONBOARDING',
+  ]).optional(),
 }).superRefine((value, ctx) => {
   if (value.GOOGLE_IDENTITY_ENABLED && !value.GOOGLE_CLIENT_ID) {
     ctx.addIssue({
@@ -40,5 +45,9 @@ if (!parsed.success) {
 }
 
 module.exports = {
-  env: parsed.data,
+  env: {
+    ...parsed.data,
+    AUTH_GOOGLE_REGISTRATION_MODE: parsed.data.AUTH_GOOGLE_REGISTRATION_MODE
+      || (parsed.data.NODE_ENV === 'production' ? 'DISABLED' : 'PUBLIC_LAUNDRY_ONBOARDING'),
+  },
 };
