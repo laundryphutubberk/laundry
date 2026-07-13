@@ -45,6 +45,40 @@ enum OnboardingStatus {
   BLOCKED
 }
 
+enum TenantStatus {
+  PROVISIONING
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum LaundryWorkspaceStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum BranchStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum TenantRole {
+  OWNER
+  MANAGER
+  STAFF
+  ACCOUNTANT
+  DRIVER
+}
+
+enum TenantMembershipStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REVOKED
+}
+
 enum WorkStatus {
   DRAFT
   BAG_RECEIVED
@@ -143,10 +177,90 @@ model User {
   identityLinkIntents IdentityLinkIntent[]
   identityUnlinkIntents IdentityUnlinkIntent[]
   stepUpGrants StepUpGrant[]
+  tenantMemberships TenantMembership[]
+  createdTenants Tenant[] @relation("TenantCreatedBy")
 
   @@index([resortId])
   @@index([workspaceType])
   @@index([role])
+}
+
+model Tenant {
+  id               String       @id @default(uuid())
+  slug             String       @unique
+  displayName      String
+  legalName        String?
+  timezone         String
+  status           TenantStatus @default(PROVISIONING)
+  createdById      Int?
+  createdBy        User?        @relation("TenantCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  suspendedAt      DateTime?
+  suspensionReason String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  laundryWorkspace LaundryWorkspace?
+  branches         Branch[]
+  memberships      TenantMembership[]
+
+  @@index([status])
+  @@index([createdById])
+}
+
+model LaundryWorkspace {
+  id          String                   @id @default(uuid())
+  tenantId    String                   @unique
+  tenant      Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  status      LaundryWorkspaceStatus   @default(ACTIVE)
+  displayName String?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  branches Branch[]
+
+  @@unique([id, tenantId])
+  @@index([status])
+}
+
+model Branch {
+  id                 String          @id @default(uuid())
+  tenantId           String
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  laundryWorkspaceId String
+  laundryWorkspace   LaundryWorkspace @relation(fields: [laundryWorkspaceId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  code               String
+  name               String
+  timezone           String?
+  address            String?
+  isDefault          Boolean         @default(false)
+  status             BranchStatus    @default(ACTIVE)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+  @@index([laundryWorkspaceId])
+}
+
+model TenantMembership {
+  id            String                 @id @default(uuid())
+  tenantId      String
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId        Int
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          TenantRole
+  status        TenantMembershipStatus @default(PENDING)
+  version       Int                    @default(1)
+  positionTitle String?
+  activatedAt   DateTime?
+  suspendedAt   DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@unique([tenantId, userId])
+  @@index([userId, status])
+  @@index([tenantId, status, role])
 }
 
 model UserIdentity {
