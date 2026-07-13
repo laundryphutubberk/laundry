@@ -6,11 +6,12 @@ import { LaundryWorkListPage } from '../features/laundry-works/pages/LaundryWork
 import { LaundryWorkDetailPage } from '../features/laundry-works/pages/LaundryWorkDetailPage'
 import { ResortListPage } from '../features/resorts/ResortListPage'
 import { IdentityManagementPage } from '../features/auth/IdentityManagementPage'
+import { RequireBusinessContext } from '../features/auth/RequireBusinessContext'
 
 export const laundryWorkRoutes = [
   {
     path: '/workspace/laundry',
-    element: <LaundryWorkspaceLayout />,
+    element: <RequireBusinessContext><LaundryWorkspaceLayout /></RequireBusinessContext>,
     children: [
       {
         index: true,

@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AuthRequestError, googleLogin, login } from './authApi'
-import { getAuthSession } from './authSession'
+import { getAuthenticatedDestination, getAuthSession } from './authSession'
 import { cancelGoogleIdentityPrompt, ensureGoogleIdentityAvailable, requestGoogleIdentityCredential } from './googleIdentityClient'
 
 const GOOGLE_LOGIN_ERROR_MESSAGES: Record<string, string> = {
@@ -62,8 +62,8 @@ export function LoginPage() {
     setError(null)
 
     try {
-      await login({ email, password, rememberDevice, deviceLabel: navigator.userAgent })
-      navigate(authenticatedDestination, { replace: true })
+      const session = await login({ email, password, rememberDevice, deviceLabel: navigator.userAgent })
+      navigate(getAuthenticatedDestination(session, authenticatedDestination), { replace: true })
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'Login failed')
     } finally {
@@ -84,8 +84,8 @@ export function LoginPage() {
         return
       }
 
-      await googleLogin({ idToken: credential, rememberDevice, deviceLabel: navigator.userAgent })
-      navigate(authenticatedDestination, { replace: true })
+      const session = await googleLogin({ idToken: credential, rememberDevice, deviceLabel: navigator.userAgent })
+      navigate(getAuthenticatedDestination(session, authenticatedDestination), { replace: true })
     } catch (err) {
       setGoogleError(normalizeGoogleLoginError(err))
     } finally {
@@ -94,7 +94,8 @@ export function LoginPage() {
     }
   }, [rememberDevice, authenticatedDestination, navigate])
 
-  if (getAuthSession()) return <Navigate to={authenticatedDestination} replace />
+  const installedSession = getAuthSession()
+  if (installedSession) return <Navigate to={getAuthenticatedDestination(installedSession, authenticatedDestination)} replace />
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">

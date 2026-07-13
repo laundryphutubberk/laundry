@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { register } from './authApi'
+import { getAuthenticatedDestination } from './authSession'
 
 export function RegisterPage() {
   const navigate = useNavigate()
@@ -17,14 +18,14 @@ export function RegisterPage() {
     setError(null)
 
     try {
-      await register({
+      const session = await register({
         email,
         password,
         displayName: displayName || undefined,
         role: 'LAUNDRY_MANAGER',
         workspaceType: 'LAUNDRY',
       })
-      navigate('/workspace/laundry/works', { replace: true })
+      navigate(getAuthenticatedDestination(session), { replace: true })
     } catch (registerError) {
       setError(registerError instanceof Error ? registerError.message : 'Registration failed')
     } finally {

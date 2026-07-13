@@ -1,19 +1,23 @@
 export type AuthSessionActor = {
   userId?: number | string
   role?: string
-  workspaceType?: 'LAUNDRY' | 'RESORT'
+  workspaceType?: 'LAUNDRY' | 'RESORT' | null
   resortId?: number
   active?: boolean
+  onboardingStatus?: 'NOT_REQUIRED' | 'PENDING' | 'COMPLETED' | 'BLOCKED'
+  hasBusinessContext?: boolean
 }
 
 export type AuthSessionUser = {
   id: number | string
   email: string
   displayName?: string | null
-  role: string
-  workspaceType: 'LAUNDRY' | 'RESORT'
+  role: string | null
+  workspaceType: 'LAUNDRY' | 'RESORT' | null
   resortId?: number | null
   active: boolean
+  onboardingStatus?: 'NOT_REQUIRED' | 'PENDING' | 'COMPLETED' | 'BLOCKED'
+  hasBusinessContext?: boolean
 }
 
 export type AuthSession = {
@@ -85,4 +89,12 @@ export function getWorkspaceContext() {
     workspaceType: session?.actor?.workspaceType || session?.user?.workspaceType,
     resortId: session?.actor?.resortId || session?.user?.resortId || undefined,
   }
+}
+
+export function hasBusinessContext(session: AuthSession | null = getAuthSession()) {
+  return session?.actor?.hasBusinessContext ?? session?.user?.hasBusinessContext ?? Boolean(session?.user?.role && session?.user?.workspaceType)
+}
+
+export function getAuthenticatedDestination(session: AuthSession, operationalDestination = '/workspace/laundry/works') {
+  return hasBusinessContext(session) ? operationalDestination : '/onboarding'
 }

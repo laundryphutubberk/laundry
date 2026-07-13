@@ -92,7 +92,7 @@ const createIdentityLinkingService = ({ googleVerifier = createGoogleIdentityVer
       if (target.expiresAt <= now) throw fail('UNLINK_INTENT_EXPIRED', 'Unlink intent has expired', 410);
     }
     const user = await prisma.user.findFirst({ where: { id: userId, active: true }, select: { passwordHash: true } });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    if (!user?.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
       if (purpose === 'LINK_IDENTITY') {
         await prisma.identityLinkIntent.update({
           where: { id: targetId },

@@ -28,6 +28,8 @@ const buildActorPayload = (user) => ({
   workspaceType: user.workspaceType,
   resortId: user.resortId,
   active: user.active,
+  onboardingStatus: user.onboardingStatus,
+  hasBusinessContext: user.onboardingStatus !== 'PENDING' && Boolean(user.role && user.workspaceType),
 });
 
 const sanitizeUser = (user) => ({
@@ -38,6 +40,8 @@ const sanitizeUser = (user) => ({
   workspaceType: user.workspaceType,
   resortId: user.resortId,
   active: user.active,
+  onboardingStatus: user.onboardingStatus,
+  hasBusinessContext: user.onboardingStatus !== 'PENDING' && Boolean(user.role && user.workspaceType),
 });
 
 const createSession = (user) => {
@@ -75,6 +79,8 @@ const createPersistentDeviceSession = async (user, metadata = {}) => {
 };
 
 const issueSession = async (user, rememberDevice, metadata = {}) => {
+  const hasUsableMethod = Boolean(user.passwordHash) || await authRepository.hasActiveIdentity(user.id);
+  if (!hasUsableMethod) throw createSessionError('AUTHENTICATION_REQUIRED', 'Authentication method is required');
   const accessSession = createSession(user);
   if (!rememberDevice) return accessSession;
   const persistent = await createPersistentDeviceSession(user, metadata);
@@ -135,7 +141,7 @@ const login = async ({ email, password, rememberDevice, deviceLabel }, metadata 
     throw createAuthError();
   }
 
-  const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+  const passwordMatches = user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
 
   if (!passwordMatches) {
     throw createAuthError();
@@ -225,4 +231,5 @@ module.exports = {
   logoutAll,
   listSessions,
   revokeSession,
+  issueSession,
 };

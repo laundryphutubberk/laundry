@@ -1,0 +1,7 @@
+CREATE TYPE "OnboardingStatus" AS ENUM ('NOT_REQUIRED', 'PENDING', 'COMPLETED', 'BLOCKED');
+
+ALTER TABLE "User"
+  ALTER COLUMN "passwordHash" DROP NOT NULL,
+  ALTER COLUMN "role" DROP NOT NULL,
+  ALTER COLUMN "workspaceType" DROP NOT NULL,
+  ADD COLUMN "onboardingStatus" "OnboardingStatus" NOT NULL DEFAULT 'NOT_REQUIRED';

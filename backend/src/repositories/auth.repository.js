@@ -9,6 +9,7 @@ const userSelect = {
   workspaceType: true,
   resortId: true,
   active: true,
+  onboardingStatus: true,
 };
 
 const findActiveUserByEmail = async (email) => {
@@ -56,6 +57,27 @@ const createUser = async ({ email, passwordHash, displayName, role, workspaceTyp
 };
 
 const createDeviceSession = (data) => prisma.deviceSession.create({ data });
+
+const hasActiveIdentity = async (userId) => (await prisma.userIdentity.count({
+  where: { userId, unlinkedAt: null },
+})) > 0;
+
+const createPasswordlessOnboardingUserWithIdentity = ({ user, identity }) => prisma.$transaction(async (tx) => {
+  const createdUser = await tx.user.create({
+    data: {
+      ...user,
+      passwordHash: null,
+      role: null,
+      workspaceType: null,
+      resortId: null,
+      onboardingStatus: 'PENDING',
+      active: true,
+    },
+    select: userSelect,
+  });
+  await tx.userIdentity.create({ data: { ...identity, userId: createdUser.id } });
+  return createdUser;
+});
 
 const findDeviceSessionById = (id) => prisma.deviceSession.findUnique({
   where: { id },
@@ -107,6 +129,8 @@ module.exports = {
   findUserByEmail,
   createUser,
   createDeviceSession,
+  hasActiveIdentity,
+  createPasswordlessOnboardingUserWithIdentity,
   findDeviceSessionById,
   rotateDeviceSession,
   revokeDeviceSession,

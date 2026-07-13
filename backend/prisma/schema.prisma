@@ -38,6 +38,13 @@ enum WorkspaceType {
   RESORT
 }
 
+enum OnboardingStatus {
+  NOT_REQUIRED
+  PENDING
+  COMPLETED
+  BLOCKED
+}
+
 enum WorkStatus {
   DRAFT
   BAG_RECEIVED
@@ -116,10 +123,11 @@ enum WashLoadFitStatus {
 model User {
   id            Int           @id @default(autoincrement())
   email         String        @unique
-  passwordHash  String
+  passwordHash  String?
   displayName   String?
-  role          UserRole
-  workspaceType WorkspaceType
+  role          UserRole?
+  workspaceType WorkspaceType?
+  onboardingStatus OnboardingStatus @default(NOT_REQUIRED)
 
   resortId Int?
   resort   Resort? @relation(fields: [resortId], references: [id])

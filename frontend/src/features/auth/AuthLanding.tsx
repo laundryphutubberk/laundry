@@ -1,7 +1,8 @@
 import { Navigate } from 'react-router-dom'
 
-import { getAuthSession } from './authSession'
+import { getAuthenticatedDestination, getAuthSession } from './authSession'
 
 export function AuthLanding() {
-  return <Navigate to={getAuthSession() ? '/workspace/laundry/works' : '/login'} replace />
+  const session = getAuthSession()
+  return <Navigate to={session ? getAuthenticatedDestination(session) : '/login'} replace />
 }
