@@ -6,11 +6,58 @@ const { assertLaundryStaffActor, assertLaundryManagementActor } = require('../po
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
 const { normalizePagination } = require('../shared/pagination');
 
-const buildLaundryWorkWhere = ({ actor, status } = {}) => {
+const BANGKOK_UTC_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+const getBangkokOperationalDayRange = (now = new Date()) => {
+  const bangkokNow = new Date(now.getTime() + BANGKOK_UTC_OFFSET_MS);
+  const start = new Date(Date.UTC(
+    bangkokNow.getUTCFullYear(),
+    bangkokNow.getUTCMonth(),
+    bangkokNow.getUTCDate(),
+  ) - BANGKOK_UTC_OFFSET_MS);
+
+  return {
+    start,
+    end: new Date(start.getTime() + (24 * 60 * 60 * 1000)),
+  };
+};
+
+const buildLaundryWorkWhere = ({ actor, status, queue, search, now } = {}) => {
   const where = buildRequiredActorResortScopedWhere({ actor });
+  const filters = [];
 
   if (status) {
-    where.currentStatus = status;
+    filters.push({ currentStatus: status });
+  }
+
+  if (queue === 'today') {
+    const { start, end } = getBangkokOperationalDayRange(now);
+    const duringOperationalDay = { gte: start, lt: end };
+    filters.push({
+      OR: [
+        { createdAt: duringOperationalDay },
+        { receivedDate: duringOperationalDay },
+        { updatedAt: duringOperationalDay },
+      ],
+    });
+  } else if (queue === 'pending') {
+    filters.push({ currentStatus: { notIn: ['CLOSED', 'CANCELLED'] } });
+  } else if (queue === 'ready') {
+    // DATA_RECORDED is the existing lifecycle point immediately before confirm-return.
+    filters.push({ currentStatus: 'DATA_RECORDED' });
+  }
+
+  if (search) {
+    filters.push({
+      OR: [
+        { workNo: { contains: search, mode: 'insensitive' } },
+        { resort: { name: { contains: search, mode: 'insensitive' } } },
+      ],
+    });
+  }
+
+  if (filters.length) {
+    where.AND = filters;
   }
 
   return where;
@@ -29,6 +76,8 @@ const listLaundryWorks = async (query = {}, context = {}) => {
   const where = buildLaundryWorkWhere({
     actor: context.actor,
     status: query.status,
+    queue: query.queue,
+    search: query.search,
   });
 
   const result = await laundryWorksRepository.listLaundryWorks({
@@ -431,6 +480,8 @@ const closeLaundryWork = async (workId, payload = {}, context = {}) => {
 };
 
 module.exports = {
+  buildLaundryWorkWhere,
+  getBangkokOperationalDayRange,
   listLaundryWorks,
   getLaundryWorkById,
   createLaundryWork,

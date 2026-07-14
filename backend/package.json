@@ -47,6 +47,7 @@
     "verify:auth-cookie-policy": "node scripts/verify-auth-cookie-policy.js",
     "verify:auth-login-validation": "node scripts/verify-auth-login-validation.js",
     "verify:resort-management": "node scripts/verify-resort-management.js",
+    "verify:work-queues": "node scripts/verify-work-queues.js",
     "verify:auth-google-foundation": "node scripts/verify-auth-google-foundation.js",
     "verify:auth-user-identity-db": "node scripts/verify-auth-user-identity-db.js",
     "verify:auth-identity-linking-http": "node scripts/verify-auth-identity-linking-http.js",

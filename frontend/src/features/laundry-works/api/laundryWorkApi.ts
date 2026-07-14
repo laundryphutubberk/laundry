@@ -251,6 +251,8 @@ export type GetLaundryWorkDetailInput = {
 
 export type ListLaundryWorksInput = {
   status?: string
+  queue?: 'today' | 'pending' | 'ready'
+  search?: string
   skip?: number
   take?: number
   meta: LaundryWorkRequestMeta
@@ -526,9 +528,11 @@ function normalizeDetail(raw: any): LaundryWorkDetailDTO {
 export const laundryWorkApi = {
   capability: laundryWorkBackendCapability,
 
-  async list({ status, skip, take, meta }: ListLaundryWorksInput): Promise<ApiResult<LaundryWorkListResult>> {
+  async list({ status, queue, search, skip, take, meta }: ListLaundryWorksInput): Promise<ApiResult<LaundryWorkListResult>> {
     const query = new URLSearchParams()
     if (status) query.set('status', status)
+    if (queue) query.set('queue', queue)
+    if (search) query.set('search', search)
     if (skip !== undefined) query.set('skip', String(skip))
     if (take !== undefined) query.set('take', String(take))
     const suffix = query.size ? `?${query.toString()}` : ''

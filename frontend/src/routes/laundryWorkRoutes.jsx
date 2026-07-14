@@ -22,6 +22,18 @@ export const laundryWorkRoutes = [
         element: <LaundryWorkListPage />,
       },
       {
+        path: 'works/today',
+        element: <LaundryWorkListPage queue="today" />,
+      },
+      {
+        path: 'works/pending',
+        element: <LaundryWorkListPage queue="pending" />,
+      },
+      {
+        path: 'works/ready',
+        element: <LaundryWorkListPage queue="ready" />,
+      },
+      {
         path: 'works/new',
         element: <LaundryWorkCreatePage />,
       },

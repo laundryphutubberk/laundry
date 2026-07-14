@@ -13,7 +13,8 @@
     "verify:auth-linking-ux": "node scripts/verify-auth-linking-ux.mjs",
     "verify:auth-onboarding-foundation": "node scripts/verify-auth-onboarding-foundation.mjs",
     "verify:mobile-workspace-shell": "node scripts/verify-mobile-workspace-shell.mjs",
-    "verify:resort-management": "node scripts/verify-resort-management.mjs"
+    "verify:resort-management": "node scripts/verify-resort-management.mjs",
+    "verify:work-queues": "node scripts/verify-work-queues.mjs"
   },
   "dependencies": {
     "axios": "^1.18.1",

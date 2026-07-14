@@ -25,6 +25,8 @@ const workIdParamSchema = z.object({
 
 const listLaundryWorksQuerySchema = z.object({
   status: workStatusSchema.optional(),
+  queue: z.enum(['today', 'pending', 'ready']).optional(),
+  search: z.string().trim().max(100).optional(),
   skip: optionalPositiveIntString,
   take: optionalPositiveIntString,
 });

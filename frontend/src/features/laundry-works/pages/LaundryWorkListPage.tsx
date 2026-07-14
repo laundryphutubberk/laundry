@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import { getWorkspaceContext } from '../../auth/authSession'
 import { laundryWorkApi, type ApiFailure, type LaundryWorkDTO, type LaundryWorkRequestMeta } from '../api/laundryWorkApi'
@@ -45,9 +45,40 @@ function formatDate(value?: string | null) {
 
 const isDraftWork = (work?: LaundryWorkDTO | null) => work?.currentStatus === 'DRAFT'
 
-export function LaundryWorkListPage() {
+export type LaundryWorkQueue = 'all' | 'today' | 'pending' | 'ready'
+
+const PAGE_SIZE = 20
+const queuePresentation: Record<LaundryWorkQueue, { title: string; description: string; empty: string }> = {
+  all: {
+    title: 'งานทั้งหมด',
+    description: 'รายการงานซักทั้งหมดใน workspace ที่คุณมีสิทธิ์เห็น',
+    empty: 'ยังไม่มีงานซักใน workspace นี้',
+  },
+  today: {
+    title: 'งานวันนี้',
+    description: 'งานที่สร้าง รับเข้า หรือมีการอัปเดตภายในวันนี้ (เวลาเอเชีย/กรุงเทพฯ)',
+    empty: 'ยังไม่มีงานที่เคลื่อนไหววันนี้',
+  },
+  pending: {
+    title: 'งานค้าง',
+    description: 'งานที่ยังไม่ปิดหรือยกเลิกในกระบวนการปัจจุบัน',
+    empty: 'ไม่มีงานค้างในขณะนี้',
+  },
+  ready: {
+    title: 'พร้อมส่ง',
+    description: 'งานที่บันทึกข้อมูลครบแล้วและพร้อมยืนยันส่งคืน',
+    empty: 'ยังไม่มีงานที่พร้อมส่ง',
+  },
+}
+
+export function LaundryWorkListPage({ queue = 'all' }: { queue?: LaundryWorkQueue }) {
   const sessionContext = useMemo(() => getWorkspaceContext(), [])
+  const presentation = queuePresentation[queue]
   const [items, setItems] = useState<LaundryWorkDTO[]>([])
+  const [total, setTotal] = useState(0)
+  const [skip, setSkip] = useState(0)
+  const [searchInput, setSearchInput] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiFailure['error'] | null>(null)
   const [requestId, setRequestId] = useState<string | undefined>()
@@ -64,23 +95,44 @@ export function LaundryWorkListPage() {
     setError(null)
     setRequestId(meta.requestId)
 
-    const result = await laundryWorkApi.listLaundryWorks({ meta, take: 50 })
+    const result = await laundryWorkApi.listLaundryWorks({
+      meta,
+      queue: queue === 'all' ? undefined : queue,
+      search: appliedSearch || undefined,
+      skip,
+      take: PAGE_SIZE,
+    })
     setRequestId(result.meta.requestId)
 
     if (result.ok) {
       setItems(result.data.items)
+      setTotal(result.data.pagination?.total || result.data.items.length)
       setError(null)
     } else {
       setItems([])
+      setTotal(0)
       setError(result.error)
     }
 
     setLoading(false)
-  }, [sessionContext])
+  }, [appliedSearch, queue, sessionContext, skip])
 
   useEffect(() => {
     void loadItems()
   }, [loadItems])
+
+  useEffect(() => {
+    setSkip(0)
+  }, [queue])
+
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSkip(0)
+    setAppliedSearch(searchInput.trim())
+  }
+
+  const pageNumber = Math.floor(skip / PAGE_SIZE) + 1
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   useEffect(() => {
     if (!successMessage) return
@@ -150,8 +202,8 @@ export function LaundryWorkListPage() {
           <p className="text-sm font-black uppercase tracking-wide text-blue-700">Laundry Workspace</p>
           <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="text-3xl font-black text-slate-950">Laundry Work</h1>
-              <p className="mt-1 text-sm font-medium text-slate-500">รายการงานซักทั้งหมดใน workspace ที่ actor มีสิทธิ์เห็น</p>
+              <h1 className="text-3xl font-black text-slate-950">{presentation.title}</h1>
+              <p className="mt-1 text-sm font-medium text-slate-500">{presentation.description}</p>
             </div>
             {canCreate ? (
               <Link to="/workspace/laundry/works/new" className="rounded-2xl bg-blue-700 px-4 py-2 text-center text-sm font-black text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800">
@@ -160,6 +212,20 @@ export function LaundryWorkListPage() {
             ) : null}
           </div>
         </section>
+
+        <form onSubmit={submitSearch} className="flex flex-col gap-3 rounded-[28px] border border-white/70 bg-white p-4 shadow-sm sm:flex-row" role="search">
+          <label className="sr-only" htmlFor="work-search">ค้นหางานซัก</label>
+          <input
+            id="work-search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="ค้นหาเลขงานหรือชื่อลูกค้า/รีสอร์ต"
+            className="min-h-11 min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+          <button type="submit" className="min-h-11 rounded-2xl bg-slate-900 px-5 text-sm font-black text-white hover:bg-slate-800">
+            ค้นหา
+          </button>
+        </form>
 
         <MutationFeedbackBanner feedback={feedback} />
 
@@ -171,9 +237,33 @@ export function LaundryWorkListPage() {
 
         {!loading && !error && items.length === 0 ? (
           <section className="rounded-[28px] border border-white/70 bg-white p-6 shadow-sm">
-            <p className="text-base font-bold text-slate-950">ยังไม่มี Laundry Work</p>
-            <p className="mt-2 text-sm text-slate-500">เมื่อ backend มีงานซักใน workspace นี้ รายการจะแสดงที่นี่</p>
+            <p className="text-base font-bold text-slate-950">{presentation.empty}</p>
+            <p className="mt-2 text-sm text-slate-500">ลองเปลี่ยนคำค้นหา หรือเลือกคิวงานอื่นจากเมนู</p>
           </section>
+        ) : null}
+
+        {!loading && !error && total > 0 ? (
+          <nav className="flex flex-col items-center justify-between gap-3 rounded-[28px] border border-white/70 bg-white p-4 shadow-sm sm:flex-row" aria-label="การแบ่งหน้า">
+            <p className="text-sm font-semibold text-slate-600">หน้า {pageNumber} จาก {pageCount} · ทั้งหมด {total} งาน</p>
+            <div className="flex w-full gap-3 sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setSkip(Math.max(0, skip - PAGE_SIZE))}
+                disabled={skip === 0}
+                className="min-h-11 flex-1 rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+              >
+                ก่อนหน้า
+              </button>
+              <button
+                type="button"
+                onClick={() => setSkip(skip + PAGE_SIZE)}
+                disabled={skip + PAGE_SIZE >= total}
+                className="min-h-11 flex-1 rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+              >
+                ถัดไป
+              </button>
+            </div>
+          </nav>
         ) : null}
 
         {!loading && items.length > 0 ? (

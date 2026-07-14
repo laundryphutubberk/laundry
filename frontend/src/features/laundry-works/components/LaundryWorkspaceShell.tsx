@@ -11,9 +11,9 @@ export type LaundryWorkspaceShellProps = {
 
 const navItems = [
   { label: 'งานทั้งหมด', icon: '▣', to: '/workspace/laundry/works' },
-  { label: 'งานวันนี้', icon: '□' },
-  { label: 'งานค้าง', icon: '◷' },
-  { label: 'พร้อมส่ง', icon: '▰' },
+  { label: 'งานวันนี้', icon: '□', to: '/workspace/laundry/works/today' },
+  { label: 'งานค้าง', icon: '◷', to: '/workspace/laundry/works/pending' },
+  { label: 'พร้อมส่ง', icon: '▰', to: '/workspace/laundry/works/ready' },
   { label: 'ลูกค้า/รีสอร์ต', icon: '♙', to: '/workspace/laundry/resorts' },
   { label: 'รายการผ้า', icon: '≡' },
   { label: 'รายงาน', icon: '▥' },
