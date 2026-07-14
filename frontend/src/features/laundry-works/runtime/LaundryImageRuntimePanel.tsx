@@ -41,7 +41,7 @@ export function LaundryImageRuntimePanel({ workId, workStatus }: { workId?: stri
   return (
     <div className="space-y-4">
       {runtime.policy.canRegister ? <div className="rounded-2xl border border-slate-200 bg-white p-4">
-        <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] || null)} disabled={runtime.registerPending} className="block w-full text-sm" />
+        <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={(event) => setFile(event.target.files?.[0] || null)} disabled={runtime.registerPending} className="block min-h-11 w-full text-sm" />
         {previewUrl ? <img src={previewUrl} alt="Selected upload preview" className="mt-3 max-h-48 rounded-xl object-contain" /> : null}
         {file ? <div className="mt-3 flex flex-col gap-2"><input value={caption} onChange={(event) => setCaption(event.target.value)} maxLength={1000} placeholder="คำอธิบายรูปภาพ (ไม่บังคับ)" className="rounded-xl border px-3 py-2 text-sm" /><button type="button" onClick={() => void submitUpload()} disabled={runtime.registerPending} className="rounded-xl bg-blue-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{runtime.registerPending ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปภาพ'}</button></div> : null}
       </div> : null}

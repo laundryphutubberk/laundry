@@ -15,10 +15,6 @@ const navItems = [
   { label: 'งานค้าง', icon: '◷', to: '/workspace/laundry/works/pending' },
   { label: 'พร้อมส่ง', icon: '▰', to: '/workspace/laundry/works/ready' },
   { label: 'ลูกค้า/รีสอร์ต', icon: '♙', to: '/workspace/laundry/resorts' },
-  { label: 'รายการผ้า', icon: '≡' },
-  { label: 'รายงาน', icon: '▥' },
-  { label: 'แจ้งปัญหา', icon: '!' },
-  { label: 'ตั้งค่า', icon: '⚙' },
 ]
 
 const roleLabels: Record<string, string> = {
@@ -62,23 +58,16 @@ function iconClassName(active?: boolean) {
 function WorkspaceNavigation({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav aria-label="เมนูหลัก" className="space-y-px px-4 py-4">
-      {navItems.map((item) =>
-        item.to ? (
-          <NavLink key={item.label} to={item.to} end onClick={onNavigate} className={({ isActive }) => navClassName(isActive)}>
-            {({ isActive }) => (
-              <>
-                <span className={iconClassName(isActive)} aria-hidden="true">{item.icon}</span>
-                <span className="min-w-0 truncate">{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ) : (
-          <button key={item.label} type="button" disabled className={navClassName(false)}>
-            <span className={iconClassName(false)} aria-hidden="true">{item.icon}</span>
-            <span className="min-w-0 truncate">{item.label}</span>
-          </button>
-        ),
-      )}
+      {navItems.map((item) => (
+        <NavLink key={item.label} to={item.to} end onClick={onNavigate} className={({ isActive }) => navClassName(isActive)}>
+          {({ isActive }) => (
+            <>
+              <span className={iconClassName(isActive)} aria-hidden="true">{item.icon}</span>
+              <span className="min-w-0 truncate">{item.label}</span>
+            </>
+          )}
+        </NavLink>
+      ))}
     </nav>
   )
 }
