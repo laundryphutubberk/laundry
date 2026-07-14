@@ -4,6 +4,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 
 import { getAuthSession } from '../../auth/authSession'
 import { logoutCurrentDevice } from '../../auth/authApi'
+import { workspaceSettingsApi } from '../../settings/workspaceSettingsApi'
 
 export type LaundryWorkspaceShellProps = {
   children: ReactNode
@@ -18,6 +19,7 @@ const navItems = [
   { label: 'รายการผ้า', icon: '≡', to: '/workspace/laundry/item-types' },
   { label: 'ศูนย์ปัญหา', icon: '!', to: '/workspace/laundry/issues' },
   { label: 'รายงาน', icon: '▥', to: '/workspace/laundry/reports', managementOnly: true },
+  { label: 'ตั้งค่า', icon: '⚙', to: '/workspace/laundry/settings' },
 ]
 
 const roleLabels: Record<string, string> = {
@@ -81,6 +83,7 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
   const location = useLocation()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [workspaceProfileName, setWorkspaceProfileName] = useState<string | null>(null)
   const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null)
   const mobileDrawerRef = useRef<HTMLDivElement>(null)
   const session = getAuthSession()
@@ -89,9 +92,11 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
   const workspaceType = session?.actor?.workspaceType || session?.user?.workspaceType || ''
   const roleLabel = roleLabels[role] || role || 'ผู้ใช้งานระบบ'
   const workspaceLabel = workspaceLabels[workspaceType] || workspaceType || 'Workspace'
+  useEffect(() => { void workspaceSettingsApi.get().then(value => setWorkspaceProfileName(value.workspace.displayName || value.tenant.displayName)).catch(() => undefined) }, [])
+  const resolvedWorkspaceLabel = workspaceProfileName || workspaceLabel
   const avatarLabel = Array.from(displayName)[0]?.toUpperCase() || 'ผ'
   const currentNavItem = navItems.find((item) => item.to && (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)))
-  const currentPageLabel = currentNavItem?.label || workspaceLabel
+  const currentPageLabel = currentNavItem?.label || resolvedWorkspaceLabel
 
   useEffect(() => {
     if (!mobileNavOpen) return undefined
@@ -171,7 +176,7 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-black leading-tight">{currentPageLabel}</p>
-              <p className="mt-0.5 truncate text-xs font-semibold text-blue-100/75">{workspaceLabel}</p>
+              <p className="mt-0.5 truncate text-xs font-semibold text-blue-100/75">{resolvedWorkspaceLabel}</p>
             </div>
 
             <button
@@ -194,7 +199,7 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
         <header className="sticky top-0 z-30 hidden h-[72px] items-center justify-end border-b border-white/10 bg-gradient-to-r from-blue-950 via-blue-950 to-slate-950 px-6 shadow-lg shadow-blue-950/10 lg:flex">
           <div className="flex items-center gap-4 text-blue-50">
             <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-blue-100">
-              {workspaceLabel}
+              {resolvedWorkspaceLabel}
             </span>
 
             <span className="h-8 w-px bg-white/15" aria-hidden="true" />

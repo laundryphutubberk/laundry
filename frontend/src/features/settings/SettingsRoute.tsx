@@ -1,0 +1,1 @@
+import{lazy,Suspense}from'react';const SettingsPage=lazy(()=>import('./SettingsPage').then(module=>({default:module.SettingsPage})));export function SettingsRoute(){return <Suspense fallback={<div className="p-6 font-bold">กำลังโหลดการตั้งค่า...</div>}><SettingsPage/></Suspense>}

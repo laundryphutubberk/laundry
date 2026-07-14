@@ -1,0 +1,1 @@
+const express=require('express');const controller=require('../controllers/workspaceSettings.controller');const router=express.Router();router.get('/workspace',controller.get);router.patch('/workspace',controller.update);module.exports=router;

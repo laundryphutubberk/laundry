@@ -42,6 +42,14 @@ const assertLaundryManagementActor = (actor) => {
   return validActor;
 };
 
+const assertLaundryOwnerActor = (actor) => {
+  const validActor = assertLaundryWorkspaceActor(actor);
+  if (validActor.role !== USER_ROLES.LAUNDRY_OWNER) {
+    throw createAuthorizationError('Laundry owner permission is required');
+  }
+  return validActor;
+};
+
 const assertLaundryStaffActor = (actor) => {
   const validActor = assertLaundryWorkspaceActor(actor);
 
@@ -57,5 +65,6 @@ module.exports = {
   LAUNDRY_STAFF_ROLES,
   assertLaundryWorkspaceActor,
   assertLaundryManagementActor,
+  assertLaundryOwnerActor,
   assertLaundryStaffActor,
 };
