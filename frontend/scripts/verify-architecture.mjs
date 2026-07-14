@@ -54,6 +54,7 @@ function isForbiddenImport(specifier) {
 
 try {
   const componentRoots = await collectComponentRoots()
+  const sourceFiles = await collectFiles(path.join(projectRoot, 'src'))
   const files = []
 
   for (const componentRoot of componentRoots) {
@@ -62,6 +63,24 @@ try {
   }
 
   const violations = []
+  const sourceStems = new Map()
+
+  for (const file of sourceFiles) {
+    const stem = file.slice(0, -path.extname(file).length)
+    const matchingFiles = sourceStems.get(stem) || []
+    matchingFiles.push(file)
+    sourceStems.set(stem, matchingFiles)
+  }
+
+  for (const matchingFiles of sourceStems.values()) {
+    if (matchingFiles.length > 1) {
+      violations.push({
+        featureName: 'source-root',
+        file: matchingFiles.map((file) => path.relative(projectRoot, file)).join(', '),
+        specifier: 'duplicate extensionless import target',
+      })
+    }
+  }
 
   for (const entry of files) {
     const source = await readFile(entry.file, 'utf8')
