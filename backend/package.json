@@ -6,6 +6,7 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "verify:runtime": "node scripts/verify-runtime.js",
+    "verify:deployment-certification": "node scripts/verify-deployment-certification.js",
     "verify:policy": "node scripts/verify-policy-tests.js",
     "verify:service-policy": "node scripts/verify-service-policy-tests.js",
     "verify:http-policy": "node scripts/verify-http-policy-tests.js",
