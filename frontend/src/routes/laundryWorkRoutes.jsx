@@ -6,6 +6,7 @@ import { LaundryWorkListPage } from '../features/laundry-works/pages/LaundryWork
 import { LaundryWorkDetailPage } from '../features/laundry-works/pages/LaundryWorkDetailPage'
 import { ResortListPage } from '../features/resorts/ResortListPage'
 import { ItemCatalogPage } from '../features/item-catalog/ItemCatalogPage'
+import { IssueCenterPage } from '../features/issues/IssueCenterPage'
 import { IdentityManagementPage } from '../features/auth/IdentityManagementPage'
 import { RequireBusinessContext } from '../features/auth/RequireBusinessContext'
 
@@ -49,6 +50,10 @@ export const laundryWorkRoutes = [
       {
         path: 'item-types',
         element: <ItemCatalogPage />,
+      },
+      {
+        path: 'issues',
+        element: <IssueCenterPage />,
       },
       {
         path: 'security',

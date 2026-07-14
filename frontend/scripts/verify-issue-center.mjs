@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+const page = fs.readFileSync(new URL('../src/features/issues/IssueCenterPage.tsx', import.meta.url), 'utf8')
+const api = fs.readFileSync(new URL('../src/features/laundry-works/api/laundryIssueApi.ts', import.meta.url), 'utf8')
+const routes = fs.readFileSync(new URL('../src/routes/laundryWorkRoutes.jsx', import.meta.url), 'utf8')
+const shell = fs.readFileSync(new URL('../src/features/laundry-works/components/LaundryWorkspaceShell.tsx', import.meta.url), 'utf8')
+const detail = fs.readFileSync(new URL('../src/features/laundry-works/pages/LaundryWorkDetailPage.tsx', import.meta.url), 'utf8')
+assert.match(routes, /path: 'issues'/)
+assert.match(shell, /\/workspace\/laundry\/issues/)
+assert.match(page, /listGlobal/); assert.match(page, /\.resolve/); assert.match(page, /\.reopen/)
+assert.match(page, /searchInput/); assert.match(page, /issueType/); assert.match(page, /PAGE_SIZE/)
+assert.match(page, /safe-area-inset-bottom/); assert.match(page, /role="dialog"/); assert.match(page, /\/workspace\/laundry\/works\//)
+assert.equal(/priority|assignment/i.test(page), false)
+assert.match(api, /\/laundry\/issues\?\$\{params\}/); assert.match(api, /\/laundry\/issues\/\$\{issueId\}\/reopen/)
+assert.match(detail, /Issue/)
+console.log('FRONTEND_ISSUE_CENTER_VERIFY PASS')

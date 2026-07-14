@@ -17,6 +17,25 @@ const issueInclude = {
       role: true,
     },
   },
+  work: {
+    select: {
+      id: true,
+      workNo: true,
+      currentStatus: true,
+    },
+  },
+  resort: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  claim: {
+    select: {
+      id: true,
+      status: true,
+    },
+  },
 };
 
 const getIssueLink = async ({ issueId, client } = {}) => {
@@ -53,6 +72,21 @@ const listLaundryIssues = async ({ where, client } = {}) => {
     },
   });
   return attachIssueLinks(issues, db);
+};
+
+const listGlobalLaundryIssues = async ({ where, skip, take, client } = {}) => {
+  const db = getClient(client);
+  const [issues, total] = await Promise.all([
+    db.issueReport.findMany({
+      where,
+      include: issueInclude,
+      orderBy: [{ reportedAt: 'desc' }, { id: 'desc' }],
+      skip,
+      take,
+    }),
+    db.issueReport.count({ where }),
+  ]);
+  return { items: await attachIssueLinks(issues, db), total };
 };
 
 const findLaundryIssueById = async ({ issueId, where, client } = {}) => {
@@ -153,6 +187,7 @@ const transaction = async (callback) => prisma.$transaction(callback);
 
 module.exports = {
   listLaundryIssues,
+  listGlobalLaundryIssues,
   findLaundryIssueById,
   createLaundryIssue,
   updateLaundryIssue,

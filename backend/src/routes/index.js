@@ -18,6 +18,8 @@ const {
 const {
   updateLaundryIssueController,
   resolveLaundryIssueController,
+  listGlobalLaundryIssuesController,
+  reopenLaundryIssueController,
 } = require('../controllers/laundryIssues.controller');
 const {
   updateLaundryWorkImageController,
@@ -48,6 +50,8 @@ router.patch('/laundry/count-lines/:lineId', authActorMiddleware, updateLaundryC
 router.delete('/laundry/count-lines/:lineId', authActorMiddleware, deleteLaundryCountLineController);
 router.patch('/laundry/issues/:issueId', authActorMiddleware, updateLaundryIssueController);
 router.patch('/laundry/issues/:issueId/resolve', authActorMiddleware, resolveLaundryIssueController);
+router.get('/laundry/issues', authActorMiddleware, listGlobalLaundryIssuesController);
+router.patch('/laundry/issues/:issueId/reopen', authActorMiddleware, reopenLaundryIssueController);
 router.patch('/laundry/images/:imageId', authActorMiddleware, updateLaundryWorkImageController);
 router.patch('/laundry/images/:imageId/cover', authActorMiddleware, setLaundryWorkImageCoverController);
 router.delete('/laundry/images/:imageId', authActorMiddleware, softDeleteLaundryWorkImageController);

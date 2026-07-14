@@ -3,6 +3,7 @@ const laundryWorksRepository = require('../repositories/laundryWorks.repository'
 const { logger } = require('../core/observability');
 const { assertLaundryStaffActor } = require('../policies/authorization.policy');
 const { buildRequiredActorResortScopedWhere } = require('../policies/workspace.policy');
+const { normalizePagination } = require('../shared/pagination');
 
 const buildIssueWhere = ({ actor, workId, status } = {}) => {
   const where = buildRequiredActorResortScopedWhere({ actor });
@@ -97,6 +98,33 @@ const listLaundryIssues = async (workId, query = {}, context = {}) => {
   return laundryIssuesRepository.listLaundryIssues({
     where: buildIssueWhere({ actor, workId, status: query.status }),
   });
+};
+
+const listGlobalLaundryIssues = async (query = {}, context = {}) => {
+  const actor = assertLaundryStaffActor(context.actor);
+  const { skip, take } = normalizePagination(query);
+  const where = buildIssueWhere({ actor, status: query.status });
+  const filters = [];
+
+  if (query.active === 'true') filters.push({ status: { in: ['OPEN', 'REVIEWING'] } });
+  if (query.active === 'false') filters.push({ status: { in: ['RESOLVED', 'CANCELLED'] } });
+  if (query.issueType) filters.push({ issueType: query.issueType });
+  if (query.search) {
+    const search = String(query.search).trim();
+    if (search) {
+      filters.push({
+        OR: [
+          { description: { contains: search, mode: 'insensitive' } },
+          { work: { workNo: { contains: search, mode: 'insensitive' } } },
+          { resort: { name: { contains: search, mode: 'insensitive' } } },
+        ],
+      });
+    }
+  }
+  if (filters.length) where.AND = filters;
+
+  const result = await laundryIssuesRepository.listGlobalLaundryIssues({ where, skip, take });
+  return { items: result.items, pagination: { total: result.total, skip, take } };
 };
 
 const createLaundryIssue = async (workId, payload = {}, context = {}) => {
@@ -288,9 +316,32 @@ const resolveLaundryIssue = async (issueId, payload = {}, context = {}) => {
   return issue;
 };
 
+const reopenLaundryIssue = async (issueId, context = {}) => {
+  const actor = assertLaundryStaffActor(context.actor);
+  const where = buildIssueWhere({ actor });
+  const issue = await laundryIssuesRepository.transaction(async (tx) => {
+    const current = await laundryIssuesRepository.findLaundryIssueById({ issueId, where, client: tx });
+    if (!current) throw Object.assign(new Error('Laundry Issue not found'), { statusCode: 404 });
+    if (current.status !== 'RESOLVED') throw Object.assign(new Error('Only resolved Laundry Issue can be reopened'), { statusCode: 409 });
+    await getMutableAccessibleWork({ workId: current.workId, actor, client: tx });
+    const updated = await laundryIssuesRepository.updateLaundryIssue({
+      issueId,
+      where,
+      data: { status: 'OPEN', resolvedAt: null },
+      client: tx,
+    });
+    await laundryIssuesRepository.updateWorkIssueCount({ workId: current.workId, resortId: current.resortId, client: tx });
+    return updated;
+  });
+  logger.business('laundry.issue.reopened', { ...buildActorLogContext(actor), issueId: issue.id, workId: issue.workId, resortId: issue.resortId });
+  return issue;
+};
+
 module.exports = {
   listLaundryIssues,
+  listGlobalLaundryIssues,
   createLaundryIssue,
   updateLaundryIssue,
   resolveLaundryIssue,
+  reopenLaundryIssue,
 };

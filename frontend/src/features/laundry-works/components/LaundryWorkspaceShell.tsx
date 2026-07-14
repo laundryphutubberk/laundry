@@ -16,6 +16,7 @@ const navItems = [
   { label: 'พร้อมส่ง', icon: '▰', to: '/workspace/laundry/works/ready' },
   { label: 'ลูกค้า/รีสอร์ต', icon: '♙', to: '/workspace/laundry/resorts' },
   { label: 'รายการผ้า', icon: '≡', to: '/workspace/laundry/item-types' },
+  { label: 'ศูนย์ปัญหา', icon: '!', to: '/workspace/laundry/issues' },
 ]
 
 const roleLabels: Record<string, string> = {

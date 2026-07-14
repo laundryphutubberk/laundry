@@ -2,19 +2,30 @@ const { sendSuccess } = require('../core/httpResponse');
 const { getRequestPolicyContext } = require('../core/policyContext');
 const {
   listLaundryIssues,
+  listGlobalLaundryIssues,
   createLaundryIssue,
   updateLaundryIssue,
   resolveLaundryIssue,
+  reopenLaundryIssue,
 } = require('../services/laundryIssues.service');
 const {
   parseRequest,
   workIdParamSchema,
   issueIdParamSchema,
   listLaundryIssuesQuerySchema,
+  listGlobalLaundryIssuesQuerySchema,
   createLaundryIssueBodySchema,
   updateLaundryIssueBodySchema,
   resolveLaundryIssueBodySchema,
 } = require('../validators/laundryIssues.validator');
+
+const listGlobalLaundryIssuesController = async (req, res, next) => {
+  try {
+    const query = parseRequest(listGlobalLaundryIssuesQuerySchema, req.query);
+    const result = await listGlobalLaundryIssues(query, getRequestPolicyContext(req));
+    return sendSuccess(res, result.items, { pagination: result.pagination });
+  } catch (error) { return next(error); }
+};
 
 const listLaundryIssuesController = async (req, res, next) => {
   try {
@@ -60,9 +71,18 @@ const resolveLaundryIssueController = async (req, res, next) => {
   }
 };
 
+const reopenLaundryIssueController = async (req, res, next) => {
+  try {
+    const params = parseRequest(issueIdParamSchema, req.params);
+    return sendSuccess(res, await reopenLaundryIssue(params.issueId, getRequestPolicyContext(req)));
+  } catch (error) { return next(error); }
+};
+
 module.exports = {
   listLaundryIssuesController,
+  listGlobalLaundryIssuesController,
   createLaundryIssueController,
   updateLaundryIssueController,
   resolveLaundryIssueController,
+  reopenLaundryIssueController,
 };

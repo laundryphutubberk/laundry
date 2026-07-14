@@ -15,6 +15,16 @@ const listLaundryIssuesQuerySchema = z.object({
   status: z.enum(issueStatuses).optional(),
 });
 
+const optionalPositiveIntString = z.string().regex(/^\d+$/).optional();
+const listGlobalLaundryIssuesQuerySchema = z.object({
+  status: z.enum(issueStatuses).optional(),
+  issueType: z.enum(issueTypes).optional(),
+  active: z.enum(['true', 'false']).optional(),
+  search: z.string().trim().max(100).optional(),
+  skip: optionalPositiveIntString,
+  take: optionalPositiveIntString,
+}).strict();
+
 const createLaundryIssueBodySchema = z.object({
   bagId: z.coerce.number().int().positive().optional(),
   countLineId: z.coerce.number().int().positive().optional(),
@@ -60,6 +70,7 @@ module.exports = {
   workIdParamSchema,
   issueIdParamSchema,
   listLaundryIssuesQuerySchema,
+  listGlobalLaundryIssuesQuerySchema,
   createLaundryIssueBodySchema,
   updateLaundryIssueBodySchema,
   resolveLaundryIssueBodySchema,

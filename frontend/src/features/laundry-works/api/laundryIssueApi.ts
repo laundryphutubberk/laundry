@@ -12,6 +12,21 @@ export type LaundryIssueDTO = IssueReportDTO & {
     category?: string | null
   } | null
   resolvedAt?: string | null
+  reportedAt?: string
+  work?: { id?: string | number; workNo?: string; currentStatus?: string } | null
+  resort?: { id?: string | number; name?: string } | null
+  reportedBy?: { id?: string | number; displayName?: string; role?: string } | null
+  claim?: { id?: string | number; status?: string } | null
+}
+
+export type GlobalLaundryIssueFilters = {
+  search?: string
+  status?: string
+  issueType?: string
+  active?: 'true' | 'false'
+  skip?: number
+  take?: number
+  meta: LaundryWorkRequestMeta
 }
 
 export type CreateLaundryIssueInput = {
@@ -80,7 +95,7 @@ async function request<T>(path: string, meta: LaundryWorkRequestMeta, init: Requ
     return {
       ok: true,
       data: envelope.data as T,
-      meta: { requestId, receivedAt: new Date().toISOString(), source: 'backend' },
+      meta: { requestId, receivedAt: new Date().toISOString(), source: 'backend', pagination: envelope?.meta?.pagination },
     }
   } catch (error) {
     return {
@@ -102,11 +117,21 @@ export const laundryIssueApi = {
     create: true,
     update: true,
     resolve: true,
+    globalList: true,
+    reopen: true,
   } as const,
 
   list({ workId, meta }: { workId?: string | number; meta: LaundryWorkRequestMeta }) {
     if (!workId) return Promise.resolve({ ok: false, error: { code: 'MISSING_WORK_ID', message: 'Missing Laundry Work id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<LaundryIssueDTO[]>)
     return request<LaundryIssueDTO[]>(`/laundry/works/${workId}/issues`, meta)
+  },
+
+  listGlobal({ meta, ...filters }: GlobalLaundryIssueFilters) {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') params.set(key, String(value))
+    })
+    return request<LaundryIssueDTO[]>(`/laundry/issues?${params}`, meta)
   },
 
   create({ workId, meta, ...input }: CreateLaundryIssueInput) {
@@ -122,5 +147,10 @@ export const laundryIssueApi = {
   resolve({ issueId, meta, resolutionNote }: ResolveLaundryIssueInput) {
     if (!issueId) return Promise.resolve({ ok: false, error: { code: 'MISSING_ISSUE_ID', message: 'Missing Laundry Issue id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<LaundryIssueDTO>)
     return request<LaundryIssueDTO>(`/laundry/issues/${issueId}/resolve`, meta, { method: 'PATCH', body: JSON.stringify({ resolutionNote }) })
+  },
+
+  reopen({ issueId, meta }: { issueId?: string | number; meta: LaundryWorkRequestMeta }) {
+    if (!issueId) return Promise.resolve({ ok: false, error: { code: 'MISSING_ISSUE_ID', message: 'Missing Laundry Issue id.' }, meta: { requestId: meta.requestId, receivedAt: new Date().toISOString(), source: 'client-normalized' } } as ApiResult<LaundryIssueDTO>)
+    return request<LaundryIssueDTO>(`/laundry/issues/${issueId}/reopen`, meta, { method: 'PATCH', body: '{}' })
   },
 }
