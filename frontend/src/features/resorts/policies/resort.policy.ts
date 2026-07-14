@@ -1,8 +1,5 @@
-/**
- * Resort policy placeholder.
- *
- * Owns resort visibility, workspace isolation, and resort selection policy checks.
- * FE-01 skeleton only.
- */
+const MANAGEMENT_ROLES = new Set(['LAUNDRY_OWNER', 'LAUNDRY_MANAGER'])
 
-export {}
+export function canManageResorts(role?: string | null, workspaceType?: string | null) {
+  return workspaceType === 'LAUNDRY' && MANAGEMENT_ROLES.has(role || '')
+}

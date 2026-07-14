@@ -5,6 +5,8 @@ const {
   parseRequest,
   listResortsQuerySchema,
   createResortBodySchema,
+  resortIdParamSchema,
+  updateResortBodySchema,
 } = require('../validators/resorts.validator');
 
 const listResortsController = async (req, res, next) => {
@@ -27,7 +29,19 @@ const createResortController = async (req, res, next) => {
   }
 };
 
+const updateResortController = async (req, res, next) => {
+  try {
+    const { resortId } = parseRequest(resortIdParamSchema, req.params);
+    const body = parseRequest(updateResortBodySchema, req.body);
+    const resort = await resortsService.updateResort(resortId, body, getRequestPolicyContext(req));
+    return sendSuccess(res, resort);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   listResortsController,
   createResortController,
+  updateResortController,
 };

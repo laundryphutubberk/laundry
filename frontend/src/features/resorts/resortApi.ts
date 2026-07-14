@@ -36,6 +36,21 @@ export type ResortListResult = {
   }
 }
 
+export type ResortInput = {
+  name?: string
+  contactName?: string
+  contactPhone?: string
+  address?: string
+  active?: boolean
+}
+
+export type ResortListOptions = {
+  search?: string
+  active?: boolean
+  skip?: number
+  take?: number
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function createRequestId() {
@@ -69,8 +84,14 @@ async function requestResort<T>(path: string, init: RequestInit = {}): Promise<T
   return envelope.data as T
 }
 
-export async function listResorts(): Promise<ResortListResult> {
-  const response = await authenticatedFetch(`${API_BASE_URL}/resorts?active=true&take=100`, {
+export async function listResorts(options: ResortListOptions = { active: true }): Promise<ResortListResult> {
+  const params = new URLSearchParams()
+  if (options.search?.trim()) params.set('search', options.search.trim())
+  if (typeof options.active === 'boolean') params.set('active', String(options.active))
+  params.set('skip', String(Math.max(0, options.skip || 0)))
+  params.set('take', String(options.take || 50))
+
+  const response = await authenticatedFetch(`${API_BASE_URL}/resorts?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${getWorkspaceContext().token}`,
       'X-Request-Id': createRequestId(),
@@ -89,9 +110,16 @@ export async function listResorts(): Promise<ResortListResult> {
   }
 }
 
-export async function createResort(input: { name: string; contactName?: string; contactPhone?: string; address?: string }): Promise<ResortDTO> {
+export async function createResort(input: ResortInput & { name: string }): Promise<ResortDTO> {
   return requestResort<ResortDTO>('/resorts', {
     method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export async function updateResort(resortId: number, input: ResortInput): Promise<ResortDTO> {
+  return requestResort<ResortDTO>(`/resorts/${resortId}`, {
+    method: 'PATCH',
     body: JSON.stringify(input),
   })
 }

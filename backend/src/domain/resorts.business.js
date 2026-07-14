@@ -42,9 +42,9 @@ const buildUpdateResortData = ({ currentResort, payload = {} }) => {
 
   return {
     name: nextName,
-    contactName: payload.contactName === undefined ? currentResort.contactName : payload.contactName,
-    contactPhone: payload.contactPhone === undefined ? currentResort.contactPhone : payload.contactPhone,
-    address: payload.address === undefined ? currentResort.address : payload.address,
+    contactName: payload.contactName === undefined ? currentResort.contactName : payload.contactName || null,
+    contactPhone: payload.contactPhone === undefined ? currentResort.contactPhone : payload.contactPhone || null,
+    address: payload.address === undefined ? currentResort.address : payload.address || null,
     active: payload.active === undefined ? currentResort.active : Boolean(payload.active),
   };
 };

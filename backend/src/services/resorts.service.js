@@ -16,6 +16,15 @@ const listResorts = async (query = {}, context = {}) => {
     where.active = query.active === 'true' || query.active === true;
   }
 
+  if (query.search) {
+    const search = String(query.search).trim();
+    if (search) {
+      where.OR = ['name', 'contactName', 'contactPhone', 'address'].map((field) => ({
+        [field]: { contains: search, mode: 'insensitive' },
+      }));
+    }
+  }
+
   const result = await resortsRepository.listResorts({
     where,
     skip,
