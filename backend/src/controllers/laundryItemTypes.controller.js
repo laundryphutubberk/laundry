@@ -1,13 +1,40 @@
 const { sendSuccess } = require('../core/httpResponse');
 const { getRequestPolicyContext } = require('../core/policyContext');
-const { listActiveLaundryItemTypes } = require('../services/laundryItemTypes.service');
+const service = require('../services/laundryItemTypes.service');
+const {
+  parseRequest,
+  listLaundryItemTypesQuerySchema,
+  itemTypeIdParamSchema,
+  createLaundryItemTypeBodySchema,
+  updateLaundryItemTypeBodySchema,
+} = require('../validators/laundryItemTypes.validator');
 
-const listActiveLaundryItemTypesController = async (req, res, next) => {
+const listLaundryItemTypesController = async (req, res, next) => {
   try {
-    return sendSuccess(res, await listActiveLaundryItemTypes(req.query, getRequestPolicyContext(req)));
-  } catch (error) {
-    return next(error);
-  }
+    const query = parseRequest(listLaundryItemTypesQuerySchema, req.query);
+    const result = await service.listLaundryItemTypes(query, getRequestPolicyContext(req));
+    return sendSuccess(res, result.items, { pagination: result.pagination });
+  } catch (error) { return next(error); }
 };
 
-module.exports = { listActiveLaundryItemTypesController };
+const createLaundryItemTypeController = async (req, res, next) => {
+  try {
+    const body = parseRequest(createLaundryItemTypeBodySchema, req.body);
+    return sendSuccess(res, await service.createLaundryItemType(body, getRequestPolicyContext(req)), undefined, 201);
+  } catch (error) { return next(error); }
+};
+
+const updateLaundryItemTypeController = async (req, res, next) => {
+  try {
+    const { itemTypeId } = parseRequest(itemTypeIdParamSchema, req.params);
+    const body = parseRequest(updateLaundryItemTypeBodySchema, req.body);
+    return sendSuccess(res, await service.updateLaundryItemType(itemTypeId, body, getRequestPolicyContext(req)));
+  } catch (error) { return next(error); }
+};
+
+module.exports = {
+  listLaundryItemTypesController,
+  listActiveLaundryItemTypesController: listLaundryItemTypesController,
+  createLaundryItemTypeController,
+  updateLaundryItemTypeController,
+};

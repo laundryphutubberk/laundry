@@ -185,6 +185,8 @@ export type LaundryItemTypeDTO = {
   id: string | number
   name: string
   category?: string | null
+  weightPerPieceKg?: string | number | null
+  active?: boolean
 }
 
 export type IssueReportDTO = {
