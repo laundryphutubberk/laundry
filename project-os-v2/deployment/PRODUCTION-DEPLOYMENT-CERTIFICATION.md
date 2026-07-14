@@ -1,6 +1,7 @@
 # Production Deployment Certification V1
 
-Status: CERTIFIED
+Status: APPROVED
+Certification: CERTIFIED
 
 ## Delivery evidence
 
