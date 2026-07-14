@@ -5,6 +5,7 @@
   "render_contract": "COMPLETE",
   "automated_verification": "PASS",
   "human_verification": "DEFERRED_TO_PREVIEW_DEPLOYMENT_RECONFIGURATION",
-  "dashboard_changes": "NOT_PERFORMED",
-  "updated_at": "2026-07-13T14:00:00+07:00"
+  "dashboard_changes": "ONE_TIME_RENDER_AUTO_DEPLOY_ACTION_REQUIRED",
+  "production_backend_auto_deploy": "BLOCKED_ONE_TIME_OPERATOR_CONFIGURATION_REQUIRED",
+  "updated_at": "2026-07-14T14:15:00+07:00"
 }

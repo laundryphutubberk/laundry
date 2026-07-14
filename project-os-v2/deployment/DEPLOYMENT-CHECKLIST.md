@@ -7,6 +7,8 @@ Status: APPROVED
 - [ ] Component directories, manifests, and lockfiles align.
 - [ ] Vercel Root Directory is `frontend`; Render Root Directory is `backend`.
 - [ ] Frontend build and backend start commands are verified.
+- [ ] Render is connected through the GitHub App to `laundryphutubberk/laundry`, branch `main`.
+- [ ] Render Auto-Deploy is `On Commit`; Build Filters are empty because Root Directory provides monorepo filtering.
 
 ## Frontend Preview
 
@@ -25,6 +27,8 @@ Status: APPROVED
 ## Production promotion
 
 - [ ] Tested commits are merged to `main`; frontend/backend contracts match.
+- [ ] Backend-changing commits auto-deploy on Render; frontend-only commits do not.
+- [ ] Vercel and Render deployment metadata match the same `main` SHA when both surfaces change.
 - [ ] Production registration mode is `DISABLED`.
 - [ ] Production database/environment and rollback targets are confirmed.
 
@@ -45,3 +49,4 @@ Status: APPROVED
 
 - [ ] Restore compatible Vercel and Render deployments; assess DB separately.
 - [ ] Verify deployed branch/commit, API base URL, CORS, cookies, refresh, Google flow, `/onboarding`, mobile width, and representative operational APIs.
+- [ ] After a specific-commit deploy or rollback, explicitly restore Render Auto-Deploy to `On Commit`.

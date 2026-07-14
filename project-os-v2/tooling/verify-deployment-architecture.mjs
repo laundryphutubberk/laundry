@@ -25,6 +25,11 @@ assert.match(architecture, /Root Directory `backend`/)
 assert.match(architecture, /Not deployed/)
 assert.match(vercel, /Output Directory \| `dist`/)
 assert.match(render, /npx prisma migrate deploy/)
+assert.match(render, /Auto-Deploy \| `On Commit`/)
+assert.match(render, /GitHub App connection/)
+assert.match(render, /Root Directory `backend` already limits automatic deploys to `backend\/\*\*`/)
+assert.match(render, /Deploy a specific commit.*disables Auto-Deploy/)
+assert.doesNotMatch(render, /Auto-Deploy \| `After CI Checks Pass`/)
 
 const variables = [
   'VITE_API_BASE_URL', 'VITE_GOOGLE_CLIENT_ID', 'NODE_ENV', 'PORT', 'DATABASE_URL', 'DIRECT_URL',
