@@ -1,0 +1,23 @@
+const repository = require('../repositories/laundryReports.repository');
+const { assertLaundryManagementActor } = require('../policies/authorization.policy');
+const { normalizePagination } = require('../shared/pagination');
+const DAY_MS = 86400000; const BANGKOK_OFFSET = 7 * 60 * 60 * 1000;
+const bangkokDate = (date) => new Date(date.getTime() + BANGKOK_OFFSET).toISOString().slice(0, 10);
+const parseBangkokStart = (value) => new Date(`${value}T00:00:00.000+07:00`);
+const resolveRange = (query = {}, now = new Date()) => {
+  if (Boolean(query.start) !== Boolean(query.end)) throw Object.assign(new Error('Both start and end dates are required'), { statusCode: 400 });
+  const endDate=query.end||bangkokDate(now); const startDate=query.start||bangkokDate(new Date(parseBangkokStart(endDate).getTime()-29*DAY_MS));
+  const start=parseBangkokStart(startDate); const endStart=parseBangkokStart(endDate);
+  if (!Number.isFinite(start.getTime())||!Number.isFinite(endStart.getTime())||start>endStart) throw Object.assign(new Error('Invalid report date range'),{statusCode:400});
+  const days=Math.round((endStart-start)/DAY_MS)+1; if(days>366) throw Object.assign(new Error('Report date range cannot exceed 366 days'),{statusCode:400});
+  return {start,endExclusive:new Date(endStart.getTime()+DAY_MS),startDate,endDate,days,timezone:'Asia/Bangkok'};
+};
+const authorize=(context)=>assertLaundryManagementActor(context.actor);
+const counts=(rows,key)=>Object.fromEntries(rows.map(row=>[row[key],row._count._all]));
+const getOverview=async(query,context)=>{authorize(context);const range=resolveRange(query);const raw=await repository.overview(range);const statuses=counts(raw.statuses,'currentStatus');const issueStatuses=counts(raw.issues,'status');const claimStatuses=counts(raw.claims,'status');const active=raw.statuses.filter(row=>!['CLOSED','CANCELLED'].includes(row.currentStatus)).reduce((sum,row)=>sum+row._count._all,0);return {range,metrics:{totalWorks:raw.totalWorks,activeWorks:active,closedWorks:statuses.CLOSED||0,cancelledWorks:statuses.CANCELLED||0,readyWorks:statuses.DATA_RECORDED||0,pendingWorks:active,totalResorts:raw.totalResorts,totalBags:raw.totalBags,totalItemCount:raw.totalItemCount,...(raw.weightComplete?{totalWeightKg:Number(raw.totalWeightKg.toFixed(3))}:{}),openIssues:issueStatuses.OPEN||0,reviewingIssues:issueStatuses.REVIEWING||0,resolvedIssues:issueStatuses.RESOLVED||0,activeClaims:(claimStatuses.OPEN||0)+(claimStatuses.IN_REVIEW||0)+(claimStatuses.APPROVED||0),totalClaims:raw.claims.reduce((sum,row)=>sum+row._count._all,0)}};};
+const getTrends=async(query,context)=>{authorize(context);const range=resolveRange(query);return {range,items:await repository.trends(range)};};
+const sortPage=(items,query,map)=>{const {skip,take}=normalizePagination(query);const key=map[query.sort]||map.default;const direction=query.order==='asc'?1:-1;items.sort((a,b)=>typeof a[key]==='string'?direction*a[key].localeCompare(b[key],'th'):direction*((a[key]||0)-(b[key]||0)));return {items:items.slice(skip,skip+take),pagination:{total:items.length,skip,take}};};
+const getResorts=async(query,context)=>{authorize(context);const range=resolveRange(query);return {range,...sortPage(await repository.resorts(range,query),query,{default:'totalWorks',name:'resortName',totalWorks:'totalWorks',activeWorks:'activeWorks',closedWorks:'closedWorks',bags:'bags',itemCount:'itemCount',issueCount:'issueCount'})};};
+const getItems=async(query,context)=>{authorize(context);const range=resolveRange(query);return {range,...sortPage(await repository.items(range,query),query,{default:'quantity',name:'name',quantity:'quantity',workCount:'workCount',weightKg:'weightKg'})};};
+const getIssues=async(query,context)=>{authorize(context);const range=resolveRange(query);const raw=await repository.issueSummary(range);return {range,byStatus:counts(raw.byStatus,'status'),byType:counts(raw.byType,'issueType'),topResorts:raw.topResorts};};
+module.exports={resolveRange,getOverview,getTrends,getResorts,getItems,getIssues};

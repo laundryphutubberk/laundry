@@ -11,6 +11,7 @@ const laundryCountLinesRoutes = require('./laundryCountLines.routes');
 const laundryIssuesRoutes = require('./laundryIssues.routes');
 const laundryWorkImagesRoutes = require('./laundryWorkImages.routes');
 const laundryItemTypesRoutes = require('./laundryItemTypes.routes');
+const laundryReportsRoutes = require('./laundryReports.routes');
 const {
   updateLaundryCountLineController,
   deleteLaundryCountLineController,
@@ -46,6 +47,7 @@ router.use('/laundry/works/:workId/count-lines', authActorMiddleware, laundryCou
 router.use('/laundry/works/:workId/issues', authActorMiddleware, laundryIssuesRoutes);
 router.use('/laundry/works/:workId/images', authActorMiddleware, laundryWorkImagesRoutes);
 router.use('/laundry/item-types', authActorMiddleware, laundryItemTypesRoutes);
+router.use('/laundry/reports', authActorMiddleware, laundryReportsRoutes);
 router.patch('/laundry/count-lines/:lineId', authActorMiddleware, updateLaundryCountLineController);
 router.delete('/laundry/count-lines/:lineId', authActorMiddleware, deleteLaundryCountLineController);
 router.patch('/laundry/issues/:issueId', authActorMiddleware, updateLaundryIssueController);

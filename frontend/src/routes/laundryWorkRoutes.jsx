@@ -9,6 +9,7 @@ import { ItemCatalogPage } from '../features/item-catalog/ItemCatalogPage'
 import { IssueCenterPage } from '../features/issues/IssueCenterPage'
 import { IdentityManagementPage } from '../features/auth/IdentityManagementPage'
 import { RequireBusinessContext } from '../features/auth/RequireBusinessContext'
+import { ReportsRoute } from '../features/reports/ReportsRoute'
 
 export const laundryWorkRoutes = [
   {
@@ -54,6 +55,10 @@ export const laundryWorkRoutes = [
       {
         path: 'issues',
         element: <IssueCenterPage />,
+      },
+      {
+        path: 'reports',
+        element: <ReportsRoute />,
       },
       {
         path: 'security',

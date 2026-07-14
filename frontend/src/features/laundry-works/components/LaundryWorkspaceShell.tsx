@@ -17,6 +17,7 @@ const navItems = [
   { label: 'ลูกค้า/รีสอร์ต', icon: '♙', to: '/workspace/laundry/resorts' },
   { label: 'รายการผ้า', icon: '≡', to: '/workspace/laundry/item-types' },
   { label: 'ศูนย์ปัญหา', icon: '!', to: '/workspace/laundry/issues' },
+  { label: 'รายงาน', icon: '▥', to: '/workspace/laundry/reports', managementOnly: true },
 ]
 
 const roleLabels: Record<string, string> = {
@@ -58,9 +59,10 @@ function iconClassName(active?: boolean) {
 }
 
 function WorkspaceNavigation({ onNavigate }: { onNavigate?: () => void }) {
+  const role = getAuthSession()?.actor?.role || getAuthSession()?.user?.role
   return (
     <nav aria-label="เมนูหลัก" className="space-y-px px-4 py-4">
-      {navItems.map((item) => (
+      {navItems.map((item) => (!item.managementOnly || ['LAUNDRY_OWNER', 'LAUNDRY_MANAGER'].includes(role || '')) ? (
         <NavLink key={item.label} to={item.to} end onClick={onNavigate} className={({ isActive }) => navClassName(isActive)}>
           {({ isActive }) => (
             <>
@@ -69,7 +71,7 @@ function WorkspaceNavigation({ onNavigate }: { onNavigate?: () => void }) {
             </>
           )}
         </NavLink>
-      ))}
+      ) : null)}
     </nav>
   )
 }
