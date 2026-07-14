@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { LogOut, Menu, ShieldCheck, X } from 'lucide-react'
+import { LogOut, Menu, X } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 
 import { getAuthSession } from '../../auth/authSession'
@@ -20,6 +20,7 @@ const navItems = [
   { label: 'ศูนย์ปัญหา', icon: '!', to: '/workspace/laundry/issues' },
   { label: 'รายงาน', icon: '▥', to: '/workspace/laundry/reports', managementOnly: true },
   { label: 'ตั้งค่า', icon: '⚙', to: '/workspace/laundry/settings' },
+  { label: 'บัญชีและความปลอดภัย', icon: '◇', to: '/workspace/laundry/security' },
 ]
 
 const roleLabels: Record<string, string> = {
@@ -95,7 +96,9 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
   useEffect(() => { void workspaceSettingsApi.get().then(value => setWorkspaceProfileName(value.workspace.displayName || value.tenant.displayName)).catch(() => undefined) }, [])
   const resolvedWorkspaceLabel = workspaceProfileName || workspaceLabel
   const avatarLabel = Array.from(displayName)[0]?.toUpperCase() || 'ผ'
-  const currentNavItem = navItems.find((item) => item.to && (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)))
+  const currentNavItem = [...navItems]
+    .sort((left, right) => right.to.length - left.to.length)
+    .find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))
   const currentPageLabel = currentNavItem?.label || resolvedWorkspaceLabel
 
   useEffect(() => {
@@ -231,14 +234,6 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
                   <button
                     type="button"
                     role="menuitem"
-                    onClick={() => { setUserMenuOpen(false); navigate('/workspace/laundry/security') }}
-                    className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    วิธีเข้าสู่ระบบและความปลอดภัย
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
                     onClick={() => void handleLogout()}
                     className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm font-bold text-red-700 transition hover:bg-red-50"
                   >
@@ -302,14 +297,6 @@ export function LaundryWorkspaceShell({ children }: LaundryWorkspaceShellProps) 
                 </div>
               </div>
               <div className="mt-3 grid gap-1">
-                <button
-                  type="button"
-                  onClick={() => { setMobileNavOpen(false); navigate('/workspace/laundry/security') }}
-                  className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-bold text-blue-50 transition hover:bg-white/10"
-                >
-                  <ShieldCheck size={20} aria-hidden="true" />
-                  <span className="truncate">วิธีเข้าสู่ระบบและความปลอดภัย</span>
-                </button>
                 <button
                   type="button"
                   onClick={() => void handleLogout()}
