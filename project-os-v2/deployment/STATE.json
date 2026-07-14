@@ -4,8 +4,12 @@
   "vercel_contract": "COMPLETE",
   "render_contract": "COMPLETE",
   "automated_verification": "PASS",
-  "human_verification": "DEFERRED_TO_PREVIEW_DEPLOYMENT_RECONFIGURATION",
-  "dashboard_changes": "ONE_TIME_RENDER_AUTO_DEPLOY_ACTION_REQUIRED",
-  "production_backend_auto_deploy": "BLOCKED_ONE_TIME_OPERATOR_CONFIGURATION_REQUIRED",
-  "updated_at": "2026-07-14T14:15:00+07:00"
+  "human_verification": "PASS",
+  "dashboard_changes": "RENDER_AUTO_DEPLOY_ON_COMMIT_CONFIRMED_BY_OPERATOR",
+  "production_backend_auto_deploy": "CERTIFIED",
+  "production_branch": "main",
+  "manual_deployment_policy": "RECOVERY_ONLY",
+  "certification_commit": "46fbf1bf683dc13ccac45e59b390f1c78fc7f590",
+  "certified_at": "2026-07-14T08:41:56Z",
+  "updated_at": "2026-07-14T15:41:56+07:00"
 }

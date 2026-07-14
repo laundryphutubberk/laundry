@@ -7,7 +7,8 @@ const projectOsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = resolve(projectOsRoot, '..')
 const requiredDocs = [
   'DEPLOYMENT-ARCHITECTURE.md', 'ENVIRONMENT-MATRIX.md', 'VERCEL-CONFIG.md',
-  'RENDER-CONFIG.md', 'DEPLOYMENT-CHECKLIST.md', 'DEPLOYMENT-RUNBOOK.md', 'STATE.json',
+  'RENDER-CONFIG.md', 'DEPLOYMENT-CHECKLIST.md', 'DEPLOYMENT-RUNBOOK.md',
+  'PRODUCTION-DEPLOYMENT-CERTIFICATION.md', 'STATE.json',
 ]
 await Promise.all(requiredDocs.map((name) => stat(resolve(projectOsRoot, 'deployment', name))))
 
@@ -20,6 +21,7 @@ const architecture = await readFile(resolve(projectOsRoot, 'deployment/DEPLOYMEN
 const vercel = await readFile(resolve(projectOsRoot, 'deployment/VERCEL-CONFIG.md'), 'utf8')
 const render = await readFile(resolve(projectOsRoot, 'deployment/RENDER-CONFIG.md'), 'utf8')
 const matrix = await readFile(resolve(projectOsRoot, 'deployment/ENVIRONMENT-MATRIX.md'), 'utf8')
+const certification = await readFile(resolve(projectOsRoot, 'deployment/PRODUCTION-DEPLOYMENT-CERTIFICATION.md'), 'utf8')
 assert.match(architecture, /Root Directory `frontend`/)
 assert.match(architecture, /Root Directory `backend`/)
 assert.match(architecture, /Not deployed/)
@@ -30,6 +32,9 @@ assert.match(render, /GitHub App connection/)
 assert.match(render, /Root Directory `backend` already limits automatic deploys to `backend\/\*\*`/)
 assert.match(render, /Deploy a specific commit.*disables Auto-Deploy/)
 assert.doesNotMatch(render, /Auto-Deploy \| `After CI Checks Pass`/)
+assert.match(certification, /Status: CERTIFIED/)
+assert.match(certification, /46fbf1bf683dc13ccac45e59b390f1c78fc7f590/)
+assert.match(certification, /no manual deploy or deploy hook used/)
 
 const variables = [
   'VITE_API_BASE_URL', 'VITE_GOOGLE_CLIENT_ID', 'NODE_ENV', 'PORT', 'DATABASE_URL', 'DIRECT_URL',
