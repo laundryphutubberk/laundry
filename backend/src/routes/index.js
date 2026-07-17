@@ -29,6 +29,7 @@ const {
   softDeleteLaundryWorkImageController,
 } = require('../controllers/laundryWorkImages.controller');
 const claims = require('../controllers/laundryClaims.controller');
+const inboundCustodyRoutes = require('./inboundCustody.routes');
 
 const router = express.Router();
 
@@ -60,6 +61,7 @@ router.patch('/laundry/images/:imageId', authActorMiddleware, updateLaundryWorkI
 router.patch('/laundry/images/:imageId/cover', authActorMiddleware, setLaundryWorkImageCoverController);
 router.delete('/laundry/images/:imageId', authActorMiddleware, softDeleteLaundryWorkImageController);
 router.use('/laundry/works', authActorMiddleware, laundryWorksRoutes);
+router.use('/laundry/works', authActorMiddleware, inboundCustodyRoutes);
 router.get('/laundry/works/:workId/claims', authActorMiddleware, claims.list);
 router.get('/laundry/claims/:claimId', authActorMiddleware, claims.detail);
 router.post('/laundry/issues/:issueId/claim', authActorMiddleware, claims.create);

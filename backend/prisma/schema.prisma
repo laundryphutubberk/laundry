@@ -154,13 +154,28 @@ enum WashLoadFitStatus {
   OVER_LOADED
 }
 
+enum InboundCustodyProfile {
+  RESORT_SELF_DELIVERY
+}
+
+enum InboundTrackingLevel {
+  COUNT_ONLY
+}
+
+enum InboundCustodyStatus {
+  PENDING
+  RECEIPT_CONFIRMED
+  COUNT_EVIDENCE_RECORDED
+  CLOSED
+}
+
 model User {
-  id            Int           @id @default(autoincrement())
-  email         String        @unique
-  passwordHash  String?
-  displayName   String?
-  role          UserRole?
-  workspaceType WorkspaceType?
+  id               Int              @id @default(autoincrement())
+  email            String           @unique
+  passwordHash     String?
+  displayName      String?
+  role             UserRole?
+  workspaceType    WorkspaceType?
   onboardingStatus OnboardingStatus @default(NOT_REQUIRED)
 
   resortId Int?
@@ -170,15 +185,18 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  createdWorks LaundryWork[] @relation("WorkCreatedBy")
-  issueReports IssueReport[] @relation("IssueReportedBy")
-  deviceSessions DeviceSession[]
-  identities UserIdentity[]
-  identityLinkIntents IdentityLinkIntent[]
-  identityUnlinkIntents IdentityUnlinkIntent[]
-  stepUpGrants StepUpGrant[]
-  tenantMemberships TenantMembership[]
-  createdTenants Tenant[] @relation("TenantCreatedBy")
+  inboundReceiptConfirmations InboundCustodyOperation[] @relation("InboundReceiptConfirmedBy")
+  inboundCountRecordings      InboundCustodyOperation[] @relation("InboundCountRecordedBy")
+  inboundClosures             InboundCustodyOperation[] @relation("InboundClosedBy")
+  createdWorks                LaundryWork[]             @relation("WorkCreatedBy")
+  issueReports                IssueReport[]             @relation("IssueReportedBy")
+  deviceSessions              DeviceSession[]
+  identities                  UserIdentity[]
+  identityLinkIntents         IdentityLinkIntent[]
+  identityUnlinkIntents       IdentityUnlinkIntent[]
+  stepUpGrants                StepUpGrant[]
+  tenantMemberships           TenantMembership[]
+  createdTenants              Tenant[]                  @relation("TenantCreatedBy")
 
   @@index([resortId])
   @@index([workspaceType])
@@ -208,13 +226,13 @@ model Tenant {
 }
 
 model LaundryWorkspace {
-  id          String                   @id @default(uuid())
-  tenantId    String                   @unique
-  tenant      Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  status      LaundryWorkspaceStatus   @default(ACTIVE)
+  id          String                 @id @default(uuid())
+  tenantId    String                 @unique
+  tenant      Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  status      LaundryWorkspaceStatus @default(ACTIVE)
   displayName String?
-  createdAt   DateTime                 @default(now())
-  updatedAt   DateTime                 @updatedAt
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
 
   branches Branch[]
 
@@ -223,19 +241,19 @@ model LaundryWorkspace {
 }
 
 model Branch {
-  id                 String          @id @default(uuid())
+  id                 String           @id @default(uuid())
   tenantId           String
-  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   laundryWorkspaceId String
   laundryWorkspace   LaundryWorkspace @relation(fields: [laundryWorkspaceId, tenantId], references: [id, tenantId], onDelete: Cascade)
   code               String
   name               String
   timezone           String?
   address            String?
-  isDefault          Boolean         @default(false)
-  status             BranchStatus    @default(ACTIVE)
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  isDefault          Boolean          @default(false)
+  status             BranchStatus     @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@unique([tenantId, code])
   @@index([tenantId, status])
@@ -264,20 +282,20 @@ model TenantMembership {
 }
 
 model UserIdentity {
-  id              String           @id @default(uuid())
+  id              String                 @id @default(uuid())
   userId          Int
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider        IdentityProvider
   providerSubject String
   providerEmail   String?
-  emailVerified   Boolean          @default(false)
+  emailVerified   Boolean                @default(false)
   displayName     String?
   avatarUrl       String?
-  linkedAt        DateTime         @default(now())
+  linkedAt        DateTime               @default(now())
   lastUsedAt      DateTime?
   unlinkedAt      DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
   unlinkIntents   IdentityUnlinkIntent[]
 
   @@unique([provider, providerSubject])
@@ -345,17 +363,17 @@ model IdentityUnlinkIntent {
 }
 
 model DeviceSession {
-  id                String   @id @default(uuid())
+  id                String    @id @default(uuid())
   userId            Int
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   familyId          String
   credentialHash    String
   previousHash      String?
-  rotationCounter   Int      @default(0)
+  rotationCounter   Int       @default(0)
   deviceLabel       String?
   userAgent         String?
-  createdAt         DateTime @default(now())
-  lastUsedAt        DateTime @default(now())
+  createdAt         DateTime  @default(now())
+  lastUsedAt        DateTime  @default(now())
   idleExpiresAt     DateTime
   absoluteExpiresAt DateTime
   revokedAt         DateTime?
@@ -376,14 +394,15 @@ model Resort {
   address      String?
   active       Boolean @default(true)
 
-  users      User[]
-  works      LaundryWork[]
-  bags       LaundryBag[]
-  countLines LaundryCountLine[]
-  movements  LinenMovement[]
-  inventory  LinenInventorySummary[]
-  issues     IssueReport[]
-  workImages LaundryWorkImage[]
+  inboundCustodyOperations InboundCustodyOperation[]
+  users                    User[]
+  works                    LaundryWork[]
+  bags                     LaundryBag[]
+  countLines               LaundryCountLine[]
+  movements                LinenMovement[]
+  inventory                LinenInventorySummary[]
+  issues                   IssueReport[]
+  workImages               LaundryWorkImage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -428,13 +447,14 @@ model LaundryWork {
   createdById Int?
   createdBy   User? @relation("WorkCreatedBy", fields: [createdById], references: [id])
 
-  bags          LaundryBag[]
-  countLines    LaundryCountLine[]
-  movements     LinenMovement[]
-  issues        IssueReport[]
-  images        LaundryWorkImage[]
-  statusLogs    WorkStatusLog[]
-  washLoadPlans WashLoadPlan[]
+  inboundCustody InboundCustodyOperation?
+  bags           LaundryBag[]
+  countLines     LaundryCountLine[]
+  movements      LinenMovement[]
+  issues         IssueReport[]
+  images         LaundryWorkImage[]
+  statusLogs     WorkStatusLog[]
+  washLoadPlans  WashLoadPlan[]
 
   note      String?
   createdAt DateTime @default(now())
@@ -753,4 +773,41 @@ model WashLoadPlan {
   @@index([loadRuleId])
   @@index([status])
   @@index([fitStatus])
+}
+
+model InboundCustodyOperation {
+  id Int @id @default(autoincrement())
+
+  workId Int         @unique
+  work   LaundryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  resortId Int
+  resort   Resort @relation(fields: [resortId], references: [id])
+
+  profile       InboundCustodyProfile @default(RESORT_SELF_DELIVERY)
+  trackingLevel InboundTrackingLevel  @default(COUNT_ONLY)
+  status        InboundCustodyStatus  @default(PENDING)
+
+  receiptConfirmedAt   DateTime?
+  receiptConfirmedById Int?
+  receiptConfirmedBy   User?     @relation("InboundReceiptConfirmedBy", fields: [receiptConfirmedById], references: [id])
+
+  countEvidenceRecordedAt   DateTime?
+  countEvidenceRecordedById Int?
+  countEvidenceRecordedBy   User?     @relation("InboundCountRecordedBy", fields: [countEvidenceRecordedById], references: [id])
+
+  countTotalItems Int @default(0)
+
+  closedAt   DateTime?
+  closedById Int?
+  closedBy   User?     @relation("InboundClosedBy", fields: [closedById], references: [id])
+
+  version Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workId])
+  @@index([resortId])
+  @@index([status])
 }
